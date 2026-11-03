@@ -216,11 +216,17 @@ public class ProtocolAdapterManager {
         // hook is not an option: removeShutdownHook throws once the JVM is already exiting.
         protocolAdapterWritingService.addWritingChangedCallback(() ->
                 protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
-        PhoneHomeData.adapterInventory(() -> PhoneHomeData.inventory(
-                protocolAdapterMap.values().stream()
-                        .map(ProtocolAdapterWrapper::getProtocolAdapterInformation)
-                        .toList(),
-                versionProvider.getVersion()));
+        // Every configured adapter, loaded or not: one whose type is missing or failed to construct has no wrapper.
+        PhoneHomeData.adapterSource("legacy", () -> protocolAdapterConfig.getAllConfigs().stream()
+                .map(entity -> protocolAdapterFactoryManager
+                        .get(entity.getProtocolId())
+                        // the type's own id, so an adapter configured under a legacy id counts with its type
+                        .map(factory -> new PhoneHomeData.ConfiguredAdapter(
+                                factory.getInformation().getProtocolId(),
+                                PhoneHomeData.version(
+                                        factory.getInformation().getVersion(), versionProvider.getVersion())))
+                        .orElseGet(() -> new PhoneHomeData.ConfiguredAdapter(entity.getProtocolId(), null)))
+                .toList());
     }
 
     /**
@@ -299,6 +305,7 @@ public class ProtocolAdapterManager {
      */
     @VisibleForTesting
     public void shutdown() {
+        PhoneHomeData.removeAdapterSource("legacy");
         protocolAdapterMap.values().forEach(wrapper -> {
             try {
                 wrapper.stopAsync(true).get(SHUTDOWN_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);

@@ -158,7 +158,12 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
         System.setProperty(PhoneHomeData.LICENSE_ID_PROPERTY, "3c1e7a52-file-set");
-        PhoneHomeData.adapterInventory(() -> "modbus:2026.16:1,opcua:2026.16:2");
+        PhoneHomeData.adapterSource(
+                "test",
+                () -> List.of(
+                        new PhoneHomeData.ConfiguredAdapter("opcua", "2026.16"),
+                        new PhoneHomeData.ConfiguredAdapter("modbus", "2026.16"),
+                        new PhoneHomeData.ConfiguredAdapter("opcua", "2026.16")));
         try {
             service = new HiveMQEdgeHttpServiceImpl(
                     EDGE_VERSION,
@@ -183,7 +188,7 @@ class HiveMQEdgeHttpServiceImplTest {
                     ping.at("/userData/adapters").asText());
         } finally {
             System.clearProperty(PhoneHomeData.LICENSE_ID_PROPERTY);
-            PhoneHomeData.adapterInventory(null);
+            PhoneHomeData.removeAdapterSource("test");
         }
     }
 

@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -48,6 +49,8 @@ import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
+import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
+import com.hivemq.edge.model.PhoneHomeData;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
@@ -148,6 +151,61 @@ class ProtocolAdapterManagerTest {
                 tagManager,
                 protocolAdapterExtractor,
                 protocolAdapterPublishService);
+    }
+
+    /// The phone-home inventory counts every configured adapter, also one whose type is not installed (no factory,
+    /// so the manager never builds a wrapper for it); first-party versions resolve to the Edge version.
+    @Test
+    void phoneHomeInventory_whenOneConfiguredTypeIsMissing_thenStillCountedWithUnknownVersion() {
+        final ProtocolAdapterEntity opcua1 = mock(ProtocolAdapterEntity.class);
+        final ProtocolAdapterEntity opcua2 = mock(ProtocolAdapterEntity.class);
+        final ProtocolAdapterEntity s7 = mock(ProtocolAdapterEntity.class);
+        when(opcua1.getProtocolId()).thenReturn("opcua");
+        when(opcua2.getProtocolId()).thenReturn("opcua");
+        when(s7.getProtocolId()).thenReturn("s7");
+        when(protocolAdapterExtractor.getAllConfigs()).thenReturn(List.of(opcua1, s7, opcua2));
+        final ProtocolAdapterFactory<?> opcuaFactory = mock(ProtocolAdapterFactory.class);
+        final ProtocolAdapterInformation opcuaInfo = mock(ProtocolAdapterInformation.class);
+        when(opcuaInfo.getProtocolId()).thenReturn("opcua");
+        when(opcuaInfo.getVersion()).thenReturn("${edge-version}");
+        doReturn(opcuaInfo).when(opcuaFactory).getInformation();
+        doReturn(Optional.of(opcuaFactory)).when(factoryManager).get("opcua");
+        doReturn(Optional.empty()).when(factoryManager).get("s7");
+        when(versionProvider.getVersion()).thenReturn("2026.16");
+        try {
+            assertThat(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_PING)
+                            .getUserData()
+                            .get(PhoneHomeData.ADAPTERS_KEY))
+                    .isEqualTo("opcua:2026.16:2,s7:unknown:1");
+        } finally {
+            PhoneHomeData.removeAdapterSource("legacy");
+        }
+    }
+
+    /// An adapter configured under a legacy protocol id counts under its type's own id.
+    @Test
+    void phoneHomeInventory_whenConfiguredUnderLegacyId_thenCountedUnderTypeId() {
+        final ProtocolAdapterEntity legacyId = mock(ProtocolAdapterEntity.class);
+        final ProtocolAdapterEntity typeId = mock(ProtocolAdapterEntity.class);
+        when(legacyId.getProtocolId()).thenReturn("opc-ua-client");
+        when(typeId.getProtocolId()).thenReturn("opcua");
+        when(protocolAdapterExtractor.getAllConfigs()).thenReturn(List.of(legacyId, typeId));
+        final ProtocolAdapterFactory<?> opcuaFactory = mock(ProtocolAdapterFactory.class);
+        final ProtocolAdapterInformation opcuaInfo = mock(ProtocolAdapterInformation.class);
+        when(opcuaInfo.getProtocolId()).thenReturn("opcua");
+        when(opcuaInfo.getVersion()).thenReturn("2026.16");
+        doReturn(opcuaInfo).when(opcuaFactory).getInformation();
+        doReturn(Optional.of(opcuaFactory)).when(factoryManager).get("opc-ua-client");
+        doReturn(Optional.of(opcuaFactory)).when(factoryManager).get("opcua");
+        when(versionProvider.getVersion()).thenReturn("2026.16");
+        try {
+            assertThat(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_PING)
+                            .getUserData()
+                            .get(PhoneHomeData.ADAPTERS_KEY))
+                    .isEqualTo("opcua:2026.16:2");
+        } finally {
+            PhoneHomeData.removeAdapterSource("legacy");
+        }
     }
 
     private @NotNull ProtocolAdapter createSuccessAdapter(final @NotNull String adapterId) {

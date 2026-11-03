@@ -15,50 +15,106 @@
  */
 package com.hivemq.edge.model;
 
-import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
- * Facts added to every phone-home event that the code building the event cannot see: the licence id, set by the
- * commercial modules as a system property, and the adapter inventory, supplied by the protocol adapter manager.
- * Both travel in {@link HiveMQEdgeRemoteEvent#userData}, which the receiving schema accepts with any string key.
+ * Facts added to phone-home events that the code building the event cannot see: the licence id, set by the commercial
+ * modules as system properties, and the inventory of configured adapters, supplied by each adapter framework. Both
+ * travel in {@link HiveMQEdgeRemoteEvent#userData}, which the receiving schema accepts with any string key.
  */
 public final class PhoneHomeData {
 
     /** System property the commercial modules set to the id of the loaded licence, and clear when it goes. */
     public static final @NotNull String LICENSE_ID_PROPERTY = "hivemq.edge.license.id";
 
+    /**
+     * System property the commercial modules set to the last day the loaded licence is valid ({@code yyyy-MM-dd}); the
+     * id is not sent after that day, even before the licence folder is checked again.
+     */
+    public static final @NotNull String LICENSE_VALID_UNTIL_PROPERTY = "hivemq.edge.license.valid-until";
+
     public static final @NotNull String LICENSE_ID_KEY = "licenseId";
 
     /** {@code protocolId:version:count} per protocol and version, comma separated, sorted. */
     public static final @NotNull String ADAPTERS_KEY = "adapters";
 
-    private static volatile @Nullable Supplier<String> adapterInventory;
-
-    private PhoneHomeData() {}
-
-    public static void adapterInventory(final @Nullable Supplier<String> supplier) {
-        adapterInventory = supplier;
-    }
+    /** The version reported for a configured adapter whose type is not installed or failed to load. */
+    public static final @NotNull String UNKNOWN_VERSION = "unknown";
 
     /** The placeholder first-party adapters return from {@code getVersion()}, resolved to the Edge version. */
     static final @NotNull String EDGE_VERSION_PLACEHOLDER = "${edge-version}";
 
+    /** One configured adapter instance: its protocol id and the version of its installed type, if any. */
+    public record ConfiguredAdapter(
+            @NotNull String protocolId, @Nullable String version) {}
+
     /**
-     * @param edgeVersion replaces {@link #EDGE_VERSION_PLACEHOLDER} in an adapter's version
+     * One source per adapter framework, keyed by framework name; a new framework registers its own. Written when a
+     * framework starts, read by the phone-home thread when it builds a ping.
+     */
+    private static final @NotNull Map<String, Supplier<? extends Collection<ConfiguredAdapter>>> adapterSources =
+            new ConcurrentHashMap<>();
+
+    /** Today's date for the licence check; replaced only by tests, read by every thread that builds an event. */
+    private static volatile @NotNull Clock clock = Clock.system(ZoneId.systemDefault());
+
+    private PhoneHomeData() {}
+
+    /**
+     * Registers (or replaces) the configured adapters of one adapter framework. Every configured adapter instance is
+     * listed, whether or not it loaded, so the inventory reports what the customer configured.
+     *
+     * @param framework the framework's name, unique per framework
+     * @param source    supplies the framework's configured adapters when a ping is built
+     */
+    public static void adapterSource(
+            final @NotNull String framework, final @NotNull Supplier<? extends Collection<ConfiguredAdapter>> source) {
+        adapterSources.put(framework, source);
+    }
+
+    /** Removes a framework's source, when the framework stops for good or in tests. */
+    public static void removeAdapterSource(final @NotNull String framework) {
+        adapterSources.remove(framework);
+    }
+
+    @VisibleForTesting
+    static void clock(final @NotNull Clock newClock) {
+        clock = newClock;
+    }
+
+    /**
+     * @param raw        the version an adapter type reports, or {@code null} when the type is not installed
+     * @param edgeVersion replaces {@link #EDGE_VERSION_PLACEHOLDER}
+     * @return the version to report
+     */
+    public static @NotNull String version(final @Nullable String raw, final @NotNull String edgeVersion) {
+        if (raw == null || raw.isBlank()) {
+            return UNKNOWN_VERSION;
+        }
+        return raw.replace(EDGE_VERSION_PLACEHOLDER, edgeVersion);
+    }
+
+    /**
      * @return the inventory of the given adapters as {@code protocolId:version:count}, one entry per protocol and
      *     version, sorted, comma separated; empty when there are none
      */
-    public static @NotNull String inventory(
-            final @NotNull Iterable<? extends ProtocolAdapterInformation> adapters, final @NotNull String edgeVersion) {
+    static @NotNull String inventory(final @NotNull Iterable<ConfiguredAdapter> adapters) {
         final Map<String, Integer> counts = new TreeMap<>();
-        for (final ProtocolAdapterInformation info : adapters) {
-            final String version = String.valueOf(info.getVersion()).replace(EDGE_VERSION_PLACEHOLDER, edgeVersion);
-            counts.merge(info.getProtocolId() + ':' + version, 1, Integer::sum);
+        for (final ConfiguredAdapter adapter : adapters) {
+            counts.merge(field(adapter.protocolId()) + ':' + field(adapter.version()), 1, Integer::sum);
         }
         final StringBuilder sb = new StringBuilder();
         counts.forEach((key, count) -> {
@@ -70,21 +126,55 @@ public final class PhoneHomeData {
         return sb.toString();
     }
 
+    /** A blank value becomes {@code unknown}; the separators {@code :} and {@code ,} become {@code _}. */
+    private static @NotNull String field(final @Nullable String value) {
+        if (value == null || value.isBlank()) {
+            return UNKNOWN_VERSION;
+        }
+        return value.strip().replace(':', '_').replace(',', '_');
+    }
+
     static void addTo(final @NotNull Map<String, String> userData, final boolean withAdapters) {
-        final String licenseId = System.getProperty(LICENSE_ID_PROPERTY);
-        if (licenseId != null && !licenseId.isBlank()) {
+        final String licenseId = currentLicenseId();
+        if (licenseId != null) {
             userData.put(LICENSE_ID_KEY, licenseId);
         }
-        final Supplier<String> supplier = adapterInventory;
-        if (withAdapters && supplier != null) {
-            try {
-                final String adapters = supplier.get();
-                if (adapters != null && !adapters.isEmpty()) {
-                    userData.put(ADAPTERS_KEY, adapters);
-                }
-            } catch (final RuntimeException ignored) {
-                // the inventory is best effort; the ping goes without it
+        if (withAdapters) {
+            final String adapters = currentInventory();
+            if (!adapters.isEmpty()) {
+                userData.put(ADAPTERS_KEY, adapters);
             }
         }
+    }
+
+    /** @return the loaded licence's id, or {@code null} when there is none or it expired before today */
+    static @Nullable String currentLicenseId() {
+        final String licenseId = System.getProperty(LICENSE_ID_PROPERTY);
+        if (licenseId == null || licenseId.isBlank()) {
+            return null;
+        }
+        final String validUntil = System.getProperty(LICENSE_VALID_UNTIL_PROPERTY);
+        if (validUntil != null) {
+            try {
+                if (LocalDate.now(clock).isAfter(LocalDate.parse(validUntil))) {
+                    return null;
+                }
+            } catch (final DateTimeParseException e) {
+                return null;
+            }
+        }
+        return licenseId;
+    }
+
+    private static @NotNull String currentInventory() {
+        final List<ConfiguredAdapter> all = new ArrayList<>();
+        for (final Supplier<? extends Collection<ConfiguredAdapter>> source : adapterSources.values()) {
+            try {
+                all.addAll(source.get());
+            } catch (final RuntimeException ignored) {
+                // the inventory is best effort; a failing source leaves its adapters out of this ping only
+            }
+        }
+        return inventory(all);
     }
 }
