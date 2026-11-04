@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -160,7 +161,9 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/config", new JsonResponseHandler(createConfigurationJson()));
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
-        System.setProperty(PhoneHomeData.LICENSE_ID_PROPERTY, "3c1e7a52-file-set");
+        System.setProperty(
+                PhoneHomeData.LICENSE_PROPERTY,
+                PhoneHomeData.licenseValue(LocalDate.now().plusYears(1), "3c1e7a52-file-set"));
         PhoneHomeData.adapterSource(
                 "test",
                 () -> List.of(
@@ -190,7 +193,7 @@ class HiveMQEdgeHttpServiceImplTest {
                     "modbus:2026.16:1,opcua:2026.16:2",
                     ping.at("/userData/adapters").asText());
         } finally {
-            System.clearProperty(PhoneHomeData.LICENSE_ID_PROPERTY);
+            System.clearProperty(PhoneHomeData.LICENSE_PROPERTY);
             PhoneHomeData.removeAdapterSource("test");
         }
     }

@@ -37,14 +37,13 @@ import org.jetbrains.annotations.VisibleForTesting;
  */
 public final class PhoneHomeData {
 
-    /** System property the commercial modules set to the id of the loaded licence, and clear when it goes. */
-    public static final @NotNull String LICENSE_ID_PROPERTY = "hivemq.edge.license.id";
-
     /**
-     * System property the commercial modules set to the last day the loaded licence is valid ({@code yyyy-MM-dd}); the
-     * id is not sent after that day, even before the licence folder is checked again.
+     * System property the commercial modules set to the loaded licence, as {@code <last valid day> <id>} with the day
+     * as {@code yyyy-MM-dd} (see {@link #licenseValue}), and clear when no licence is loaded. One property, set and
+     * read in one call, so an event never pairs one licence's id with another's validity; the id is not sent after
+     * that day, even before the licence folder is checked again.
      */
-    public static final @NotNull String LICENSE_VALID_UNTIL_PROPERTY = "hivemq.edge.license.valid-until";
+    public static final @NotNull String LICENSE_PROPERTY = "hivemq.edge.license";
 
     public static final @NotNull String LICENSE_ID_KEY = "licenseId";
 
@@ -153,21 +152,39 @@ public final class PhoneHomeData {
         }
     }
 
-    /** @return the loaded licence's id, or {@code null} when there is none or it expired before today */
+    /**
+     * @param lastValidDay the licence's last valid day
+     * @param licenseId the licence's id
+     * @return the value of {@link #LICENSE_PROPERTY} for that licence
+     */
+    public static @NotNull String licenseValue(final @NotNull LocalDate lastValidDay, final @NotNull String licenseId) {
+        return lastValidDay + " " + licenseId;
+    }
+
+    /**
+     * @return the loaded licence's id, or {@code null} when there is none, it expired before today, or the property
+     *     cannot be read
+     */
     static @Nullable String currentLicenseId() {
-        final String licenseId = System.getProperty(LICENSE_ID_PROPERTY);
-        if (licenseId == null || licenseId.isBlank()) {
+        // one read: the day and the id always belong to the same licence
+        final String license = System.getProperty(LICENSE_PROPERTY);
+        if (license == null) {
             return null;
         }
-        final String validUntil = System.getProperty(LICENSE_VALID_UNTIL_PROPERTY);
-        if (validUntil != null) {
-            try {
-                if (LocalDate.now(clock).isAfter(LocalDate.parse(validUntil))) {
-                    return null;
-                }
-            } catch (final DateTimeParseException e) {
+        final int separator = license.indexOf(' ');
+        if (separator < 0) {
+            return null;
+        }
+        final String licenseId = license.substring(separator + 1).strip();
+        if (licenseId.isEmpty()) {
+            return null;
+        }
+        try {
+            if (LocalDate.now(clock).isAfter(LocalDate.parse(license.substring(0, separator)))) {
                 return null;
             }
+        } catch (final DateTimeParseException e) {
+            return null;
         }
         return licenseId;
     }

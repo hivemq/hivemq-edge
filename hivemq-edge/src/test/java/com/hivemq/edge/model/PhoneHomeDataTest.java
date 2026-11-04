@@ -26,6 +26,8 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /// What the phone home adds to an event: the licence id while the licence is valid, and the inventory of every
 /// configured adapter across all adapter frameworks.
@@ -35,8 +37,7 @@ class PhoneHomeDataTest {
 
     @AfterEach
     void tearDown() {
-        System.clearProperty(PhoneHomeData.LICENSE_ID_PROPERTY);
-        System.clearProperty(PhoneHomeData.LICENSE_VALID_UNTIL_PROPERTY);
+        System.clearProperty(PhoneHomeData.LICENSE_PROPERTY);
         PhoneHomeData.removeAdapterSource("legacy");
         PhoneHomeData.removeAdapterSource("v2");
         PhoneHomeData.removeAdapterSource("broken");
@@ -151,8 +152,9 @@ class PhoneHomeDataTest {
     void event_whenLicenseValidToday_thenEveryEventCarriesItsId() throws Exception {
         PhoneHomeData.clock(
                 Clock.fixed(LocalDate.of(2026, 11, 3).atStartOfDay(ZONE).toInstant(), ZONE));
-        System.setProperty(PhoneHomeData.LICENSE_ID_PROPERTY, "0f5c1b9e-licence");
-        System.setProperty(PhoneHomeData.LICENSE_VALID_UNTIL_PROPERTY, "2026-11-03");
+        System.setProperty(
+                PhoneHomeData.LICENSE_PROPERTY,
+                PhoneHomeData.licenseValue(LocalDate.of(2026, 11, 3), "0f5c1b9e-licence"));
 
         final JsonNode json = toJson(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED));
 
@@ -164,21 +166,55 @@ class PhoneHomeDataTest {
     void event_whenLicenseExpiredSinceLastFolderCheck_thenNoLicenseIdKey() throws Exception {
         PhoneHomeData.clock(
                 Clock.fixed(LocalDate.of(2026, 11, 4).atStartOfDay(ZONE).toInstant(), ZONE));
-        System.setProperty(PhoneHomeData.LICENSE_ID_PROPERTY, "0f5c1b9e-licence");
-        System.setProperty(PhoneHomeData.LICENSE_VALID_UNTIL_PROPERTY, "2026-11-03");
+        System.setProperty(
+                PhoneHomeData.LICENSE_PROPERTY,
+                PhoneHomeData.licenseValue(LocalDate.of(2026, 11, 3), "0f5c1b9e-licence"));
 
         final JsonNode json = toJson(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_PING));
 
         assertThat(json.at("/userData").has(PhoneHomeData.LICENSE_ID_KEY)).isFalse();
     }
 
-    /// An unreadable validity date sends no id rather than one that may have expired.
-    @Test
-    void event_whenValidityUnreadable_thenNoLicenseIdKey() {
-        System.setProperty(PhoneHomeData.LICENSE_ID_PROPERTY, "0f5c1b9e-licence");
-        System.setProperty(PhoneHomeData.LICENSE_VALID_UNTIL_PROPERTY, "not-a-date");
+    /// A property that cannot be read sends no id rather than one that may have expired.
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "",
+                "0f5c1b9e-licence",
+                "not-a-date 0f5c1b9e-licence",
+                "2099-01-01",
+                "2099-01-01 ",
+                "2099-01-01  "
+            })
+    void event_whenLicensePropertyUnreadable_thenNoLicenseIdKey(final @NotNull String value) {
+        System.setProperty(PhoneHomeData.LICENSE_PROPERTY, value);
 
         assertThat(PhoneHomeData.currentLicenseId()).isNull();
+    }
+
+    /// A licence replaced by a renewal while events are built: each event reads day and id of one licence, so the
+    /// expired id is never sent with the renewal's day (Sam's round-2 interleaving, which two properties allowed).
+    @Test
+    void event_whenExpiredLicenseReplacedByRenewal_thenExpiredIdNeverSent() {
+        PhoneHomeData.clock(
+                Clock.fixed(LocalDate.of(2026, 11, 4).atStartOfDay(ZONE).toInstant(), ZONE));
+        System.setProperty(
+                PhoneHomeData.LICENSE_PROPERTY, PhoneHomeData.licenseValue(LocalDate.of(2026, 11, 3), "old"));
+        assertThat(PhoneHomeData.currentLicenseId()).isNull();
+
+        System.setProperty(
+                PhoneHomeData.LICENSE_PROPERTY, PhoneHomeData.licenseValue(LocalDate.of(2027, 11, 3), "new"));
+
+        assertThat(PhoneHomeData.currentLicenseId()).isEqualTo("new");
+    }
+
+    /// The property's name and format are the contract with the commercial loader, which writes the same literal
+    /// (`hivemq.edge.license`, `<last valid day> <id>`) and pins it in its own test.
+    @Test
+    void licenseProperty_isTheContractTheCommercialLoaderWrites() {
+        assertThat(PhoneHomeData.LICENSE_PROPERTY).isEqualTo("hivemq.edge.license");
+        assertThat(PhoneHomeData.licenseValue(LocalDate.of(2020, 11, 3), "lic-1"))
+                .isEqualTo("2020-11-03 lic-1");
     }
 
     /// Without a licence no event carries a `licenseId`.
