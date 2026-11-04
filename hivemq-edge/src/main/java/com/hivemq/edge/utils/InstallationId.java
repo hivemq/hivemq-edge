@@ -20,6 +20,8 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -65,9 +67,7 @@ public final class InstallationId {
         if (existing != null) {
             return existing;
         }
-        final String created = UUID.randomUUID().toString();
-        write(dataFolder, file, created);
-        return created;
+        return write(dataFolder, file, UUID.randomUUID().toString(), Files.exists(file));
     }
 
     /** @return the id the file holds, or {@code null} when it is missing, unreadable or not a UUID */
@@ -93,21 +93,35 @@ public final class InstallationId {
         return null;
     }
 
-    /** Writes the id through a temporary file and a rename, so a crash never leaves a half-written file. */
-    private static void write(final @NotNull Path dataFolder, final @NotNull Path file, final @NotNull String id) {
+    /**
+     * Writes the id through a temporary file, so a crash never leaves a half-written file. A missing file is created
+     * only if it is still missing (a hard link, else a move that does not replace), so when another process on the
+     * same data folder created it first, that process's id is the one both use; a broken file is replaced.
+     *
+     * @return the id the file holds afterwards, or {@code id} when it could not be written (this run only)
+     */
+    static @NotNull String write(
+            final @NotNull Path dataFolder, final @NotNull Path file, final @NotNull String id, final boolean replace) {
         Path temp = null;
         try {
             Files.createDirectories(dataFolder);
             temp = Files.createTempFile(dataFolder, FILE_NAME, ".tmp");
             Files.writeString(temp, id + '\n', US_ASCII);
-            try {
-                Files.move(temp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (final AtomicMoveNotSupportedException e) {
-                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
+            if (replace) {
+                try {
+                    Files.move(temp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (final AtomicMoveNotSupportedException e) {
+                    Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
+                }
+                temp = null;
+            } else {
+                createIfMissing(temp, file);
             }
-            temp = null;
+        } catch (final FileAlreadyExistsException e) {
+            // another process created it between our read and our write: its id wins
         } catch (final IOException e) {
             log.warn("Could not write {}; the installation id lasts for this run only: {}", file, e.getMessage());
+            return id;
         } finally {
             if (temp != null) {
                 try {
@@ -116,6 +130,20 @@ public final class InstallationId {
                     // a leftover temporary file is harmless: the next start writes its own
                 }
             }
+        }
+        final String written = read(file);
+        return written != null ? written : id;
+    }
+
+    /** Creates {@code file} with the content of {@code temp}, failing if it exists; what is left of {@code temp} is the caller's to delete. */
+    private static void createIfMissing(final @NotNull Path temp, final @NotNull Path file) throws IOException {
+        try {
+            Files.createLink(file, temp);
+        } catch (final FileAlreadyExistsException e) {
+            throw e;
+        } catch (final UnsupportedOperationException | FileSystemException e) {
+            // no hard links on this file system: a move that does not replace is the next best
+            Files.move(temp, file);
         }
     }
 }

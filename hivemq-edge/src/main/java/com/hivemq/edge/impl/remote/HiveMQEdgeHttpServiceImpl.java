@@ -285,8 +285,10 @@ public class HiveMQEdgeHttpServiceImpl {
      * next wait.
      */
     public void edgeStarted() {
-        edgeStarted = true;
+        // the flag and the wake-up under one monitor: a loop that sees the flag and pings first, then waits, finds the
+        // wake-up already spent instead of being woken into a second first ping
         synchronized (monitor) {
+            edgeStarted = true;
             wakeRequested = true;
             monitor.notifyAll();
         }

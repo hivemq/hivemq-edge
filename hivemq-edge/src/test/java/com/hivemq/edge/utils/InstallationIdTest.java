@@ -25,6 +25,11 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -119,6 +124,43 @@ class InstallationIdTest {
             assertThat(Files.exists(file())).isFalse();
         } finally {
             Files.setPosixFilePermissions(dataFolder, PosixFilePermissions.fromString("rwxr-xr-x"));
+        }
+    }
+
+    /// Another process on the same data folder created the file between our read and our write: its id is the one
+    /// used, and the file is left as it wrote it.
+    @Test
+    void write_whenAnotherProcessCreatedTheFileFirst_thenItsIdWins() throws IOException {
+        final String winner = UUID.randomUUID().toString();
+        Files.writeString(file(), winner + "\n", US_ASCII);
+
+        assertThat(InstallationId.write(dataFolder, file(), UUID.randomUUID().toString(), false))
+                .isEqualTo(winner);
+        assertThat(Files.readString(file(), US_ASCII)).isEqualTo(winner + "\n");
+        try (var files = Files.list(dataFolder)) {
+            assertThat(files).containsExactly(file());
+        }
+    }
+
+    /// Two starts racing on a data folder without the file end with one id, the one on disk.
+    @Test
+    void loadOrCreate_whenTwoStartsRace_thenBothUseTheIdOnDisk() throws Exception {
+        for (int round = 0; round < 50; round++) {
+            Files.deleteIfExists(file());
+            final CyclicBarrier start = new CyclicBarrier(2);
+            final Callable<String> race = () -> {
+                start.await();
+                return InstallationId.loadOrCreate(dataFolder);
+            };
+            try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
+                final Future<String> first = pool.submit(race);
+                final Future<String> second = pool.submit(race);
+                final String firstId = first.get();
+                final String secondId = second.get();
+                final String onDisk = Files.readString(file(), US_ASCII).strip();
+                assertThat(firstId).isEqualTo(onDisk);
+                assertThat(secondId).isEqualTo(onDisk);
+            }
         }
     }
 
