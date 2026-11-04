@@ -8,8 +8,10 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 import {
   handlerCapabilities,
   handlers as frontendHandler,
+  MOCK_CAPABILITIES,
   MOCK_CAPABILITY_WRITEABLE_CONFIG,
 } from '@/api/hooks/useFrontendServices/__handlers__'
+import { useGetCapabilities } from '@/api/hooks/useFrontendServices/useGetCapabilities.ts'
 import { handlers as gitHubHandler } from '@/api/hooks/useGitHub/__handlers__'
 
 import { useGetManagedNotifications } from './useGetManagedNotifications.tsx'
@@ -38,21 +40,28 @@ describe('useGetManagedNotifications', () => {
   })
 
   it('should explain why the config cannot be updated', async () => {
-    const { result } = renderHook(useGetManagedNotifications, { wrapper })
+    server.use(...handlerCapabilities(MOCK_CAPABILITIES))
+
+    const { result } = renderHook(
+      () => ({ managed: useGetManagedNotifications(), capabilities: useGetCapabilities() }),
+      { wrapper }
+    )
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBeTruthy()
+      expect(result.current.managed.isSuccess).toBeTruthy()
+      expect(result.current.capabilities.isSuccess).toBeTruthy()
     })
+    expect(result.current.capabilities.data?.items?.map(({ id }) => id)).not.toContain('config-writeable')
 
-    const notification = result.current.notifications.find(({ id }) => id === 'config-writeable')
+    const notification = result.current.managed.notifications.find(({ id }) => id === 'config-writeable')
     expect(notification).toBeDefined()
 
     const { container: title } = render(notification?.title, { wrapper })
     const { container: description } = render(notification?.description, { wrapper })
 
-    expect(title).toHaveTextContent('Config cannot be updated in this Edge')
-    expect(description).toHaveTextContent(
-      'This Edge was started with config updates turned off, which is always the case on Kubernetes. To change the config, update the Helm values, or the config file this Edge was started with.'
+    expect(title.textContent?.trim()).toBe('Config cannot be updated in this Edge')
+    expect(description.textContent?.trim()).toBe(
+      'This Edge was started with config updates turned off, the default with the HiveMQ Edge Helm chart. To change the config, update the Helm values, or the config file this Edge was started with.'
     )
   })
 
