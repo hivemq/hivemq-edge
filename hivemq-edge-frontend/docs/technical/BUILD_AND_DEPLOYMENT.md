@@ -120,15 +120,15 @@ The CI pipeline runs on every PR and push to `master`. It is defined in:
 **Jobs run in this order:**
 
 ```
-Lint → Unit Tests ──────────────────────────────────────→ SonarQube
-       Build Instrumented → Cypress Matrix (9 parallel) ↗
+Lint → Unit Tests
+       Build Instrumented → Cypress Matrix (9 parallel)
        Build Production → Lighthouse
        Percy Prepare → Cypress Matrix → Percy Finalize
 ```
 
 The 9 parallel Cypress jobs cover: E2E-Adapters, E2E-Workspace, E2E-Core, Components, Extensions, Workspace, Mappings, Pulse, Modules.
 
-**See:** [Testing Architecture](../architecture/TESTING_ARCHITECTURE.md) — "CI/CD Pipeline" section — for the complete breakdown of all 9 jobs, artifact flow, SonarQube coverage merge, and Percy visual testing integration.
+**See:** [Testing Architecture](../architecture/TESTING_ARCHITECTURE.md) — "CI/CD Pipeline" section — for the complete breakdown of all 9 jobs, artifact flow, and Percy visual testing integration.
 
 ---
 
@@ -293,7 +293,6 @@ This process is **under development** and not yet fully automated. The infrastru
 
 | Variable | Used In | Purpose |
 |------------------------------------------------|------------------------------------------------------|----------------------------------------------|
-| `SONAR_TOKEN` | `check-frontend.yml` | SonarCloud authentication |
 | `PERCY_TOKEN` | `check-frontend.yml` | Percy visual regression |
 | `SNYK_TOKEN` | `snyk-pr.yml`, `snyk-push.yml`, `snyk-release.yml` | Snyk security scanning |
 | `NODE_OPTIONS="--max_old_space_size=8192"` | Instrumented build | 8 GB memory for Istanbul build |
