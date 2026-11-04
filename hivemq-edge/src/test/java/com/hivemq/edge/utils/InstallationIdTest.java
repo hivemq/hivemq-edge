@@ -57,6 +57,17 @@ class InstallationIdTest {
         }
     }
 
+    /// The file gets the mode any new file in the data folder gets (the umask's), not the 0600 of a temporary file.
+    @Test
+    void loadOrCreate_whenNoFile_thenFileHasTheFolderDefaultMode() throws IOException {
+        assumeTrue(dataFolder.getFileSystem().supportedFileAttributeViews().contains("posix"));
+        final Path reference = Files.createFile(dataFolder.resolve("reference"));
+
+        InstallationId.loadOrCreate(dataFolder);
+
+        assertThat(Files.getPosixFilePermissions(file())).isEqualTo(Files.getPosixFilePermissions(reference));
+    }
+
     /// Every later start reads the same id back and leaves the file as it is.
     @Test
     void loadOrCreate_whenFileHoldsAnId_thenSameIdAndFileUntouched() throws IOException {
@@ -134,7 +145,7 @@ class InstallationIdTest {
         final String winner = UUID.randomUUID().toString();
         Files.writeString(file(), winner + "\n", US_ASCII);
 
-        assertThat(InstallationId.write(dataFolder, file(), UUID.randomUUID().toString(), false))
+        assertThat(InstallationId.write(dataFolder, file(), UUID.randomUUID().toString()))
                 .isEqualTo(winner);
         assertThat(Files.readString(file(), US_ASCII)).isEqualTo(winner + "\n");
         try (var files = Files.list(dataFolder)) {
@@ -142,10 +153,20 @@ class InstallationIdTest {
         }
     }
 
+    /// A broken file found when creating is replaced, and the new id is the one used.
+    @Test
+    void write_whenFileExistsButBroken_thenReplacedWithTheNewId() throws IOException {
+        Files.writeString(file(), "not-a-uuid", US_ASCII);
+        final String id = UUID.randomUUID().toString();
+
+        assertThat(InstallationId.write(dataFolder, file(), id)).isEqualTo(id);
+        assertThat(Files.readString(file(), US_ASCII)).isEqualTo(id + "\n");
+    }
+
     /// Two starts racing on a data folder without the file end with one id, the one on disk.
     @Test
     void loadOrCreate_whenTwoStartsRace_thenBothUseTheIdOnDisk() throws Exception {
-        for (int round = 0; round < 50; round++) {
+        for (int round = 0; round < 500; round++) {
             Files.deleteIfExists(file());
             final CyclicBarrier start = new CyclicBarrier(2);
             final Callable<String> race = () -> {

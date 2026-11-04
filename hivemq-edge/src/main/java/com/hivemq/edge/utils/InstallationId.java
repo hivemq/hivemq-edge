@@ -67,7 +67,7 @@ public final class InstallationId {
         if (existing != null) {
             return existing;
         }
-        return write(dataFolder, file, UUID.randomUUID().toString(), Files.exists(file));
+        return write(dataFolder, file, UUID.randomUUID().toString());
     }
 
     /** @return the id the file holds, or {@code null} when it is missing, unreadable or not a UUID */
@@ -94,31 +94,34 @@ public final class InstallationId {
     }
 
     /**
-     * Writes the id through a temporary file, so a crash never leaves a half-written file. A missing file is created
-     * only if it is still missing (a hard link, else a move that does not replace), so when another process on the
-     * same data folder created it first, that process's id is the one both use; a broken file is replaced.
+     * Writes the id through a temporary file, so a crash never leaves a half-written file. The file is created only
+     * if it is missing (a hard link, else a move that does not replace); when it exists, a valid id in it wins, so a
+     * process on the same data folder that created it first and this one use the same id, and only a file that does
+     * not hold one is replaced.
      *
      * @return the id the file holds afterwards, or {@code id} when it could not be written (this run only)
      */
-    static @NotNull String write(
-            final @NotNull Path dataFolder, final @NotNull Path file, final @NotNull String id, final boolean replace) {
+    static @NotNull String write(final @NotNull Path dataFolder, final @NotNull Path file, final @NotNull String id) {
         Path temp = null;
         try {
             Files.createDirectories(dataFolder);
-            temp = Files.createTempFile(dataFolder, FILE_NAME, ".tmp");
+            // createFile, not createTempFile: the file then gets the umask's mode, like the rest of the data folder,
+            // instead of 0600
+            temp = Files.createFile(dataFolder.resolve(FILE_NAME + '.' + UUID.randomUUID() + ".tmp"));
             Files.writeString(temp, id + '\n', US_ASCII);
-            if (replace) {
+            try {
+                createIfMissing(temp, file);
+            } catch (final FileAlreadyExistsException e) {
+                final String winner = read(file);
+                if (winner != null) {
+                    return winner;
+                }
                 try {
                     Files.move(temp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (final AtomicMoveNotSupportedException e) {
+                } catch (final AtomicMoveNotSupportedException notAtomic) {
                     Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
                 }
-                temp = null;
-            } else {
-                createIfMissing(temp, file);
             }
-        } catch (final FileAlreadyExistsException e) {
-            // another process created it between our read and our write: its id wins
         } catch (final IOException e) {
             log.warn("Could not write {}; the installation id lasts for this run only: {}", file, e.getMessage());
             return id;
