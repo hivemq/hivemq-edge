@@ -10,8 +10,6 @@ on:
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # For frontend usage; secrets cannot be accessed in a conditional job
-  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -78,8 +76,6 @@ jobs:
     needs: check-for-changes
     uses: ./.github/workflows/check-frontend.yml
     if: needs.check-for-changes.outputs.frontend-changed == 'true'
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   check-backend:
     needs: check-for-changes
@@ -107,7 +103,7 @@ jobs:
 
       - name: Check if frontend job succeeded
         if: needs.check-for-changes.outputs.frontend-changed == 'true'
-        # Continue on error, to deal with known blocks (percy tokens, sonarcloud gates)
+        # Continue on error, to deal with known blocks (percy tokens)
         continue-on-error: true
         run: |
           if [[ ! "${{ needs.check-frontend.result }}" =~ ^(success|skipped)$ ]]; then
