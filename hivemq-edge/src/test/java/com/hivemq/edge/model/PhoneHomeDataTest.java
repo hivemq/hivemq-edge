@@ -64,9 +64,27 @@ class PhoneHomeDataTest {
 
     /// The format's separators cannot appear inside a field, and a blank protocol id reads `unknown`.
     @Test
-    void inventory_whenFieldsHoldSeparatorsOrAreBlank_thenEscaped() {
+    void inventory_whenFieldsHoldSeparatorsOrAreBlank_thenEncoded() {
         assertThat(PhoneHomeData.inventory(List.of(adapter("my:proto", "1,2"), adapter(" ", "1.0"))))
-                .isEqualTo("my_proto:1_2:1,unknown:1.0:1");
+                .isEqualTo("my%3Aproto:1%2C2:1,unknown:1.0:1");
+    }
+
+    /// The encoding is reversible: ids that differ only in a separator or the escape character stay apart.
+    @Test
+    void inventory_whenIdsDifferOnlyInSeparators_thenSeparateEntries() {
+        assertThat(PhoneHomeData.inventory(List.of(adapter("a:b", "1"), adapter("a_b", "1"), adapter("a%3Ab", "1"))))
+                .isEqualTo("a%253Ab:1:1,a%3Ab:1:1,a_b:1:1");
+    }
+
+    /// A framework instance that stops after its replacement registered leaves the replacement's adapters in place.
+    @Test
+    void ping_whenOldRegistrationRemovedAfterReplacement_thenReplacementStays() throws Exception {
+        final Runnable old = PhoneHomeData.adapterSource("legacy", () -> List.of(adapter("opcua", "2026.15")));
+        PhoneHomeData.adapterSource("legacy", () -> List.of(adapter("opcua", "2026.16")));
+
+        old.run();
+
+        assertThat(adaptersOf(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_PING)).isEqualTo("opcua:2026.16:1");
     }
 
     /// Nothing configured, nothing listed.

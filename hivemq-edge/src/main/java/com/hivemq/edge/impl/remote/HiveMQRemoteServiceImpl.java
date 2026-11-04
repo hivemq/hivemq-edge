@@ -26,7 +26,9 @@ import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
+import com.hivemq.edge.utils.InstallationId;
 import jakarta.inject.Inject;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
@@ -67,6 +69,11 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
         // -- We should only init the remote service (and thus the overhead of the threads) when
         // -- remote tracking is enabled.
         if (configurationService.usageTrackingConfiguration().isUsageTrackingEnabled()) {
+            // before the first event: every event built from now on carries the saved id
+            final File dataFolder = systemInformation.getDataFolder();
+            if (dataFolder != null) {
+                HiveMQEdgeEnvironmentUtils.installationToken(InstallationId.loadOrCreate(dataFolder.toPath()));
+            }
             initHttpService();
             shutdownHooks.add(this);
         }
@@ -91,6 +98,14 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
                 logger.trace(
                         "Initialized remote HTTP service(s), usage tracking enabled (this can be disabled in configuration)");
             }
+        }
+    }
+
+    @Override
+    public void edgeStarted() {
+        final HiveMQEdgeHttpServiceImpl httpService = hiveMQEdgeHttpService;
+        if (httpService != null) {
+            httpService.edgeStarted();
         }
     }
 

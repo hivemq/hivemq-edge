@@ -72,6 +72,13 @@ public class HiveMQEdgeHttpServiceImpl {
     private final @NotNull Thread cloudClientThread;
     private volatile boolean running;
     private volatile boolean hasConnectivity;
+    /** Set once Edge has started; until then no ping is sent, as its adapter inventory would be incomplete. */
+    private volatile boolean edgeStarted;
+    /** Guarded by {@link #monitor}: a wake-up that arrived while the cloud loop was not waiting. */
+    private boolean wakeRequested;
+    /** Confined to the cloud loop: a ping went out since Edge started, so a kept wake-up has nothing left to do. */
+    private boolean pingedSinceStarted;
+
     private volatile @Nullable HiveMQEdgeRemoteConfiguration remoteConfiguration;
     private volatile @Nullable HiveMQEdgeRemoteServices remoteServices;
     private volatile @Nullable Thread usageClientThread;
@@ -163,8 +170,9 @@ public class HiveMQEdgeHttpServiceImpl {
                 logger.trace(
                         "Successfully established connection to http provider {}, online", serviceDiscoveryEndpoint);
             }
-            if (hasConnectivity && activateUsage) {
+            if (hasConnectivity && activateUsage && edgeStarted) {
                 fireEvent(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_PING), false);
+                pingedSinceStarted = true;
             }
         } catch (final IOException e) {
             hasConnectivity = false;
@@ -260,10 +268,27 @@ public class HiveMQEdgeHttpServiceImpl {
     private void waitForNextRetry(final long waitTimeMillis) {
         synchronized (monitor) {
             try {
-                monitor.wait(waitTimeMillis);
+                // a wake-up kept while the loop was busy skips the wait, unless that pass already sent the ping
+                if (!wakeRequested || pingedSinceStarted) {
+                    monitor.wait(waitTimeMillis);
+                }
+                wakeRequested = false;
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    /**
+     * Edge has started: from now on every connectivity check sends a ping. Wakes the cloud loop, so the first ping
+     * goes out now rather than one retry interval later; a wake-up that comes while the loop is busy is kept for its
+     * next wait.
+     */
+    public void edgeStarted() {
+        edgeStarted = true;
+        synchronized (monitor) {
+            wakeRequested = true;
+            monitor.notifyAll();
         }
     }
 

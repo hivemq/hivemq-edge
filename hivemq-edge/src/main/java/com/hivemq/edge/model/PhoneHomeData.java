@@ -79,10 +79,13 @@ public final class PhoneHomeData {
      *
      * @param framework the framework's name, unique per framework
      * @param source    supplies the framework's configured adapters when a ping is built
+     * @return removes this registration only, so a framework instance that stops after its replacement registered
+     *     (embedded Edge restarts) leaves the replacement's source in place
      */
-    public static void adapterSource(
+    public static @NotNull Runnable adapterSource(
             final @NotNull String framework, final @NotNull Supplier<? extends Collection<ConfiguredAdapter>> source) {
         adapterSources.put(framework, source);
+        return () -> adapterSources.remove(framework, source);
     }
 
     /** Removes a framework's source, when the framework stops for good or in tests. */
@@ -126,12 +129,15 @@ public final class PhoneHomeData {
         return sb.toString();
     }
 
-    /** A blank value becomes {@code unknown}; the separators {@code :} and {@code ,} become {@code _}. */
+    /**
+     * A blank value becomes {@code unknown}; {@code %}, {@code :} and {@code ,} are percent-encoded, so distinct
+     * values stay distinct and the format's separators never appear inside a field.
+     */
     private static @NotNull String field(final @Nullable String value) {
         if (value == null || value.isBlank()) {
             return UNKNOWN_VERSION;
         }
-        return value.strip().replace(':', '_').replace(',', '_');
+        return value.strip().replace("%", "%25").replace(":", "%3A").replace(",", "%2C");
     }
 
     static void addTo(final @NotNull Map<String, String> userData, final boolean withAdapters) {

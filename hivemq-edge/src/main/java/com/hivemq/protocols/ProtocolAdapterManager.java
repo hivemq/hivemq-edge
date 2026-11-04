@@ -140,6 +140,7 @@ public class ProtocolAdapterManager {
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
+    private final @NotNull Runnable phoneHomeRegistration;
     private final @NotNull ExecutorService executorService;
     private final @NotNull ExecutorService adapterLifecycleExecutor;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
@@ -217,16 +218,17 @@ public class ProtocolAdapterManager {
         protocolAdapterWritingService.addWritingChangedCallback(() ->
                 protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
         // Every configured adapter, loaded or not: one whose type is missing or failed to construct has no wrapper.
-        PhoneHomeData.adapterSource("legacy", () -> protocolAdapterConfig.getAllConfigs().stream()
-                .map(entity -> protocolAdapterFactoryManager
-                        .get(entity.getProtocolId())
-                        // the type's own id, so an adapter configured under a legacy id counts with its type
-                        .map(factory -> new PhoneHomeData.ConfiguredAdapter(
-                                factory.getInformation().getProtocolId(),
-                                PhoneHomeData.version(
-                                        factory.getInformation().getVersion(), versionProvider.getVersion())))
-                        .orElseGet(() -> new PhoneHomeData.ConfiguredAdapter(entity.getProtocolId(), null)))
-                .toList());
+        phoneHomeRegistration =
+                PhoneHomeData.adapterSource("legacy", () -> protocolAdapterConfig.getAllConfigs().stream()
+                        .map(entity -> protocolAdapterFactoryManager
+                                .get(entity.getProtocolId())
+                                // the type's own id, so an adapter configured under a legacy id counts with its type
+                                .map(factory -> new PhoneHomeData.ConfiguredAdapter(
+                                        factory.getInformation().getProtocolId(),
+                                        PhoneHomeData.version(
+                                                factory.getInformation().getVersion(), versionProvider.getVersion())))
+                                .orElseGet(() -> new PhoneHomeData.ConfiguredAdapter(entity.getProtocolId(), null)))
+                        .toList());
     }
 
     /**
@@ -305,7 +307,7 @@ public class ProtocolAdapterManager {
      */
     @VisibleForTesting
     public void shutdown() {
-        PhoneHomeData.removeAdapterSource("legacy");
+        phoneHomeRegistration.run();
         protocolAdapterMap.values().forEach(wrapper -> {
             try {
                 wrapper.stopAsync(true).get(SHUTDOWN_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);

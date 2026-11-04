@@ -27,4 +27,10 @@ public interface HiveMQEdgeRemoteService {
     HiveMQEdgeRemoteConfiguration getConfiguration();
 
     void fireUsageEvent(@NotNull HiveMQEdgeRemoteEvent event);
+
+    /**
+     * Edge has started: the adapter frameworks have registered their configured adapters, so a ping now reports
+     * them all. Pings are sent only from this call on.
+     */
+    default void edgeStarted() {}
 }

@@ -41,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +53,7 @@ class HiveMQEdgeHttpServiceImplTest {
     private static final @NotNull String EDGE_VERSION = "2024.1-test";
     private static final int TIMEOUT_MILLIS = 5000;
     private static final int RETRY_MILLIS = 100;
+    private static final int LONG_RETRY_MILLIS = 60_000;
 
     private List<JsonNode> receivedEvents;
     private HttpServer httpServer;
@@ -129,6 +131,7 @@ class HiveMQEdgeHttpServiceImplTest {
                 true);
 
         assertTrue(waitForCondition(() -> service.isOnline(), 10000), "Service should come online");
+        service.edgeStarted();
 
         service.fireEvent(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED), false);
         service.fireEvent(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_STARTED), false);
@@ -221,7 +224,8 @@ class HiveMQEdgeHttpServiceImplTest {
 
     @Test
     void testEventsQueuedWhenOfflineIfFlagSet() throws Exception {
-        eventLatch = new CountDownLatch(2);
+        // Edge is not started here, so no automatic ping: the latch counts only this test's events
+        eventLatch = new CountDownLatch(1);
         final String configJson = createConfigurationJson();
         final String servicesJson = createServicesJson();
 
@@ -367,7 +371,8 @@ class HiveMQEdgeHttpServiceImplTest {
 
     @Test
     void testMultipleEventTypes() throws Exception {
-        eventLatch = new CountDownLatch(5);
+        // Edge is not started here, so no automatic ping: the latch counts only this test's events
+        eventLatch = new CountDownLatch(4);
         final String configJson = createConfigurationJson();
         final String servicesJson = createServicesJson();
 
@@ -399,7 +404,8 @@ class HiveMQEdgeHttpServiceImplTest {
 
     @Test
     void testEventContainsSessionAndInstallationTokens() throws Exception {
-        eventLatch = new CountDownLatch(2);
+        // Edge is not started here, so no automatic ping: the latch counts only this test's events
+        eventLatch = new CountDownLatch(1);
         final String configJson = createConfigurationJson();
         final String servicesJson = createServicesJson();
 
@@ -432,6 +438,101 @@ class HiveMQEdgeHttpServiceImplTest {
         assertNotNull(adapterEvent.get("sessionToken"), "Event should have sessionToken");
         assertNotNull(adapterEvent.get("installationToken"), "Event should have installationToken");
         assertNotNull(adapterEvent.get("created"), "Event should have created timestamp");
+    }
+
+    /// Until Edge has started no ping goes out, however many connectivity checks pass; the adapter inventory would
+    /// still be incomplete. The first ping follows `edgeStarted()`.
+    @Test
+    void testNoPingBeforeEdgeStarted_thenPingOnceStarted() throws Exception {
+        final AtomicInteger discoveries = new AtomicInteger();
+        final JsonResponseHandler services = new JsonResponseHandler(createServicesJson());
+        httpServer.createContext("/services", exchange -> {
+            discoveries.incrementAndGet();
+            services.handle(exchange);
+        });
+        httpServer.createContext("/config", new JsonResponseHandler(createConfigurationJson()));
+        httpServer.createContext("/usage", new UsageEventHandler());
+        httpServer.start();
+
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
+                objectMapper,
+                "http://localhost:" + port + "/services",
+                TIMEOUT_MILLIS,
+                TIMEOUT_MILLIS,
+                RETRY_MILLIS,
+                true);
+
+        assertTrue(waitForCondition(() -> discoveries.get() >= 5, 10000), "The cloud loop should run repeatedly");
+        assertTrue(service.isOnline(), "Service should be online");
+        assertEquals(0, pings(), "No ping before Edge has started");
+
+        service.edgeStarted();
+
+        assertTrue(waitForCondition(() -> pings() > 0, 5000), "A ping should follow edgeStarted()");
+    }
+
+    /// `edgeStarted()` wakes the cloud loop from its retry wait, so the first ping does not wait one interval.
+    @Test
+    void testEdgeStarted_wakesTheLoopFromItsRetryWait() throws Exception {
+        httpServer.createContext("/services", new JsonResponseHandler(createServicesJson()));
+        httpServer.createContext("/config", new JsonResponseHandler(createConfigurationJson()));
+        httpServer.createContext("/usage", new UsageEventHandler());
+        httpServer.start();
+
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
+                objectMapper,
+                "http://localhost:" + port + "/services",
+                TIMEOUT_MILLIS,
+                TIMEOUT_MILLIS,
+                LONG_RETRY_MILLIS,
+                true);
+        assertTrue(waitForCondition(() -> service.isOnline(), 10000), "Service should come online");
+
+        service.edgeStarted();
+
+        assertTrue(
+                waitForCondition(() -> pings() > 0, 5000),
+                "The ping should come within seconds, not after the " + LONG_RETRY_MILLIS + " ms retry wait");
+        // the next regular ping is a retry interval away, so a second one now would be a duplicate
+        Thread.sleep(500);
+        assertEquals(1, pings(), "Exactly one ping after edgeStarted()");
+    }
+
+    /// Edge's own order: `edgeStarted()` right after the service is built, racing its first connectivity check.
+    /// Whichever wins, the ping comes promptly: the check sees the flag, or the kept wake-up skips the retry wait.
+    @Test
+    void testEdgeStarted_rightAfterConstruction_pingsPromptly() throws Exception {
+        httpServer.createContext("/services", new JsonResponseHandler(createServicesJson()));
+        httpServer.createContext("/config", new JsonResponseHandler(createConfigurationJson()));
+        httpServer.createContext("/usage", new UsageEventHandler());
+        httpServer.start();
+
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
+                objectMapper,
+                "http://localhost:" + port + "/services",
+                TIMEOUT_MILLIS,
+                TIMEOUT_MILLIS,
+                LONG_RETRY_MILLIS,
+                true);
+        service.edgeStarted();
+
+        assertTrue(
+                waitForCondition(() -> pings() > 0, 5000),
+                "The ping should come within seconds, not after the " + LONG_RETRY_MILLIS + " ms retry wait");
+        // the next regular ping is a retry interval away, so a second one now would be a duplicate
+        Thread.sleep(500);
+        assertEquals(1, pings(), "Exactly one ping after edgeStarted()");
+    }
+
+    private long pings() {
+        synchronized (receivedEvents) {
+            return receivedEvents.stream()
+                    .filter(e -> "EDGE_PING".equals(e.get("eventType").asText()))
+                    .count();
+        }
     }
 
     private @NotNull String createServicesJson() {
