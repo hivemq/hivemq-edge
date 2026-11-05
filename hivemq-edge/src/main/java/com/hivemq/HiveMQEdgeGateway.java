@@ -19,6 +19,7 @@ import com.hivemq.bootstrap.HiveMQEdgeNettyBootstrap;
 import com.hivemq.bootstrap.ListenerStartupInformation;
 import com.hivemq.bootstrap.StartupListenerVerifier;
 import com.hivemq.combining.runtime.DataCombinerManager;
+import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
@@ -40,6 +41,7 @@ public class HiveMQEdgeGateway {
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull DataCombinerManager dataCombinerManager;
     private final @NotNull AssetMapperManager assetMapperManager;
+    private final @NotNull HiveMQEdgeRemoteService remoteService;
 
     @Inject
     public HiveMQEdgeGateway(
@@ -48,13 +50,15 @@ public class HiveMQEdgeGateway {
             final @NotNull AdminService adminService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull DataCombinerManager dataCombinerManager,
-            final @NotNull AssetMapperManager assetMapperManager) {
+            final @NotNull AssetMapperManager assetMapperManager,
+            final @NotNull HiveMQEdgeRemoteService remoteService) {
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.dataCombinerManager = dataCombinerManager;
         this.assetMapperManager = assetMapperManager;
+        this.remoteService = remoteService;
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
@@ -70,6 +74,8 @@ public class HiveMQEdgeGateway {
             new StartupListenerVerifier(startupInformation).verifyAndPrint();
 
             ((AdminServiceImpl) adminService).hivemqStarted();
+            // every adapter framework has registered its configured adapters: pings can report them all
+            remoteService.edgeStarted();
         } catch (Exception e) {
             throw new HiveMQEdgeStartupException(e);
         }
