@@ -16,7 +16,7 @@ export const useGetManagedNotifications = () => {
   const { data: configuration } = useGetConfiguration()
   const { data: releases, isSuccess: isReleasesSuccess } = useGetReleases()
   const { data: notification, isSuccess: isNotificationsSuccess } = useGetNotifications()
-  const { data: isWritableConfig } = useGetCapability(Capability.id.CONFIG_WRITEABLE)
+  const { data: isWritableConfig, isSuccess: isCapabilitiesSuccess } = useGetCapability(Capability.id.CONFIG_WRITEABLE)
   const [readNotifications, setReadNotifications] = useState<string[]>([])
   const [skip] = useLocalStorage<string[]>('edge.notifications', [])
 
@@ -54,11 +54,9 @@ export const useGetManagedNotifications = () => {
       list.push(...toasts)
     }
 
-    if (!isWritableConfig && !skip.includes(Capability.id.CONFIG_WRITEABLE)) {
-      // TODO[EDGE] The important feature is when the config is NOT writable (API request will fail)
-      //  The question is whether undefined (because it's not found) and undefined (because it is not supported)
-      //  have the same effect
-
+    // Read-only only once the capabilities have loaded without config-writeable: while they load, or when the
+    // request fails, whether the config is writable is unknown, and the warning would say something untrue
+    if (isCapabilitiesSuccess && !isWritableConfig && !skip.includes(Capability.id.CONFIG_WRITEABLE)) {
       list.push({
         ...defaults,
         id: Capability.id.CONFIG_WRITEABLE,
@@ -95,7 +93,16 @@ export const useGetManagedNotifications = () => {
     }
 
     return list
-  }, [notification?.items, isWritableConfig, skip, configuration, releases, readNotifications, t])
+  }, [
+    notification?.items,
+    isCapabilitiesSuccess,
+    isWritableConfig,
+    skip,
+    configuration,
+    releases,
+    readNotifications,
+    t,
+  ])
 
   return { notifications, isSuccess: isNotificationsSuccess && isReleasesSuccess, readNotifications }
 }
