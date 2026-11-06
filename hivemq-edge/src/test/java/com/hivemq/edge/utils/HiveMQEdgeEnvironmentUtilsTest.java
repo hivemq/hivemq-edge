@@ -72,6 +72,20 @@ class HiveMQEdgeEnvironmentUtilsTest {
                 "All threads must observe the same installation token, but got " + tokens.size() + " distinct values");
     }
 
+    /// Once the saved installation id is loaded, every event carries it.
+    @Test
+    void installationToken_whenSavedIdLoaded_thenEveryCallReturnsIt() {
+        final String before = HiveMQEdgeEnvironmentUtils.generateInstallationToken();
+        try {
+            HiveMQEdgeEnvironmentUtils.installationToken("0f5c1b9e-0000-4000-8000-000000000001");
+
+            assertEquals(
+                    "0f5c1b9e-0000-4000-8000-000000000001", HiveMQEdgeEnvironmentUtils.generateInstallationToken());
+        } finally {
+            HiveMQEdgeEnvironmentUtils.installationToken(before);
+        }
+    }
+
     @Test
     void sessionToken_returnsSameValueOnRepeatedCalls() {
         final String first = HiveMQEdgeEnvironmentUtils.getSessionToken();

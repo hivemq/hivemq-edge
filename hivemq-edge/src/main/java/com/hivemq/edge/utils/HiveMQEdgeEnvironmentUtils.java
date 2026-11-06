@@ -15,28 +15,40 @@
  */
 package com.hivemq.edge.utils;
 
-import io.netty.util.internal.MacAddressUtil;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
 public class HiveMQEdgeEnvironmentUtils {
 
+    /** Used until the saved installation id is loaded, and when usage tracking is off: one per JVM, never the MAC. */
     private static class InstallationTokenHolder {
-        static final @NotNull String VALUE = getDefaultMachineId();
+        static final @NotNull String VALUE = UUID.randomUUID().toString();
     }
+
+    /** The saved installation id ({@link InstallationId}), set once at startup when usage tracking is on. */
+    private static volatile @Nullable String installationToken;
 
     private static class SessionTokenHolder {
         static final @NotNull String VALUE = UUID.randomUUID().toString();
     }
 
     public static @NotNull String generateInstallationToken() {
-        return InstallationTokenHolder.VALUE;
+        final String token = installationToken;
+        return token != null ? token : InstallationTokenHolder.VALUE;
+    }
+
+    /**
+     * @param token the installation id every phone-home event carries from now on, read from the data folder by
+     *     {@link InstallationId#loadOrCreate}
+     */
+    public static void installationToken(final @NotNull String token) {
+        installationToken = token;
     }
 
     public static @NotNull String getSessionToken() {
@@ -53,15 +65,5 @@ public class HiveMQEdgeEnvironmentUtils {
         map.put("processor.count", Runtime.getRuntime().availableProcessors() + "");
         map.put("max.memory", Runtime.getRuntime().maxMemory() + "");
         return map;
-    }
-
-    @SuppressWarnings("EmptyCatch")
-    public static String getDefaultMachineId() {
-        try {
-            return MacAddressUtil.formatAddress(MacAddressUtil.defaultMachineId())
-                    .toUpperCase(Locale.ROOT);
-        } catch (Exception ignored) {
-        }
-        return "<unknown>";
     }
 }

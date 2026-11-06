@@ -120,7 +120,6 @@ These are **not** `VITE_` prefixed and are never embedded in the browser bundle.
 | Variable | Set By | Purpose |
 |----------|--------|---------|
 | `VITE_COVERAGE` | CI pipeline | Set to `'true'` to enable Istanbul instrumentation in the Vite build (forces `forceBuildInstrument: true` in `vite-plugin-istanbul`). Not a standard `VITE_` variable — it is read by `vite.config.ts` as a Node environment variable via `process.env`. |
-| `SONAR_TOKEN` | CI secrets | SonarCloud authentication token for `check-frontend.yml`. |
 | `SNYK_TOKEN` | CI secrets | Snyk authentication for all three Snyk workflows. |
 
 ---
@@ -232,9 +231,7 @@ The `PERCY_BRANCH=local` setting prevents local snapshots from being compared ag
 
 **See:** [External Services — SonarCloud](./EXTERNAL_SERVICES.md#sonarcloud) for the dashboard URL, login method, and access status.
 
-**CI only** — no local configuration required.
-
-**PR analysis:** SonarCloud posts a quality gate status on every PR via `check-frontend.yml`. Coverage data is merged from Vitest + Cypress component + Cypress E2E before upload.
+**Not in CI.** The SonarQube job and its `SONAR_TOKEN` secret were removed (the job by EDG-1180 on hivemq-edge2 and EDG-1215 on hivemq-edge, the secret by EDG-1218 on both): no workflow scans the frontend or uploads coverage to SonarCloud.
 
 **See:** [Dependency Management](./DEPENDENCY_MANAGEMENT.md) and the `/sonarqube` skill for fetching per-PR metrics.
 
