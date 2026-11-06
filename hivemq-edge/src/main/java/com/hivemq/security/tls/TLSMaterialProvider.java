@@ -15,7 +15,6 @@
  */
 package com.hivemq.security.tls;
 
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +37,8 @@ public class TLSMaterialProvider {
     /// built, so publishing the new one is the whole of the synchronisation needed.
     private volatile @NotNull TLSMaterialRegistry registry = TLSMaterialRegistry.empty();
 
-    @Inject
+    /// Not injectable: the node's one instance is the configuration service's, bound where the
+    /// configuration module provides it, so no injection point can be handed an empty one.
     public TLSMaterialProvider() {}
 
     /// The material currently declared. Never null: a deployment that declares none gets an empty

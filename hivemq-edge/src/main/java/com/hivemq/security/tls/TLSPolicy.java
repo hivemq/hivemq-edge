@@ -17,6 +17,7 @@ package com.hivemq.security.tls;
 
 import com.hivemq.security.tls.TLSConstants.TrustMode;
 import com.hivemq.security.tls.TLSConstants.ValidityCheck;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.MalformedInputException;
@@ -41,6 +42,7 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HexFormat;
 import java.util.LinkedHashSet;
@@ -317,7 +319,7 @@ public final class TLSPolicy {
     private static @NotNull Identity loadContainerIdentity(final @NotNull MaterialRef.Inline inline)
             throws TLSMaterialException {
         final Path file = singleFile(inline, "identity");
-        final char[] containerPassword = secret(inline.password());
+        final char[] containerPassword = storePassword(inline.password());
         final char[] keyPassword = secret(inline.entryPassword());
 
         final KeyStore store = openKeyStore(file, inline.format(), containerPassword);
@@ -325,25 +327,17 @@ public final class TLSPolicy {
         requireKeyEntry(store, entry, file);
 
         try {
-            final KeyManagerFactory factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            // The whole container is handed over, not a copy holding only the named entry. Copying
-            // would mean re-storing the key and its chain, and a container format that validates a
-            // chain on write rejects chains the original held quite happily - so a configuration
-            // that worked would stop working on a detail of the copy rather than of the material.
-            //
-            // Which entry is presented is therefore still the factory's choice where a container
-            // holds several keys, which is why naming one is required there: the check above refuses
-            // an unnamed entry in that case rather than letting the factory pick.
-            factory.init(store, keyPassword);
-
-            // The same entry the factory will present, read again as objects for a surface whose
-            // library signs its own handshake. Read from the same store and the same entry name, so
-            // the two cannot be different keys.
             final Key key = store.getKey(entry, keyPassword);
             if (!(key instanceof PrivateKey privateKey)) {
                 throw new TLSMaterialException("The entry '%s' in '%s' is not a private key.".formatted(entry, file));
             }
             final List<X509Certificate> chain = chainOf(store, entry, file);
+            // The factory gets this one entry, not the whole container. Over the whole container the
+            // JDK's key manager picks among every key it holds by the authorities the peer names, so
+            // a container holding a second key would present that one wherever its issuer matched
+            // better - and the entry the operator named would decide nothing. The entry is copied as
+            // objects into a store in memory, which writes the chain without re-validating it.
+            final KeyManagerFactory factory = keyManagerFactoryFor(privateKey, chain);
             return new Identity(privateKey, chain.get(0), chain, applicationUriOf(chain.get(0)), factory);
         } catch (final GeneralSecurityException e) {
             throw new TLSMaterialException(
@@ -469,34 +463,79 @@ public final class TLSPolicy {
         }
     }
 
-    /// The chain with the key's own certificate first, which is the order both the TLS and the OPC UA
-    /// handshake require.
+    /// The chain with the key's own certificate first, then each issuer in turn, which is the order
+    /// both the TLS and the OPC UA handshake require.
     ///
     /// The leaf is found by matching public keys rather than by position, because a PEM file imposes
-    /// no order and an operator may name the intermediates before the certificate.
+    /// no order and an operator may name the intermediates before the certificate. For the same
+    /// reason the rest is ordered by who issued whom, not by where it stood in the files: a peer
+    /// checks that each certificate is signed by the next, and a chain in file order fails that
+    /// check although every certificate it needs is present.
+    ///
+    /// Each next certificate is the one whose subject is the current certificate's issuer and whose
+    /// key verifies its signature; the name alone could match a re-keyed or cross-signed authority
+    /// that did not sign it. Where several qualify, the first named wins. A root the operator
+    /// supplied stays at the end of that path, where a peer that does not need it ignores it.
+    ///
+    /// A certificate not on the path follows it, in the order it was named: a cross-signed authority
+    /// is such a certificate, and whether the chain reaches an authority the peer trusts is the
+    /// peer's judgement, not one to pre-empt while loading our own key by dropping what the operator
+    /// supplied.
     private static @NotNull List<X509Certificate> chainFromLeaf(
             final @NotNull List<X509Certificate> certificates, final @NotNull PrivateKey privateKey)
             throws TLSMaterialException {
-        final List<X509Certificate> ordered = new ArrayList<>();
+        final List<X509Certificate> leaves = new ArrayList<>();
         for (final X509Certificate certificate : certificates) {
             if (belongsTo(certificate, privateKey)) {
-                ordered.add(certificate);
+                leaves.add(certificate);
             }
         }
-        if (ordered.isEmpty()) {
+        if (leaves.isEmpty()) {
             throw new TLSMaterialException("None of the certificates named belongs to the private key named. A "
                     + "certificate and the key it certifies have to be a pair.");
         }
-        if (ordered.size() > 1) {
+        if (leaves.size() > 1) {
             throw new TLSMaterialException("More than one certificate named belongs to the private key named, so "
                     + "which one Edge would present is ambiguous. Name one.");
         }
-        for (final X509Certificate certificate : certificates) {
-            if (!ordered.contains(certificate)) {
-                ordered.add(certificate);
+        final List<X509Certificate> ordered = new ArrayList<>();
+        final List<X509Certificate> remaining = new ArrayList<>(certificates);
+        X509Certificate current = leaves.getFirst();
+        remaining.remove(current);
+        ordered.add(current);
+        while (!isSelfIssued(current)) {
+            final X509Certificate issuer = issuerOf(current, remaining);
+            if (issuer == null) {
+                break;
+            }
+            remaining.remove(issuer);
+            ordered.add(issuer);
+            current = issuer;
+        }
+        ordered.addAll(remaining);
+        return ordered;
+    }
+
+    private static boolean isSelfIssued(final @NotNull X509Certificate certificate) {
+        return certificate.getIssuerX500Principal().equals(certificate.getSubjectX500Principal());
+    }
+
+    /// The first of the candidates that issued the certificate: named as its issuer and holding the
+    /// key its signature verifies with.
+    private static @Nullable X509Certificate issuerOf(
+            final @NotNull X509Certificate certificate, final @NotNull List<X509Certificate> candidates) {
+        for (final X509Certificate candidate : candidates) {
+            if (!candidate.getSubjectX500Principal().equals(certificate.getIssuerX500Principal())) {
+                continue;
+            }
+            try {
+                certificate.verify(candidate.getPublicKey());
+                return candidate;
+            } catch (final GeneralSecurityException _) {
+                // Same name, different key: not the authority that signed this certificate.
             }
         }
-        return ordered;
+        return null;
     }
 
     /// Whether a certificate certifies this key, decided by signing a fixed block with the key and
@@ -686,7 +725,7 @@ public final class TLSPolicy {
     }
 
     private static @NotNull KeyStore openKeyStore(
-            final @NotNull Path file, final @Nullable String format, final char @NotNull [] password)
+            final @NotNull Path file, final @Nullable String format, final char @Nullable [] password)
             throws TLSMaterialException {
         final String type = keyStoreType(format);
         try (final InputStream in = Files.newInputStream(file)) {
@@ -696,6 +735,13 @@ public final class TLSPolicy {
         } catch (final NoSuchFileException e) {
             throw new TLSMaterialException("'" + file + "' does not exist.", e);
         } catch (final IOException e) {
+            // A container mounted from a Kubernetes secret may arrive base64-encoded. The superseded
+            // bridge settings have always read such a file (SslUtil), so every container gets the
+            // same second attempt; a file that is not base64 fails as before.
+            final KeyStore decoded = openBase64KeyStore(file, type, password);
+            if (decoded != null) {
+                return decoded;
+            }
             // A wrong password and a wrong format both surface here, and they have different fixes,
             // so both are named rather than one being guessed at.
             throw new TLSMaterialException(
@@ -705,6 +751,25 @@ public final class TLSPolicy {
                     e);
         } catch (final GeneralSecurityException e) {
             throw new TLSMaterialException("'" + file + "' could not be read as " + type + ".", e);
+        }
+    }
+
+    /// The key store a base64-encoded file holds, or `null` when the file is not base64 or its
+    /// decoded content does not open: the caller then reports the original failure.
+    private static @Nullable KeyStore openBase64KeyStore(
+            final @NotNull Path file, final @NotNull String type, final char @Nullable [] password) {
+        final byte[] decoded;
+        try {
+            decoded = Base64.getDecoder().decode(Files.readAllBytes(file));
+        } catch (final IOException | IllegalArgumentException _) {
+            return null;
+        }
+        try (final InputStream in = new ByteArrayInputStream(decoded)) {
+            final KeyStore store = KeyStore.getInstance(type);
+            store.load(in, password);
+            return store;
+        } catch (final IOException | GeneralSecurityException _) {
+            return null;
         }
     }
 
@@ -734,14 +799,26 @@ public final class TLSPolicy {
     /// Every certificate the truststore names, as trust anchors.
     ///
     /// Files, directories, glob patterns and runtime truststores merge into one set, so an operator
-    /// may trust a corporate container, a plant bundle and the public authorities together.
+    /// may trust several plant bundles and the public authorities together. The files share the
+    /// truststore's one format and one password; the runtime's own authorities are a separate
+    /// source and take neither.
     private static @NotNull Set<TrustAnchor> loadTrustAnchors(final @NotNull MaterialRef ref)
             throws TLSMaterialException {
         final MaterialRef.Inline inline = requireInline(ref, "truststore");
         final Set<TrustAnchor> anchors = new LinkedHashSet<>();
 
-        for (final Path file : expandPaths(inline.files(), "truststore")) {
-            for (final X509Certificate certificate : readCertificates(file, inline.format(), inline.password())) {
+        final List<Path> files = expandPaths(inline.files(), "truststore");
+        for (final Path file : files) {
+            final List<X509Certificate> certificates;
+            try {
+                certificates = readCertificates(file, inline.format(), inline.password());
+            } catch (final TLSMaterialException e) {
+                if (files.size() < 2) {
+                    throw e;
+                }
+                throw inUnion(file, inline.format(), e);
+            }
+            for (final X509Certificate certificate : certificates) {
                 anchors.add(new TrustAnchor(certificate, null));
             }
         }
@@ -756,6 +833,46 @@ public final class TLSPolicy {
                     + "builtin=" + FileSet.JVM_CACERTS + ".");
         }
         return anchors;
+    }
+
+    /// A file of a truststore naming several that could not be read, explained by the rule a union
+    /// follows: every file is read with the truststore's one format and opened with its one password.
+    ///
+    /// A union whose files differ in either is what an operator most likely wrote when one file of
+    /// several fails - a corporate container beside a plant PEM bundle - and the message for a
+    /// single file, check the password or the format, would send them to fix a file that is fine.
+    private static @NotNull TLSMaterialException inUnion(
+            final @NotNull Path file, final @Nullable String format, final @NotNull TLSMaterialException cause) {
+        final String declared = format == null ? "no format" : "the format " + format;
+        final boolean declaredPem = format != null && format.equalsIgnoreCase("pem");
+        final Boolean pem = looksLikePem(file);
+        final String looks;
+        if (pem == null) {
+            looks = "";
+        } else if (pem && !declaredPem) {
+            looks = " '%s' holds PEM text.".formatted(file);
+        } else if (!pem && declaredPem) {
+            looks = " '%s' holds no PEM text; it looks like a key store container.".formatted(file);
+        } else {
+            looks = "";
+        }
+        return new TLSMaterialException(
+                ("The truststore names several files and declares %s, and '%s' could not be read with it.%s A "
+                                + "truststore reads every file it names with one format and opens it with one "
+                                + "password, so a union cannot mix formats or passwords. Convert the files to one "
+                                + "format with one password, or trust fewer of them. %s")
+                        .formatted(declared, file, looks, cause.getMessage()),
+                cause);
+    }
+
+    /// Whether the file starts with a PEM block, or `null` where it cannot be read.
+    private static @Nullable Boolean looksLikePem(final @NotNull Path file) {
+        try (final InputStream in = Files.newInputStream(file)) {
+            final byte[] head = in.readNBytes(64);
+            return new String(head, StandardCharsets.US_ASCII).stripLeading().startsWith("-----BEGIN");
+        } catch (final IOException _) {
+            return null;
+        }
     }
 
     /// The certificates a truststore the runtime carries holds.
@@ -799,7 +916,7 @@ public final class TLSPolicy {
         if (format != null && format.equalsIgnoreCase("pem")) {
             return readPemCertificates(file);
         }
-        final KeyStore store = openKeyStore(file, format, secret(password));
+        final KeyStore store = openKeyStore(file, format, storePassword(password));
         final List<X509Certificate> certificates = new ArrayList<>();
         try {
             for (final String alias : java.util.Collections.list(store.aliases())) {
@@ -868,6 +985,7 @@ public final class TLSPolicy {
                 throw unreadable(file, e);
             }
 
+            int read = 0;
             for (int i = 0; i < lines.size(); i++) {
                 // A Windows editor saving "UTF-8" commonly writes a byte order mark first; left in
                 // place it fails the first fingerprint with a message about an invisible character.
@@ -877,7 +995,18 @@ public final class TLSPolicy {
                     continue;
                 }
                 fingerprints.add(parseFingerprint(content, i + 1, file));
+                read++;
             }
+            // A file named and holding nothing is a source the operator meant to fill, refused by its
+            // name; with several files, the rest would otherwise hide that it trusts nothing.
+            if (read == 0) {
+                throw new TLSMaterialException(("Certificate allow-list '%s' contains no fingerprints. An empty "
+                                + "allow-list would reject every certificate it was meant to trust; add the SHA-256 "
+                                + "fingerprint of each certificate to trust, one per line, or use a different trust "
+                                + "mode.")
+                        .formatted(file));
+            }
+            log.info("{} fingerprint(s) loaded from '{}'.", read, file);
         }
         if (fingerprints.isEmpty()) {
             throw new TLSMaterialException("The allow-list holds no fingerprint, so no certificate could be "
@@ -886,9 +1015,17 @@ public final class TLSPolicy {
         return fingerprints;
     }
 
+    /// One fingerprint, written bare or as `openssl x509 -noout -fingerprint -sha256` prints it, with
+    /// its `sha256 Fingerprint=` label: an operator who redirects that command into the file gets a
+    /// file Edge reads. Any other label is refused with the line, because a label naming another
+    /// digest would make the digits that follow a fingerprint of the wrong kind.
     private static @NotNull String parseFingerprint(
             final @NotNull String entry, final int line, final @NotNull Path file) throws TLSMaterialException {
-        final String normalized = entry.trim().replace(":", "").replace(" ", "").toLowerCase(Locale.ROOT);
+        final int equals = entry.indexOf('=');
+        final String digits =
+                equals >= 0 && isSha256Label(entry.substring(0, equals)) ? entry.substring(equals + 1) : entry;
+        final String normalized =
+                digits.trim().replace(":", "").replace(" ", "").toLowerCase(Locale.ROOT);
         if (normalized.length() != FINGERPRINT_HEX_LENGTH || !normalized.chars().allMatch(TLSPolicy::isHex)) {
             throw new TLSMaterialException(("'%s', line %d: '%s' is not a SHA-256 fingerprint. A fingerprint is 64 "
                             + "hexadecimal digits, with or without colons, as `openssl x509 -fingerprint -sha256` "
@@ -896,6 +1033,11 @@ public final class TLSPolicy {
                     .formatted(file, line, entry.trim()));
         }
         return normalized;
+    }
+
+    private static boolean isSha256Label(final @NotNull String label) {
+        final String normalized = label.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+        return normalized.equals("sha256 fingerprint") || normalized.equals("sha-256 fingerprint");
     }
 
     private static boolean isHex(final int c) {
@@ -1003,7 +1145,35 @@ public final class TLSPolicy {
             requireNotSilentlyEmpty(matches, pattern.location(), pattern.mayBeEmpty(), what);
             paths.addAll(matches);
         }
+        for (final String legacyPath : fileSet.legacyPaths()) {
+            paths.addAll(expandLegacyPath(Path.of(legacyPath), what));
+        }
         return paths;
+    }
+
+    /// A path in a superseded spelling that took a file or a directory: the file itself, or the
+    /// directory's regular files in name order, as that spelling read it. A directory holding none
+    /// is refused, as it always was; there is no way to write that it may be empty.
+    private static @NotNull List<Path> expandLegacyPath(final @NotNull Path path, final @NotNull String what)
+            throws TLSMaterialException {
+        if (!Files.isDirectory(path)) {
+            return List.of(path);
+        }
+        final List<Path> entries = new ArrayList<>();
+        try (final DirectoryStream<Path> stream = Files.newDirectoryStream(path, Files::isRegularFile)) {
+            for (final Path entry : stream) {
+                entries.add(entry);
+            }
+        } catch (final IOException e) {
+            throw new TLSMaterialException("'" + path + "' could not be listed.", e);
+        }
+        if (entries.isEmpty()) {
+            throw new TLSMaterialException(("The %s names the directory '%s', which holds no file. Put the "
+                            + "material in it, or name a single file instead.")
+                    .formatted(what, path));
+        }
+        entries.sort(null);
+        return entries;
     }
 
     /// Why a file could not be read, said in a way an operator can act on.
@@ -1085,6 +1255,16 @@ public final class TLSPolicy {
                 .formatted(what));
     }
 
+    /// The password a key store is opened with: `null` only where the operator waived the integrity
+    /// check, which is the one input that makes a key store skip it. Anything else, an absent
+    /// password included, opens the store with a password and so checks it.
+    private static char @Nullable [] storePassword(final @Nullable Secret secret) throws TLSMaterialException {
+        if (secret instanceof Secret.Waived) {
+            return null;
+        }
+        return secret(secret);
+    }
+
     /// A password, read from its file where the configuration named one rather than wrote one.
     private static char @NotNull [] secret(final @Nullable Secret secret) throws TLSMaterialException {
         if (secret == null) {
@@ -1092,13 +1272,11 @@ public final class TLSPolicy {
         }
         return switch (secret) {
             case Secret.Literal literal -> literal.value().toCharArray();
+            case Secret.Waived _ -> new char[0];
             case Secret.FromFile fromFile -> {
                 final Path file = Path.of(fromFile.path());
                 try {
-                    // Trailing newline removed: a password file written by an editor or projected by
-                    // Kubernetes commonly ends with one, and it is not part of the password.
-                    yield Files.readString(file, StandardCharsets.UTF_8)
-                            .stripTrailing()
+                    yield withoutFinalLineEnd(Files.readString(file, StandardCharsets.UTF_8))
                             .toCharArray();
                 } catch (final NoSuchFileException e) {
                     throw new TLSMaterialException("The password file '" + file + "' does not exist.", e);
@@ -1107,6 +1285,22 @@ public final class TLSPolicy {
                 }
             }
         };
+    }
+
+    /// The contents of a password file without the one line end that closes it.
+    ///
+    /// An editor and a Kubernetes secret projected as a file commonly end the file with one, and it
+    /// is not part of the password. Only that one is removed, as LF or CRLF: a space, a tab or a
+    /// second line end is a character the password may hold, and removing it would make the file
+    /// and the same password written inline open different stores.
+    private static @NotNull String withoutFinalLineEnd(final @NotNull String contents) {
+        if (contents.endsWith("\r\n")) {
+            return contents.substring(0, contents.length() - 2);
+        }
+        if (contents.endsWith("\n")) {
+            return contents.substring(0, contents.length() - 1);
+        }
+        return contents;
     }
 
     /// Material that could not be read. The message names the file and the fix, because it reaches

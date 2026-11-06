@@ -48,6 +48,8 @@ import com.hivemq.util.Topics;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -415,6 +417,42 @@ public class BridgeExtractor
                 websocketConfiguration.getServerPath(), websocketConfiguration.getSubProtocol());
     }
 
+    /// Why the TLS of the configuration's bridges cannot be carried out: one reason per refused bridge,
+    /// in configuration order, or none.
+    ///
+    /// Read when a configuration file is loaded, before it replaces the configuration in force. A
+    /// refusal found later, while the configuration is applied, reads as a change that needs a restart,
+    /// and the watcher exits the node for it; the restarted node then refuses the same file at start-up
+    /// and does not come back (EDG-949). Found here, the file is rejected: a reload keeps the node
+    /// running on the configuration it has, and a start still refuses. [#convertTls] performs the same
+    /// construction when the bridges are built.
+    static @NotNull List<String> tlsRefusalsOf(final @NotNull HiveMQConfigEntity config) {
+        final TLSMaterialRegistry registry;
+        try {
+            registry = TlsMaterialRegistryBuilder.registryOf(config.getTlsMaterials());
+        } catch (final TLSMaterialRegistry.InvalidReferenceException e) {
+            return List.of("Unable to read the declared TLS material: " + e.reason());
+        }
+        final List<String> refusals = new ArrayList<>();
+        for (final MqttBridgeEntity bridge : config.getBridgeConfig()) {
+            final BridgeTlsEntity tls = bridge.getRemoteBroker().getTls();
+            if (tls == null || !tls.isEnabled()) {
+                continue;
+            }
+            // An absent id is refused where the bridges are built, with its own message.
+            final String id = Objects.requireNonNullElse(bridge.getId(), "");
+            try {
+                new TLSConfigResolved(TLSConfigBridge.withoutWarnings(id, tls), registry);
+            } catch (final TLSConfigBridge.InvalidTlsConfigException e) {
+                refusals.add(e.reason());
+            } catch (final TLSMaterialRegistry.InvalidReferenceException e) {
+                refusals.add(
+                        "Bridge '%s' references TLS material that cannot be resolved: %s".formatted(id, e.reason()));
+            }
+        }
+        return refusals;
+    }
+
     /// A bridge's TLS settings, in both the shape the REST API and the write-back read and the shape
     /// the validation chain uses.
     ///
@@ -451,7 +489,8 @@ public class BridgeExtractor
             throw new UnrecoverableException(false);
         }
 
-        final BridgeTls.Builder builder = new BridgeTls.Builder().withEffectiveTls(effectiveTls);
+        final BridgeTls.Builder builder =
+                new BridgeTls.Builder().withEffectiveTls(effectiveTls).withConfiguredTls(tls);
         if (tls.getKeyStore() != null && !tls.getKeyStore().getPath().isBlank()) {
             builder.withKeystorePath(tls.getKeyStore().getPath())
                     .withKeystorePassword(
@@ -463,8 +502,7 @@ public class BridgeExtractor
                                     ? tls.getKeyStore().getPrivateKeyPassword()
                                     : "");
 
-            if (tls.getKeyStore().getPath().endsWith(".p12")
-                    || tls.getKeyStore().getPath().endsWith(".pfx")) {
+            if (isPkcs12FileName(tls.getKeyStore().getPath())) {
                 builder.withKeystoreType(KEYSTORE_TYPE_PKCS12);
             } else {
                 builder.withKeystoreType(KEYSTORE_TYPE_JKS);
@@ -475,8 +513,7 @@ public class BridgeExtractor
             builder.withTruststorePath(tls.getTrustStore().getPath())
                     .withTruststorePassword(tls.getTrustStore().getPassword());
 
-            if (tls.getTrustStore().getPath().endsWith(".p12")
-                    || tls.getTrustStore().getPath().endsWith(".pfx")) {
+            if (isPkcs12FileName(tls.getTrustStore().getPath())) {
                 builder.withTruststoreType(KEYSTORE_TYPE_PKCS12);
             } else {
                 builder.withTruststoreType(KEYSTORE_TYPE_JKS);
@@ -488,6 +525,13 @@ public class BridgeExtractor
                 .withHandshakeTimeout(tls.getHandshakeTimeout())
                 .withVerifyHostname(tls.isVerifyHostname())
                 .build();
+    }
+
+    /// The type the REST API serves for a store must be the type the bridge reads it as, since the
+    /// editor sends it back and a stated type wins over the file name; the reader ignores case.
+    private static boolean isPkcs12FileName(final @NotNull String path) {
+        final String lower = path.toLowerCase(Locale.ROOT);
+        return lower.endsWith(".p12") || lower.endsWith(".pfx");
     }
 
     @Override
@@ -647,7 +691,11 @@ public class BridgeExtractor
 
         // TLS
         final BridgeTls bridgeTls = from.getBridgeTls();
-        if (bridgeTls != null) {
+        if (bridgeTls != null && bridgeTls.getConfiguredTls() != null) {
+            // Read from the file: return the element as written. Rebuilding it from the superseded
+            // fields below would drop every newer element from the operator's file on the next write.
+            remoteBrokerEntity.setTls(bridgeTls.getConfiguredTls());
+        } else if (bridgeTls != null) {
             final BridgeTlsEntity bridgeTlsEntity = new BridgeTlsEntity();
             bridgeTlsEntity.setEnabled(true);
             bridgeTlsEntity.setHandshakeTimeout(bridgeTls.getHandshakeTimeout());

@@ -191,8 +191,8 @@ public final class TLSConfigOpcUA implements TLSConfig {
             // An allow-list holds one hash per line and a revocation list is read as either encoding
             // by the same call, so neither declares a format.
             this.allowList =
-                    pathOf(tls.allowList() == null ? null : tls.allowList().path());
-            this.revocationList = pathOf(
+                    fileOf(tls.allowList() == null ? null : tls.allowList().path());
+            this.revocationList = fileOrDirectoryOf(
                     tls.revocationList() == null ? null : tls.revocationList().path());
         }
     }
@@ -528,8 +528,12 @@ public final class TLSConfigOpcUA implements TLSConfig {
         if (truststore == null) {
             return fallbackWhereAPathIsBuilt(trustMode, tlsEnabled, "tls-truststore");
         }
-        final FileSet files =
-                fileSetOf(truststore.files(), truststore.directories(), truststore.patterns(), truststore.builtins());
+        final FileSet files = fileSetOf(
+                "tls-truststore",
+                truststore.files(),
+                truststore.directories(),
+                truststore.patterns(),
+                truststore.builtins());
         final Optional<MaterialRef> reference =
                 referenceOf("tls-truststore", truststore.referenceName(), truststore.referenceUuid(), !files.isEmpty());
         if (reference.isPresent()) {
@@ -541,13 +545,39 @@ public final class TLSConfigOpcUA implements TLSConfig {
         return Optional.of(new MaterialRef.Inline(
                 truststore.format() == null ? null : truststore.format().asDeclared(),
                 files,
-                // An operator with no password writes skip-integrity-check instead; the absence of
-                // both is what the reading stage refuses, not something to decide here.
-                truststore.isSkipIntegrityCheck()
-                        ? null
-                        : secretOrFile("tls-truststore", truststore.password(), truststore.passwordFile()),
+                integrityOf(truststore, files),
                 null,
                 null));
+    }
+
+    /// The password a truststore is opened with, or the waiver an operator with none writes instead.
+    ///
+    /// The waiver is carried as itself: an absent password opens a container store as an empty one
+    /// and so still checks it, and only the waiver opens one unchecked. A container named by path
+    /// with neither is refused here, where the element can still be named; a PEM file has no
+    /// integrity to check, and a set naming only the runtime's truststore reads nothing the
+    /// operator supplied. Writing both a password and the waiver is refused: Edge could not tell
+    /// whether the file is to be checked.
+    private static @Nullable Secret integrityOf(final @NotNull TlsTruststore truststore, final @NotNull FileSet files)
+            throws InvalidTlsConfigException {
+        final Secret password = secretOrFile("tls-truststore", truststore.password(), truststore.passwordFile());
+        if (truststore.isSkipIntegrityCheck()) {
+            if (password != null) {
+                throw new InvalidTlsConfigException("The 'tls-truststore' element names both a password and "
+                        + "skip-integrity-check, so Edge cannot tell whether the file is to be checked. Keep the "
+                        + "password to check it, or skip-integrity-check for a store that has none.");
+            }
+            return new Secret.Waived();
+        }
+        final MaterialFormat format = truststore.format();
+        if (password == null && files.namesAPath() && (format == MaterialFormat.P12 || format == MaterialFormat.JKS)) {
+            throw new InvalidTlsConfigException(("The 'tls-truststore' element names a %s container but neither a "
+                            + "password nor skip-integrity-check. The password lets Edge confirm the file is the one "
+                            + "somebody built; write it with <password> or <password-file>, or write "
+                            + "<skip-integrity-check>true</skip-integrity-check> to read the store unchecked.")
+                    .formatted(format.asDeclared()));
+        }
+        return password;
     }
 
     /// An allow-list or revocation list from the superseding spelling. One method for both, which the
@@ -557,7 +587,7 @@ public final class TLSConfigOpcUA implements TLSConfig {
         if (list == null) {
             return Optional.empty();
         }
-        final FileSet files = fileSetOf(list.files(), list.directories(), list.patterns(), null);
+        final FileSet files = fileSetOf(element, list.files(), list.directories(), list.patterns(), null);
         final Optional<MaterialRef> reference =
                 referenceOf(element, list.referenceName(), list.referenceUuid(), !files.isEmpty());
         if (reference.isPresent()) {
@@ -569,42 +599,68 @@ public final class TLSConfigOpcUA implements TLSConfig {
         return Optional.of(new MaterialRef.Inline(null, files, null, null, null));
     }
 
+    /// The sources an element names.
+    ///
+    /// A `directory` or `pattern` without a `location`, and an empty `file` or `builtin`, is refused
+    /// rather than skipped. Skipped, it would leave the element naming nothing, and a truststore naming
+    /// nothing falls back to the runtime's own authorities: the entry lost while templating would
+    /// widen what Edge trusts.
     private static @NotNull FileSet fileSetOf(
+            final @NotNull String element,
             final @Nullable List<String> files,
             final @Nullable List<FileLocation> directories,
             final @Nullable List<FileLocation> patterns,
-            final @Nullable List<String> builtins) {
+            final @Nullable List<String> builtins)
+            throws InvalidTlsConfigException {
         final List<FileSet.Directory> asDirectories = new java.util.ArrayList<>();
         if (directories != null) {
             for (final FileLocation directory : directories) {
-                if (present(directory.location())) {
-                    asDirectories.add(new FileSet.Directory(
-                            java.util.Objects.requireNonNull(directory.location()), directory.isMayBeEmpty()));
-                }
+                asDirectories.add(
+                        new FileSet.Directory(locationOf(element, "directory", directory), directory.isMayBeEmpty()));
             }
         }
         final List<FileSet.Pattern> asPatterns = new java.util.ArrayList<>();
         if (patterns != null) {
             for (final FileLocation pattern : patterns) {
-                if (present(pattern.location())) {
-                    asPatterns.add(new FileSet.Pattern(
-                            java.util.Objects.requireNonNull(pattern.location()), pattern.isMayBeEmpty()));
-                }
+                asPatterns.add(new FileSet.Pattern(locationOf(element, "pattern", pattern), pattern.isMayBeEmpty()));
             }
         }
         final List<String> named = new java.util.ArrayList<>();
         if (files != null) {
             for (final String file : files) {
-                addIfPresent(named, file);
+                named.add(valueOf(element, "file", file));
             }
         }
         final List<String> runtimeStores = new java.util.ArrayList<>();
         if (builtins != null) {
             for (final String builtin : builtins) {
-                addIfPresent(runtimeStores, builtin);
+                runtimeStores.add(valueOf(element, "builtin", builtin));
             }
         }
         return new FileSet(named, asDirectories, asPatterns, runtimeStores);
+    }
+
+    private static @NotNull String locationOf(
+            final @NotNull String element, final @NotNull String entry, final @Nullable FileLocation source)
+            throws InvalidTlsConfigException {
+        final String location = source == null ? null : source.location();
+        if (!present(location)) {
+            throw new InvalidTlsConfigException(("The '%s' element has a '%s' entry without a 'location'. Name the "
+                            + "%s in <%s><%s><location>...</location></%s></%s>, or remove the entry.")
+                    .formatted(element, entry, entry, element, entry, entry, element));
+        }
+        return Objects.requireNonNull(location);
+    }
+
+    private static @NotNull String valueOf(
+            final @NotNull String element, final @NotNull String entry, final @Nullable String value)
+            throws InvalidTlsConfigException {
+        if (!present(value)) {
+            throw new InvalidTlsConfigException(("The '%s' element has an empty '%s' entry. Name it in "
+                            + "<%s><%s>...</%s></%s>, or remove the entry.")
+                    .formatted(element, entry, element, entry, entry, element));
+        }
+        return Objects.requireNonNull(value);
     }
 
     /// The runtime's own authorities, where a certification path is to be built and nothing was named
@@ -710,12 +766,22 @@ public final class TLSConfigOpcUA implements TLSConfig {
     }
 
     /// A file whose contents describe themselves, so no format is declared. The whole reach of the
-    /// superseded `allowList` and `revocationList`: one path, no directory, no pattern.
-    private static @NotNull Optional<MaterialRef> pathOf(final @Nullable String path) {
+    /// superseded `allowList`: one file, no directory, no pattern - which is all it ever read.
+    private static @NotNull Optional<MaterialRef> fileOf(final @Nullable String path) {
         if (path == null || path.isBlank()) {
             return Optional.empty();
         }
         return Optional.of(new MaterialRef.Inline(null, FileSet.of(path), null, null, null));
+    }
+
+    /// The whole reach of the superseded `revocationList`: one path naming either a file of
+    /// revocation lists or a directory of such files. Which of the two it is, is decided when the
+    /// material is read, so this stage stays free of file access.
+    private static @NotNull Optional<MaterialRef> fileOrDirectoryOf(final @Nullable String path) {
+        if (path == null || path.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(new MaterialRef.Inline(null, FileSet.ofLegacyPath(path), null, null, null));
     }
 
     /// A reference into shared material, by name or by uuid, refusing more than one way of naming it.

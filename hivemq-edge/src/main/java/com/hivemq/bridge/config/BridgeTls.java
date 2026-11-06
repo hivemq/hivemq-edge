@@ -15,7 +15,9 @@
  */
 package com.hivemq.bridge.config;
 
+import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
 import com.hivemq.security.tls.TLSConfig;
+import com.hivemq.security.tls.TLSConfigBridge;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +49,15 @@ public class BridgeTls {
     /// file, which is every caller that predates the chain. Such a bridge connects the way it always
     /// did; a bridge whose configuration was read carries this and validates through it.
     private final @Nullable TLSConfig effectiveTls;
+
+    /// The `<tls>` element exactly as the operator wrote it, where this bridge was read from a
+    /// configuration file; null for a bridge built in code or over the REST API.
+    ///
+    /// The fields above can express only the superseded settings, so a configuration write-back that
+    /// rebuilt the element from them would drop every newer element (`tls-checks`, `tls-truststore`,
+    /// `tls-allowlist` and the rest) from the file. Not compared in `equals`: it describes the same
+    /// settings as {@link #effectiveTls}, which is.
+    private final @Nullable BridgeTlsEntity configuredTls;
 
     public BridgeTls(
             final @Nullable String keystorePath,
@@ -90,7 +101,39 @@ public class BridgeTls {
             final boolean verifyHostname,
             final int handshakeTimeout,
             final @Nullable TLSConfig effectiveTls) {
+        this(
+                keystorePath,
+                keystorePassword,
+                privateKeyPassword,
+                truststorePath,
+                truststorePassword,
+                protocols,
+                cipherSuites,
+                keystoreType,
+                truststoreType,
+                verifyHostname,
+                handshakeTimeout,
+                effectiveTls,
+                null);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    private BridgeTls(
+            final @Nullable String keystorePath,
+            final @NotNull String keystorePassword,
+            final @NotNull String privateKeyPassword,
+            final @Nullable String truststorePath,
+            final @NotNull String truststorePassword,
+            final @NotNull List<String> protocols,
+            final @NotNull List<String> cipherSuites,
+            final @Nullable String keystoreType,
+            final @Nullable String truststoreType,
+            final boolean verifyHostname,
+            final int handshakeTimeout,
+            final @Nullable TLSConfig effectiveTls,
+            final @Nullable BridgeTlsEntity configuredTls) {
         this.effectiveTls = effectiveTls;
+        this.configuredTls = configuredTls;
         this.keystorePath = keystorePath;
         this.keystorePassword = keystorePassword;
         this.privateKeyPassword = privateKeyPassword;
@@ -108,6 +151,12 @@ public class BridgeTls {
     /// configuration file.
     public @Nullable TLSConfig getEffectiveTls() {
         return effectiveTls;
+    }
+
+    /// The `<tls>` element as written, for the configuration write-back to return to the file
+    /// unchanged. Treated as read-only.
+    public @Nullable BridgeTlsEntity getConfiguredTls() {
+        return configuredTls;
     }
 
     public @Nullable String getKeystorePath() {
@@ -181,7 +230,67 @@ public class BridgeTls {
         if (!protocols.equals(bridgeTls.protocols)) {
             return false;
         }
-        return cipherSuites.equals(bridgeTls.cipherSuites);
+        if (!cipherSuites.equals(bridgeTls.cipherSuites)) {
+            return false;
+        }
+        // The superseding settings live only here; without it two bridges that differ only in them
+        // compare equal, and a reload keeps the old connection running on the old settings.
+        return isCompatibilityPreset(configuredTls) == isCompatibilityPreset(bridgeTls.configuredTls)
+                && sameEffectiveTls(effectiveTls, bridgeTls.effectiveTls);
+    }
+
+    /// Whether a bridge is on the preset that keeps what a bridge validated before upgrading: it
+    /// names neither `tls-checks-full` nor a preset other than `TLS_BRIDGE_DEFAULT`. A bridge without
+    /// the configuration it was read from was built from the superseded settings, which mean the
+    /// same. Part of equality: writing the preset's values out in `tls-checks-full` validates a
+    /// directly trusted certificate's dates, so the switch must restart the bridge.
+    public static boolean isCompatibilityPreset(final @Nullable BridgeTlsEntity configuredTls) {
+        if (configuredTls == null) {
+            return true;
+        }
+        return TLSConfigBridge.isCompatibilityPreset(configuredTls);
+    }
+
+    /// Compared by value through the interface rather than by the implementations' `equals`: the
+    /// same file read twice must compare equal, or every reload restarts every TLS bridge, whichever
+    /// class carries the settings.
+    private static boolean sameEffectiveTls(final @Nullable TLSConfig left, final @Nullable TLSConfig right) {
+        if (left == right) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        return left.isEnabled() == right.isEnabled()
+                && left.enforcesSameChecks(right)
+                && left.identity().equals(right.identity())
+                && left.truststore().equals(right.truststore())
+                && left.allowList().equals(right.allowList())
+                && left.revocationList().equals(right.revocationList())
+                && left.protocols().equals(right.protocols())
+                && left.cipherSuites().equals(right.cipherSuites())
+                && left.handshakeTimeout().equals(right.handshakeTimeout());
+    }
+
+    private static int effectiveTlsHash(final @Nullable TLSConfig tls) {
+        if (tls == null) {
+            return 0;
+        }
+        return Objects.hash(
+                tls.isEnabled(),
+                tls.trustMode(),
+                tls.sanUri(),
+                tls.hostname(),
+                tls.validity(),
+                tls.revocation(),
+                tls.keyUsage(),
+                tls.identity(),
+                tls.truststore(),
+                tls.allowList(),
+                tls.revocationList(),
+                tls.protocols(),
+                tls.cipherSuites(),
+                tls.handshakeTimeout());
     }
 
     @Override
@@ -193,6 +302,8 @@ public class BridgeTls {
         result = 31 * result + (truststorePassword != null ? truststorePassword.hashCode() : 0);
         result = 31 * result + protocols.hashCode();
         result = 31 * result + cipherSuites.hashCode();
+        result = 31 * result + Boolean.hashCode(isCompatibilityPreset(configuredTls));
+        result = 31 * result + effectiveTlsHash(effectiveTls);
         return result;
     }
 
@@ -239,12 +350,20 @@ public class BridgeTls {
         private boolean verifyHostname = true;
         private int handshakeTimeoutSeconds = 10;
         private @Nullable TLSConfig effectiveTls;
+        private @Nullable BridgeTlsEntity configuredTls;
 
         /// The settings as the validation chain sees them. Set by the configuration reader; a caller
         /// assembling a bridge in code leaves it alone and gets the connection path that predates
         /// the chain.
         public @NotNull Builder withEffectiveTls(final @Nullable TLSConfig effectiveTls) {
             this.effectiveTls = effectiveTls;
+            return this;
+        }
+
+        /// The `<tls>` element as read. Set by the configuration reader, so that the write-back returns
+        /// it to the file as written.
+        public @NotNull Builder withConfiguredTls(final @Nullable BridgeTlsEntity configuredTls) {
+            this.configuredTls = configuredTls;
             return this;
         }
 
@@ -316,7 +435,8 @@ public class BridgeTls {
                     truststoreType,
                     verifyHostname,
                     handshakeTimeoutSeconds,
-                    effectiveTls);
+                    effectiveTls,
+                    configuredTls);
         }
     }
 }

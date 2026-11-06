@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -468,6 +469,9 @@ class TLSValidatorBridgeTest {
                     subjectPair.getPublic());
             builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(isAuthority));
             if (purpose != null) {
+                // A certificate issued for a purpose declares the key uses that go with it.
+                builder.addExtension(
+                        Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
                 builder.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(purpose));
             }
             return new JcaX509CertificateConverter()

@@ -15,25 +15,45 @@
  */
 package com.hivemq.security.tls;
 
+import java.io.IOException;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Principal;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.SignatureException;
 import java.security.cert.CertPathValidator;
+import java.security.cert.CertStore;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXRevocationChecker;
-import java.security.cert.X509CertSelector;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.TrustManagerFactorySpi;
 import javax.net.ssl.X509ExtendedTrustManager;
+import javax.security.auth.x500.X500Principal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,13 +63,45 @@ import org.jetbrains.annotations.Nullable;
 /// tunnel settings, and hands the first three to the TLS implementation beneath it. So everything
 /// this class does is reshape what the policy already decided; it adds no decision of its own.
 ///
-/// Four of the five checks live in the trust manager, because that is the one callback the TLS
-/// handshake makes with the peer's certificate chain in hand. The fifth - hostname - is a separate
-/// hook the library calls after the chain is accepted, so it is produced separately.
+/// All five checks live in the trust manager, because that is the one callback the TLS handshake
+/// makes with the peer's certificate chain in hand. The hostname check is among them: where it is
+/// on, the library is given no verifier, asks the TLS implementation to identify the endpoint, and
+/// that request reaches the trust manager together with the connection it concerns.
 ///
 /// Which checks apply is read from the policy, not decided here. A validator that chose would be a
 /// second place where the meaning of a check lives, and two such places diverge.
 public final class TLSValidatorBridge {
+
+    /// The OID of id-kp-serverAuth.
+    private static final @NotNull String SERVER_AUTHENTICATION = "1.3.6.1.5.5.7.3.1";
+
+    /// The OID of anyExtendedKeyUsage.
+    private static final @NotNull String ANY_EXTENDED_KEY_USAGE = "2.5.29.37.0";
+
+    /// Bit positions in the KeyUsage extension, RFC 5280 section 4.2.1.3.
+    private static final int DIGITAL_SIGNATURE = 0;
+
+    private static final int KEY_ENCIPHERMENT = 2;
+    private static final int KEY_AGREEMENT = 4;
+
+    /// How the TLS implementation words an alert the other side sent.
+    private static final @NotNull String RECEIVED_ALERT = "Received fatal alert: ";
+
+    /// The alerts a server sends about the certificate a client presented, or failed to present.
+    private static final @NotNull Set<String> CERTIFICATE_ALERTS = Set.of(
+            "bad_certificate",
+            "unsupported_certificate",
+            "certificate_revoked",
+            "certificate_expired",
+            "certificate_unknown",
+            "unknown_ca",
+            "access_denied",
+            "certificate_required");
+
+    /// Bounds the walk down a cause chain, which a misbehaving library could make circular. Not a
+    /// measured value: a connection failure arrives wrapped a few levels deep, and sixteen leaves
+    /// room for any library between Edge and the TLS implementation.
+    private static final int MAX_CAUSE_DEPTH = 16;
 
     private TLSValidatorBridge() {}
 
@@ -60,16 +112,30 @@ public final class TLSValidatorBridge {
     /// manager would mean the runtime's own authorities, which is a different policy.
     public static @NotNull TrustManagerFactory trustManagerFactoryFor(final @NotNull TLSPolicy policy)
             throws TLSPolicy.TLSMaterialException {
-        return new SingleManagerFactory(managerFor(policy));
+        return new SingleManagerFactory(managerFor(policy, AnchorDates.CHECKED));
+    }
+
+    /// The trust manager for a bridge on the compatibility preset, which validates what a bridge
+    /// validated before the elementary checks existed.
+    ///
+    /// The one difference from [#trustManagerFactoryFor(TLSPolicy)]: a broker certificate that is
+    /// itself in the truststore is accepted whatever its dates, as the runtime's path validator
+    /// accepts a trust anchor. Every other certificate's dates are checked as before.
+    public static @NotNull TrustManagerFactory compatibilityTrustManagerFactoryFor(final @NotNull TLSPolicy policy)
+            throws TLSPolicy.TLSMaterialException {
+        return new SingleManagerFactory(managerFor(policy, AnchorDates.WAIVED));
     }
 
     /// The hostname check, as the verifier the MQTT client library takes.
     ///
-    /// Returns null where the check is off, which the library reads as "use the default verifier" -
-    /// so the caller must substitute one that accepts everything. Expressed this way because the
-    /// library has no "no verifier" state, and saying so here keeps the decision visible.
+    /// Returns null where the check is on. Given no verifier, the library sets HTTPS endpoint
+    /// identification on the TLS engine, and the trust manager this class builds then matches the
+    /// broker's certificate against the host the bridge connected to, under every trust mode. A
+    /// verifier would instead be called after the handshake had accepted the certificate. Where the
+    /// check is off, the caller installs [#acceptAnyHostname()], which also keeps the library from
+    /// requesting endpoint identification.
     public static @Nullable HostnameVerifier hostnameVerifierFor(final @NotNull TLSPolicy policy) {
-        return policy.config().hostname() == TLSConstants.HostnameCheck.HOSTNAME ? null : acceptAnyHostname();
+        return policy.config().isHostname() ? null : acceptAnyHostname();
     }
 
     /// A verifier that accepts every hostname, for the configuration that turns the check off.
@@ -77,16 +143,346 @@ public final class TLSValidatorBridge {
         return (hostname, session) -> true;
     }
 
-    private static @NotNull X509ExtendedTrustManager managerFor(final @NotNull TLSPolicy policy)
+    /// The warnings a bridge logs once at start-up about checks its configuration weakens or
+    /// material it names and never reads.
+    ///
+    /// Each is conditioned on the effective configuration and on what the policy loaded, never on
+    /// which elements were written, so none fires on a deployment that is configured correctly. Each
+    /// names the bridge and the broker, says what follows from the setting, and names the ways out.
+    ///
+    /// @param policy the bridge's policy, material loaded
+    /// @param bridgeId the bridge, as the configuration names it
+    /// @param endpoint the remote broker, as `host:port`
+    public static @NotNull List<String> startupWarnings(
+            final @NotNull TLSPolicy policy, final @NotNull String bridgeId, final @NotNull String endpoint) {
+        final TLSConfig config = policy.config();
+        final List<String> warnings = new ArrayList<>();
+        if (config.trustMode() == TLSConstants.TrustMode.ANY_CERT) {
+            warnings.add(("Bridge '%s' to %s: trust mode ANY_CERT accepts every certificate the broker presents and "
+                            + "establishes no trust at all, so an interposed server would be accepted in the broker's "
+                            + "place. Name the broker's authority in <tls-truststore> and set <tls-checks>STANDARD"
+                            + "</tls-checks>, or pin the broker's certificate with <tls-checks>SELF_SIGNED</tls-checks> "
+                            + "and <tls-allowlist>.")
+                    .formatted(bridgeId, endpoint));
+        }
+        if (config.isChainBuilt() && !config.isHostname()) {
+            warnings.add(("Bridge '%s' to %s: TLS hostname verification is not enabled. The broker's certificate is "
+                            + "trusted through its chain but is not checked against the host the bridge connects to, "
+                            + "so a substituted broker whose certificate chains to the same anchor would be accepted. "
+                            + "Enable it with <tls-checks>ALL</tls-checks> or <hostname>HOSTNAME</hostname> in "
+                            + "<tls-checks-full>.")
+                    .formatted(bridgeId, endpoint));
+        }
+        if (config.trustMode() != TLSConstants.TrustMode.ALLOW_LIST
+                && config.allowList().isPresent()) {
+            warnings.add(("Bridge '%s' to %s: a certificate allow-list is configured but the effective trust mode is "
+                            + "%s, which never reads it. No broker certificate is pinned by its fingerprint. Set "
+                            + "<tls-checks>SELF_SIGNED</tls-checks> or <trust-mode>ALLOW_LIST</trust-mode> to enforce "
+                            + "the allow-list, or remove the <tls-allowlist> element.")
+                    .formatted(bridgeId, endpoint, config.trustMode()));
+        }
+        if (!config.isChainBuilt() && config.revocationList().isPresent()) {
+            warnings.add(("Bridge '%s' to %s: certificate revocation lists are configured but the effective trust "
+                            + "mode is %s, which builds no certification path and never reads them. No revocation "
+                            + "status is checked. Set <trust-mode>CHAIN</trust-mode> to enforce revocation, or remove "
+                            + "the <tls-revocationlist> element.")
+                    .formatted(bridgeId, endpoint, config.trustMode()));
+        }
+        // Conditional on the truststore holding a CA: a truststore of end-entity certificates is
+        // direct trust, where no issuer appears in the path and revocation is satisfied vacuously.
+        // Warning there would fire on working deployments and train operators to ignore it.
+        if (config.isChainBuilt()
+                && config.isRevocationLists()
+                && policy.revocationLists().isEmpty()
+                && anchorsIncludeAnAuthority(policy)) {
+            warnings.add(("Bridge '%s' to %s: revocation=%s is enforced and the truststore contains a certificate "
+                            + "authority, but no certificate revocation list is configured. The issuer's revocation "
+                            + "status is therefore unknown, and unknown fails closed: a broker certificate signed by "
+                            + "that authority will be refused however correct the rest of the configuration is. Point "
+                            + "<tls-revocationlist> at the authority's CRL, or set <revocation>CHECK</revocation> or "
+                            + "<revocation>NONE</revocation> in <tls-checks-full> to accept an unknown revocation "
+                            + "status.")
+                    .formatted(bridgeId, endpoint, config.revocation()));
+        }
+        return List.copyOf(warnings);
+    }
+
+    /// The warning a bridge logs on every successful connection, where there is one.
+    ///
+    /// Only accepting any certificate warrants it: a single line at start-up scrolls out of a
+    /// production log within hours, and this is the setting an operator must see while triaging.
+    ///
+    /// @param config the bridge's effective configuration
+    /// @param bridgeId the bridge, as the configuration names it
+    /// @param endpoint the remote broker, as `host:port`
+    public static @NotNull Optional<String> connectionWarning(
+            final @NotNull TLSConfig config, final @NotNull String bridgeId, final @NotNull String endpoint) {
+        if (config.trustMode() != TLSConstants.TrustMode.ANY_CERT) {
+            return Optional.empty();
+        }
+        return Optional.of(("Bridge '%s' connected to %s with trust mode ANY_CERT: the broker's certificate was "
+                        + "accepted without establishing any trust, so this connection may be to an interposed "
+                        + "server. Consider <tls-checks>SELF_SIGNED</tls-checks>, which trusts specific certificates "
+                        + "by SHA-256 fingerprint.")
+                .formatted(bridgeId, endpoint));
+    }
+
+    /// Which side of a TLS connection refused a certificate, where the failure was a refusal.
+    ///
+    /// Both directions fail the same way from outside, with the connection down, and the TLS
+    /// implementation's own wording does not say whose decision it was. Edge's refusal of the
+    /// broker's certificate surfaces with the certificate exception its trust manager threw. The
+    /// broker's refusal of Edge's certificate surfaces only as an alert the broker sent, which the
+    /// TLS implementation exposes as message text and nothing else; reading the text is therefore the
+    /// only way to tell, and an unrecognised wording yields no description rather than a wrong one.
+    ///
+    /// @param failure the connection failure, with its causes
+    /// @return a sentence naming the refusing side and where to look, or empty where the failure
+    ///     was not a certificate refusal
+    public static @NotNull Optional<String> describeRefusal(final @NotNull Throwable failure) {
+        Throwable cause = failure;
+        for (int depth = 0; cause != null && depth < MAX_CAUSE_DEPTH; depth++, cause = cause.getCause()) {
+            if (cause instanceof SSLException && cause.getMessage() != null) {
+                final String message = cause.getMessage();
+                final int at = message.indexOf(RECEIVED_ALERT);
+                if (at >= 0) {
+                    final String alert =
+                            message.substring(at + RECEIVED_ALERT.length()).trim();
+                    if (CERTIFICATE_ALERTS.contains(alert)) {
+                        return Optional.of(("The remote broker refused the TLS handshake with the alert '%s': it did "
+                                        + "not accept the client certificate Edge presented, or required one and Edge "
+                                        + "presented none. Edge's own checks of the broker's certificate had passed. "
+                                        + "Check that <tls-identity> names a certificate the broker trusts, and the "
+                                        + "broker's own trust configuration for client certificates.")
+                                .formatted(alert));
+                    }
+                }
+            }
+            if (cause instanceof CertificateException) {
+                return Optional.of("Edge refused the remote broker's certificate; the reason is above. Check "
+                        + "<tls-truststore>, <tls-allowlist> and <tls-checks> for this bridge.");
+            }
+        }
+        return Optional.empty();
+    }
+
+    /// Whether the dates of a broker certificate that is itself a trust anchor are checked.
+    private enum AnchorDates {
+        CHECKED,
+        WAIVED
+    }
+
+    private static @NotNull X509ExtendedTrustManager managerFor(
+            final @NotNull TLSPolicy policy, final @NotNull AnchorDates anchorDates)
             throws TLSPolicy.TLSMaterialException {
         return switch (policy.config().trustMode()) {
-            case CHAIN -> new ChainTrustManager(policy);
+            case CHAIN -> new ChainTrustManager(policy, anchorDates);
             case ALLOW_LIST -> new FingerprintTrustManager(policy);
-            // Accepts any certificate, including one presented by anybody at all. Configured
-            // explicitly, logged as such where the bridge starts, and the reason this returns a
-            // manager rather than none: no manager means the runtime's own authorities.
-            case ANY_CERT -> new AcceptAnyTrustManager();
+            // Establishes no trust: any certificate passes as far as who issued it is concerned.
+            // The checks on the certificate itself still apply where the policy asks for them, and
+            // the bridge logs the trust mode where it starts and on every connection.
+            case ANY_CERT -> new CertificateOnlyTrustManager(policy);
         };
+    }
+
+    // --- what every trust mode shares ----------------------------------------------------------
+
+    /// The three server-side entry points routed to one decision, and the client side refused.
+    ///
+    /// The handshake calls the socket or engine form; the form without either is what a caller
+    /// outside a handshake uses, and it cannot check the hostname because it has no connection to
+    /// check against.
+    private abstract static class BridgeTrustManager extends X509ExtendedTrustManager {
+
+        final @NotNull TLSPolicy policy;
+
+        BridgeTrustManager(final @NotNull TLSPolicy policy) {
+            this.policy = policy;
+        }
+
+        abstract void validate(
+                X509Certificate @NotNull [] chain,
+                @NotNull String authType,
+                @Nullable Socket socket,
+                @Nullable SSLEngine engine)
+                throws CertificateException;
+
+        @Override
+        public final void checkServerTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType)
+                throws CertificateException {
+            validate(requirePresented(chain), authType, null, null);
+        }
+
+        @Override
+        public final void checkServerTrusted(
+                final X509Certificate @NotNull [] chain, final @NotNull String authType, final @Nullable Socket socket)
+                throws CertificateException {
+            validate(requirePresented(chain), authType, socket, null);
+        }
+
+        @Override
+        public final void checkServerTrusted(
+                final X509Certificate @NotNull [] chain,
+                final @NotNull String authType,
+                final @Nullable SSLEngine engine)
+                throws CertificateException {
+            validate(requirePresented(chain), authType, null, engine);
+        }
+
+        /// Edge is the client here and presents its own certificate; it never judges one.
+        @Override
+        public final void checkClientTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType)
+                throws CertificateException {
+            throw new CertificateException("A bridge is a client and does not validate client certificates.");
+        }
+
+        @Override
+        public final void checkClientTrusted(
+                final X509Certificate @NotNull [] chain, final @NotNull String authType, final @Nullable Socket socket)
+                throws CertificateException {
+            throw new CertificateException("A bridge is a client and does not validate client certificates.");
+        }
+
+        @Override
+        public final void checkClientTrusted(
+                final X509Certificate @NotNull [] chain,
+                final @NotNull String authType,
+                final @Nullable SSLEngine engine)
+                throws CertificateException {
+            throw new CertificateException("A bridge is a client and does not validate client certificates.");
+        }
+
+        private static X509Certificate @NotNull [] requirePresented(final X509Certificate @Nullable [] chain)
+                throws CertificateException {
+            if (chain == null || chain.length == 0) {
+                throw new CertificateException("The broker presented no certificate.");
+            }
+            return chain;
+        }
+    }
+
+    /// The checks on the broker's own certificate that need no path: its validity period and its
+    /// declared purpose.
+    ///
+    /// Validity is checked on the broker's certificate here, with a message naming it and its
+    /// dates; under chain trust the path validator checks the issuers above it.
+    private static void requireCertificateChecks(
+            final @NotNull TLSPolicy policy, final @NotNull X509Certificate certificate) throws CertificateException {
+        if (policy.config().isValidity()) {
+            try {
+                policy.requireValidity(certificate);
+            } catch (final TLSPolicy.TLSCheckFailedException e) {
+                throw new CertificateException(e.getMessage(), e);
+            }
+        }
+        requireDeclaredPurpose(policy.config().keyUsage(), certificate);
+    }
+
+    /// Requires the certificate's declared purpose to permit authenticating a TLS server.
+    ///
+    /// `KEY_USAGE` requires the KeyUsage extension, asserting at least one of the uses a TLS server
+    /// key is put to. `SERVER_AUTH` requires that and an ExtendedKeyUsage extension permitting
+    /// server authentication. The extensions are required, not merely consulted where present:
+    /// RFC 5280 reads an absent extension as "any purpose", and that reading is what `NONE` is for.
+    private static void requireDeclaredPurpose(
+            final @NotNull TLSConstants.KeyUsageCheck check, final @NotNull X509Certificate certificate)
+            throws CertificateException {
+        if (check == TLSConstants.KeyUsageCheck.NONE) {
+            return;
+        }
+        final String subject = certificate.getSubjectX500Principal().getName();
+        final boolean[] usage = certificate.getKeyUsage();
+        if (usage == null) {
+            throw new CertificateException(("The broker's certificate '%s' carries no KeyUsage extension, which "
+                            + "key-usage %s requires. Either the broker presents the wrong certificate, or set "
+                            + "<key-usage>NONE</key-usage> for a broker whose certificate omits it.")
+                    .formatted(subject, check));
+        }
+        if (!asserts(usage, DIGITAL_SIGNATURE) && !asserts(usage, KEY_ENCIPHERMENT) && !asserts(usage, KEY_AGREEMENT)) {
+            throw new CertificateException(("The broker's certificate '%s' is not valid for a TLS server: its "
+                            + "KeyUsage permits none of digitalSignature, keyEncipherment and keyAgreement. Either "
+                            + "the broker presents the wrong certificate, or the key-usage check does not apply to "
+                            + "this deployment.")
+                    .formatted(subject));
+        }
+        if (check != TLSConstants.KeyUsageCheck.SERVER_AUTH) {
+            return;
+        }
+        final List<String> purposes = certificate.getExtendedKeyUsage();
+        if (purposes == null) {
+            throw new CertificateException(("The broker's certificate '%s' carries no ExtendedKeyUsage extension, "
+                            + "which key-usage SERVER_AUTH requires. Either the broker presents the wrong certificate, "
+                            + "or set <key-usage>KEY_USAGE</key-usage> for a broker whose certificate omits it.")
+                    .formatted(subject));
+        }
+        if (!purposes.contains(SERVER_AUTHENTICATION) && !purposes.contains(ANY_EXTENDED_KEY_USAGE)) {
+            throw new CertificateException(("The broker's certificate '%s' is not valid for server "
+                            + "authentication: it declares the purposes %s. Either the broker presents the wrong "
+                            + "certificate, or the key-usage check does not apply to this deployment.")
+                    .formatted(subject, purposes));
+        }
+    }
+
+    private static boolean asserts(final boolean @NotNull [] usage, final int bit) {
+        return bit < usage.length && usage[bit];
+    }
+
+    /// Requires the broker's certificate to name the host the bridge connected to, where the policy
+    /// asks for it and a connection is in hand.
+    ///
+    /// The JDK's own trust manager makes the comparison, because the matching rules (wildcards, the
+    /// preference of subject alternative names over the common name, IP addresses) are where a
+    /// hand-written implementation goes wrong. Given a truststore holding exactly the broker's
+    /// certificate, it trusts that certificate without building a path and then identifies the
+    /// endpoint the connection reports; trust itself was decided before this is called.
+    private static void requireIdentity(
+            final @NotNull TLSPolicy policy,
+            final @NotNull X509Certificate certificate,
+            final @NotNull String authType,
+            final @Nullable Socket socket,
+            final @Nullable SSLEngine engine)
+            throws CertificateException {
+        if (!policy.config().isHostname() || (socket == null && engine == null)) {
+            return;
+        }
+        final X509ExtendedTrustManager identityCheck;
+        try {
+            final KeyStore alone = KeyStore.getInstance("PKCS12");
+            alone.load(null, null);
+            alone.setCertificateEntry("broker", certificate);
+            final TrustManagerFactory factory = TrustManagerFactory.getInstance("PKIX");
+            factory.init(alone);
+            identityCheck = extendedManagerOf(factory);
+        } catch (final GeneralSecurityException | IOException e) {
+            throw new CertificateException("The hostname check could not be prepared: %s".formatted(e.getMessage()), e);
+        }
+        final X509Certificate[] presented = {certificate};
+        try {
+            if (socket != null) {
+                identityCheck.checkServerTrusted(presented, authType, socket);
+            } else {
+                identityCheck.checkServerTrusted(presented, authType, engine);
+            }
+        } catch (final CertificateException e) {
+            throw new CertificateException(
+                    "The broker's certificate failed the hostname check: %s".formatted(e.getMessage()), e);
+        }
+    }
+
+    private static @NotNull X509ExtendedTrustManager extendedManagerOf(final @NotNull TrustManagerFactory factory)
+            throws NoSuchAlgorithmException {
+        for (final TrustManager manager : factory.getTrustManagers()) {
+            if (manager instanceof final X509ExtendedTrustManager extended) {
+                return extended;
+            }
+        }
+        throw new NoSuchAlgorithmException("The PKIX trust-manager factory produced no X.509 trust manager.");
+    }
+
+    private static boolean anchorsIncludeAnAuthority(final @NotNull TLSPolicy policy) {
+        return policy.trustAnchors().stream()
+                .anyMatch(anchor -> anchor.getTrustedCert() != null
+                        && anchor.getTrustedCert().getBasicConstraints() != -1);
     }
 
     // --- chain trust -------------------------------------------------------------------------------
@@ -94,140 +490,91 @@ public final class TLSValidatorBridge {
     /// Builds a certification path from the broker's chain to one of the configured anchors, and
     /// enforces the hygiene checks the policy asks for.
     ///
-    /// The JDK's own path validator does the building, because the rules it implements - name
-    /// constraints, basic constraints, path length, signature verification at every step - are
-    /// exactly where a hand-written implementation goes wrong. What this class supplies is the
-    /// parameters: the anchors, whether validity is checked, whether revocation is demanded, and
-    /// what the certificate's declared purpose must permit.
-    private static final class ChainTrustManager extends X509ExtendedTrustManager {
+    /// The JDK's own trust manager does the path work, because the rules it implements - a path that
+    /// ends at whichever configured certificate it reaches first, a broker certificate trusted
+    /// directly, name and basic constraints, signatures at every step, the TLS end-entity rules,
+    /// the hostname - are exactly where a hand-written implementation goes wrong. What this class
+    /// supplies is the parameters: the anchors, the revocation demand and its lists. The declared
+    /// purpose and the broker certificate's validity are checked here first, because the policy
+    /// asks for more than the JDK checks and for messages that name the certificate.
+    private static final class ChainTrustManager extends BridgeTrustManager {
 
-        private final @NotNull TLSPolicy policy;
-        private final @NotNull CertificateFactory certificates;
+        private final @NotNull X509ExtendedTrustManager pathValidator;
+        private final @NotNull AnchorDates anchorDates;
 
-        ChainTrustManager(final @NotNull TLSPolicy policy) throws TLSPolicy.TLSMaterialException {
-            this.policy = policy;
-            try {
-                this.certificates = CertificateFactory.getInstance("X.509");
-            } catch (final CertificateException e) {
-                throw new TLSPolicy.TLSMaterialException("The X.509 certificate factory is unavailable.", e);
-            }
+        ChainTrustManager(final @NotNull TLSPolicy policy, final @NotNull AnchorDates anchorDates)
+                throws TLSPolicy.TLSMaterialException {
+            super(policy);
+            this.anchorDates = anchorDates;
             if (policy.trustAnchors().isEmpty()) {
                 // A path with nothing to build to refuses every connection. Caught here rather than
                 // at connect time, where it arrives as a certificate error naming no cause.
                 throw new TLSPolicy.TLSMaterialException("The trust mode builds a certification path but no trust "
                         + "anchors were loaded, so no certificate could be trusted.");
             }
+            try {
+                this.pathValidator = pathValidatorFor(policy);
+            } catch (final GeneralSecurityException e) {
+                throw new TLSPolicy.TLSMaterialException(
+                        "The certificate path validator could not be built: %s".formatted(e.getMessage()), e);
+            }
         }
 
         @Override
-        public void checkServerTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType)
+        void validate(
+                final X509Certificate @NotNull [] chain,
+                final @NotNull String authType,
+                final @Nullable Socket socket,
+                final @Nullable SSLEngine engine)
                 throws CertificateException {
-            validate(chain);
-        }
-
-        @Override
-        public void checkServerTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final Socket socket)
-                throws CertificateException {
-            validate(chain);
-        }
-
-        @Override
-        public void checkServerTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final SSLEngine engine)
-                throws CertificateException {
-            validate(chain);
-        }
-
-        /// Edge is the client here and presents its own certificate; it never judges one.
-        @Override
-        public void checkClientTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType)
-                throws CertificateException {
-            throw new CertificateException("A bridge is a client and does not validate client certificates.");
-        }
-
-        @Override
-        public void checkClientTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final Socket socket)
-                throws CertificateException {
-            throw new CertificateException("A bridge is a client and does not validate client certificates.");
-        }
-
-        @Override
-        public void checkClientTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final SSLEngine engine)
-                throws CertificateException {
-            throw new CertificateException("A bridge is a client and does not validate client certificates.");
+            if (anchorDates == AnchorDates.WAIVED && isTrustAnchor(chain[0])) {
+                // The path validator ends the path at a trusted broker certificate without looking
+                // at its dates, and that is what a bridge on the compatibility preset always got.
+                requireDeclaredPurpose(policy.config().keyUsage(), chain[0]);
+            } else {
+                requireCertificateChecks(policy, chain[0]);
+            }
+            // Where validity is off, the chain goes to the validator with the date checks waived on
+            // each certificate rather than with the validation date moved. A moved date would also
+            // move the moment revocation is judged at, accepting a certificate revoked since, and no
+            // single date fits a chain whose certificates' validity periods do not overlap.
+            final X509Certificate[] presented = policy.config().isValidity() ? chain : waiveValidity(chain);
+            try {
+                if (socket != null) {
+                    pathValidator.checkServerTrusted(presented, authType, socket);
+                } else if (engine != null) {
+                    pathValidator.checkServerTrusted(presented, authType, engine);
+                } else {
+                    pathValidator.checkServerTrusted(presented, authType);
+                }
+            } catch (final CertificateException e) {
+                throw new CertificateException(
+                        "The broker's certificate could not be verified: %s".formatted(e.getMessage()), e);
+            }
         }
 
         @Override
         public X509Certificate @NotNull [] getAcceptedIssuers() {
-            return policy.trustAnchors().stream()
-                    .map(anchor -> anchor.getTrustedCert())
-                    .toArray(X509Certificate[]::new);
+            return pathValidator.getAcceptedIssuers();
         }
 
-        private void validate(final X509Certificate @NotNull [] chain) throws CertificateException {
-            if (chain.length == 0) {
-                throw new CertificateException("The broker presented no certificate.");
-            }
-            // Validity first, and separately: the path validator reports an expired certificate as a
-            // generic path failure, while this names the certificate and its dates. Skipped entirely
-            // where the policy does not ask for it, which is also why it cannot be left to the
-            // validator - there is no way to ask the validator for a path without date checking
-            // other than pinning its clock, which would hide a genuinely expired anchor.
-            if (policy.config().validity() == TLSConstants.ValidityCheck.NOT_BEFORE_OR_AFTER) {
-                for (final X509Certificate certificate : chain) {
-                    try {
-                        policy.requireValidity(certificate);
-                    } catch (final TLSPolicy.TLSCheckFailedException e) {
-                        throw new CertificateException(e.getMessage(), e);
-                    }
+        private boolean isTrustAnchor(final @NotNull X509Certificate certificate) {
+            for (final TrustAnchor anchor : policy.trustAnchors()) {
+                if (certificate.equals(anchor.getTrustedCert())) {
+                    return true;
                 }
             }
-            // The declared purpose, checked here rather than through the path validator's target
-            // selector: that selector filters candidates while a path is *built*, and validating a
-            // path the handshake already supplied never consults it. Asserting it there would have
-            // looked right and checked nothing.
-            if (policy.config().keyUsage() == TLSConstants.KeyUsageCheck.SERVER_AUTH) {
-                requireServerAuthentication(chain[0]);
-            }
-            try {
-                final PKIXBuilderParameters parameters = parameters(chain);
-                CertPathValidator.getInstance("PKIX")
-                        .validate(certificates.generateCertPath(Arrays.asList(chain)), parameters);
-            } catch (final GeneralSecurityException | java.io.IOException e) {
-                throw new CertificateException(
-                        ("The broker's certificate could not be verified against the " + "configured trust anchors: %s")
-                                .formatted(e.getMessage()),
-                        e);
-            }
+            return false;
         }
 
-        private @NotNull PKIXBuilderParameters parameters(final X509Certificate @NotNull [] chain)
-                throws GeneralSecurityException, java.io.IOException {
-            final X509CertSelector target = new X509CertSelector();
-            target.setCertificate(chain[0]);
-            final PKIXBuilderParameters parameters;
-            try {
-                parameters = new PKIXBuilderParameters(policy.trustAnchors(), target);
-            } catch (final InvalidAlgorithmParameterException e) {
-                throw new GeneralSecurityException("The configured trust anchors cannot build a path.", e);
-            }
-
-            // The JDK's path validation always checks dates, and there is no way to ask it not to:
-            // setDate(null) means "use the current time", not "skip". So where the policy turns
-            // validity off, the path is validated at a moment the chain is valid at - the latest
-            // notBefore across the chain - which is the only way to let the rest of the path
-            // verification run without the dates deciding the outcome.
-            //
-            // Where validity is on, the dates were already checked above with a message naming the
-            // certificate, so the validator's own check can only agree.
-            if (policy.config().validity() != TLSConstants.ValidityCheck.NOT_BEFORE_OR_AFTER) {
-                parameters.setDate(latestNotBefore(chain));
-            }
+        /// The JDK's PKIX trust manager over the policy's anchors, revocation demand and lists.
+        ///
+        /// Built once: the JDK copies the parameters, checkers included, for every validation, so
+        /// one manager serves concurrent handshakes.
+        private static @NotNull X509ExtendedTrustManager pathValidatorFor(final @NotNull TLSPolicy policy)
+                throws GeneralSecurityException {
+            final PKIXBuilderParameters parameters = new PKIXBuilderParameters(policy.trustAnchors(), null);
             parameters.setRevocationEnabled(false);
-
             switch (policy.config().revocation()) {
                 case NONE -> {
                     // Nothing to add: revocation stays off.
@@ -235,47 +582,13 @@ public final class TLSValidatorBridge {
                 case CHECK -> parameters.addCertPathChecker(revocationChecker(true));
                 case REQUIRE_CRLS -> parameters.addCertPathChecker(revocationChecker(false));
             }
-
             if (!policy.revocationLists().isEmpty()) {
-                parameters.addCertStore(java.security.cert.CertStore.getInstance(
-                        "Collection", new java.security.cert.CollectionCertStoreParameters(policy.revocationLists())));
+                parameters.addCertStore(CertStore.getInstance(
+                        "Collection", new CollectionCertStoreParameters(policy.revocationLists())));
             }
-
-            return parameters;
-        }
-
-        /// Requires the certificate's declared purpose to permit server authentication.
-        ///
-        /// A certificate carrying no extended-key-usage extension permits every purpose, which is
-        /// what the extension's absence means in RFC 5280 - so it passes. One that lists purposes
-        /// must list this among them, or it was issued for something else and accepting it would let
-        /// a certificate meant for signing code stand in for a broker.
-        private static void requireServerAuthentication(final @NotNull X509Certificate certificate)
-                throws CertificateException {
-            final List<String> purposes = certificate.getExtendedKeyUsage();
-            if (purposes == null) {
-                return;
-            }
-            // 1.3.6.1.5.5.7.3.1 is id-kp-serverAuth and 2.5.29.37.0 is anyExtendedKeyUsage.
-            if (purposes.contains("1.3.6.1.5.5.7.3.1") || purposes.contains("2.5.29.37.0")) {
-                return;
-            }
-            throw new CertificateException(("The broker's certificate '%s' is not valid for server "
-                            + "authentication: it declares the purposes %s. Either the broker presents the wrong "
-                            + "certificate, or the key-usage check does not apply to this deployment.")
-                    .formatted(certificate.getSubjectX500Principal().getName(), purposes));
-        }
-
-        /// The latest moment at which every certificate in the chain has already become valid, used
-        /// as the validation date where the policy does not check validity.
-        private static @NotNull java.util.Date latestNotBefore(final X509Certificate @NotNull [] chain) {
-            java.util.Date latest = chain[0].getNotBefore();
-            for (final X509Certificate certificate : chain) {
-                if (certificate.getNotBefore().after(latest)) {
-                    latest = certificate.getNotBefore();
-                }
-            }
-            return latest;
+            final TrustManagerFactory factory = TrustManagerFactory.getInstance("PKIX");
+            factory.init(new CertPathTrustManagerParameters(parameters));
+            return extendedManagerOf(factory);
         }
 
         /// The revocation checker, set to fail closed or to tolerate an unknown status.
@@ -284,7 +597,7 @@ public final class TLSValidatorBridge {
         /// "unknown fails closed" amounts to. `CHECK` means a known revocation refuses the
         /// certificate but an unobtainable list does not, which is the weaker reading an operator
         /// chooses when their authority publishes lists unreliably.
-        private @NotNull PKIXRevocationChecker revocationChecker(final boolean tolerateUnknown)
+        private static @NotNull PKIXRevocationChecker revocationChecker(final boolean tolerateUnknown)
                 throws GeneralSecurityException {
             final PKIXRevocationChecker checker = (PKIXRevocationChecker)
                     CertPathValidator.getInstance("PKIX").getRevocationChecker();
@@ -296,6 +609,199 @@ public final class TLSValidatorBridge {
             checker.setOptions(options);
             return checker;
         }
+
+        private static X509Certificate @NotNull [] waiveValidity(final X509Certificate @NotNull [] chain) {
+            final X509Certificate[] waived = new X509Certificate[chain.length];
+            for (int i = 0; i < chain.length; i++) {
+                waived[i] = new ValidityWaivedCertificate(chain[i]);
+            }
+            return waived;
+        }
+    }
+
+    /// A certificate whose validity period is never enforced, and that is otherwise the certificate
+    /// it wraps.
+    ///
+    /// The JDK's path validation asks each certificate whether it is valid at the validation date,
+    /// and offers no setting that skips the question. Answering it here waives exactly that check:
+    /// the validation date stays the present, so revocation is judged now, and nothing else about
+    /// the path changes. Equality and hashing compare encodings, so the wrapper is the certificate it
+    /// wraps wherever the validator looks one up.
+    @SuppressWarnings("deprecation") // getIssuerDN and getSubjectDN are abstract and must be delegated.
+    private static final class ValidityWaivedCertificate extends X509Certificate {
+
+        private static final long serialVersionUID = 1L;
+
+        private final @NotNull X509Certificate certificate;
+
+        private ValidityWaivedCertificate(final @NotNull X509Certificate certificate) {
+            this.certificate = certificate;
+        }
+
+        @Override
+        public void checkValidity() {
+            // Waived.
+        }
+
+        @Override
+        public void checkValidity(final @NotNull Date date) {
+            // Waived.
+        }
+
+        @Override
+        public int getVersion() {
+            return certificate.getVersion();
+        }
+
+        @Override
+        public @NotNull BigInteger getSerialNumber() {
+            return certificate.getSerialNumber();
+        }
+
+        @Override
+        public @NotNull Principal getIssuerDN() {
+            return certificate.getIssuerDN();
+        }
+
+        @Override
+        public @NotNull Principal getSubjectDN() {
+            return certificate.getSubjectDN();
+        }
+
+        @Override
+        public @NotNull X500Principal getIssuerX500Principal() {
+            return certificate.getIssuerX500Principal();
+        }
+
+        @Override
+        public @NotNull X500Principal getSubjectX500Principal() {
+            return certificate.getSubjectX500Principal();
+        }
+
+        @Override
+        public @NotNull Date getNotBefore() {
+            return certificate.getNotBefore();
+        }
+
+        @Override
+        public @NotNull Date getNotAfter() {
+            return certificate.getNotAfter();
+        }
+
+        @Override
+        public byte @NotNull [] getTBSCertificate() throws CertificateEncodingException {
+            return certificate.getTBSCertificate();
+        }
+
+        @Override
+        public byte @NotNull [] getSignature() {
+            return certificate.getSignature();
+        }
+
+        @Override
+        public @NotNull String getSigAlgName() {
+            return certificate.getSigAlgName();
+        }
+
+        @Override
+        public @NotNull String getSigAlgOID() {
+            return certificate.getSigAlgOID();
+        }
+
+        @Override
+        public byte @Nullable [] getSigAlgParams() {
+            return certificate.getSigAlgParams();
+        }
+
+        @Override
+        public boolean @Nullable [] getIssuerUniqueID() {
+            return certificate.getIssuerUniqueID();
+        }
+
+        @Override
+        public boolean @Nullable [] getSubjectUniqueID() {
+            return certificate.getSubjectUniqueID();
+        }
+
+        @Override
+        public boolean @Nullable [] getKeyUsage() {
+            return certificate.getKeyUsage();
+        }
+
+        @Override
+        public @Nullable List<String> getExtendedKeyUsage() throws CertificateParsingException {
+            return certificate.getExtendedKeyUsage();
+        }
+
+        @Override
+        public int getBasicConstraints() {
+            return certificate.getBasicConstraints();
+        }
+
+        @Override
+        public @Nullable Collection<List<?>> getSubjectAlternativeNames() throws CertificateParsingException {
+            return certificate.getSubjectAlternativeNames();
+        }
+
+        @Override
+        public @Nullable Collection<List<?>> getIssuerAlternativeNames() throws CertificateParsingException {
+            return certificate.getIssuerAlternativeNames();
+        }
+
+        @Override
+        public byte @NotNull [] getEncoded() throws CertificateEncodingException {
+            return certificate.getEncoded();
+        }
+
+        @Override
+        public void verify(final @NotNull PublicKey key)
+                throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException,
+                        SignatureException {
+            certificate.verify(key);
+        }
+
+        @Override
+        public void verify(final @NotNull PublicKey key, final @NotNull String sigProvider)
+                throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException,
+                        SignatureException {
+            certificate.verify(key, sigProvider);
+        }
+
+        @Override
+        public void verify(final @NotNull PublicKey key, final @NotNull Provider sigProvider)
+                throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+            certificate.verify(key, sigProvider);
+        }
+
+        @Override
+        public @NotNull String toString() {
+            return certificate.toString();
+        }
+
+        @Override
+        public @NotNull PublicKey getPublicKey() {
+            return certificate.getPublicKey();
+        }
+
+        @Override
+        public boolean hasUnsupportedCriticalExtension() {
+            return certificate.hasUnsupportedCriticalExtension();
+        }
+
+        @Override
+        public @Nullable Set<String> getCriticalExtensionOIDs() {
+            return certificate.getCriticalExtensionOIDs();
+        }
+
+        @Override
+        public @Nullable Set<String> getNonCriticalExtensionOIDs() {
+            return certificate.getNonCriticalExtensionOIDs();
+        }
+
+        @Override
+        public byte @Nullable [] getExtensionValue(final @NotNull String oid) {
+            return certificate.getExtensionValue(oid);
+        }
     }
 
     // --- fingerprint trust -------------------------------------------------------------------------
@@ -303,15 +809,13 @@ public final class TLSValidatorBridge {
     /// Accepts the individual certificates an operator wrote down, by SHA-256 fingerprint.
     ///
     /// No path is built: the fingerprint is the whole of the trust decision, which is what makes this
-    /// usable where there is no certificate authority at all. Validity is still enforced where the
-    /// policy asks for it, because a pinned certificate that has expired is one the operator
-    /// recorded and then let lapse.
-    private static final class FingerprintTrustManager extends X509ExtendedTrustManager {
-
-        private final @NotNull TLSPolicy policy;
+    /// usable where there is no certificate authority at all. The checks on the certificate itself
+    /// still apply where the policy asks for them, because a pinned certificate that has expired is
+    /// one the operator recorded and then let lapse.
+    private static final class FingerprintTrustManager extends BridgeTrustManager {
 
         FingerprintTrustManager(final @NotNull TLSPolicy policy) throws TLSPolicy.TLSMaterialException {
-            this.policy = policy;
+            super(policy);
             if (policy.allowedFingerprints().isEmpty()) {
                 throw new TLSPolicy.TLSMaterialException("Trust by fingerprint is configured but no fingerprints "
                         + "were loaded, so no certificate could be trusted.");
@@ -319,43 +823,21 @@ public final class TLSValidatorBridge {
         }
 
         @Override
-        public void checkServerTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType)
+        void validate(
+                final X509Certificate @NotNull [] chain,
+                final @NotNull String authType,
+                final @Nullable Socket socket,
+                final @Nullable SSLEngine engine)
                 throws CertificateException {
-            validate(chain);
-        }
-
-        @Override
-        public void checkServerTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final Socket socket)
-                throws CertificateException {
-            validate(chain);
-        }
-
-        @Override
-        public void checkServerTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final SSLEngine engine)
-                throws CertificateException {
-            validate(chain);
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType)
-                throws CertificateException {
-            throw new CertificateException("A bridge is a client and does not validate client certificates.");
-        }
-
-        @Override
-        public void checkClientTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final Socket socket)
-                throws CertificateException {
-            throw new CertificateException("A bridge is a client and does not validate client certificates.");
-        }
-
-        @Override
-        public void checkClientTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final SSLEngine engine)
-                throws CertificateException {
-            throw new CertificateException("A bridge is a client and does not validate client certificates.");
+            try {
+                // The certificate the broker presents, not any issuer above it: what was pinned is
+                // the broker's own certificate.
+                policy.requireAllowedFingerprint(chain[0]);
+            } catch (final TLSPolicy.TLSCheckFailedException e) {
+                throw new CertificateException(e.getMessage(), e);
+            }
+            requireCertificateChecks(policy, chain[0]);
+            requireIdentity(policy, chain[0], authType, socket, engine);
         }
 
         /// Empty: nothing is accepted by issuer, so there is no issuer to advertise.
@@ -363,51 +845,33 @@ public final class TLSValidatorBridge {
         public X509Certificate @NotNull [] getAcceptedIssuers() {
             return new X509Certificate[0];
         }
-
-        private void validate(final X509Certificate @NotNull [] chain) throws CertificateException {
-            if (chain.length == 0) {
-                throw new CertificateException("The broker presented no certificate.");
-            }
-            try {
-                // The certificate the broker presents, not any issuer above it: what was pinned is
-                // the broker's own certificate.
-                policy.requireAllowedFingerprint(chain[0]);
-                if (policy.config().validity() == TLSConstants.ValidityCheck.NOT_BEFORE_OR_AFTER) {
-                    policy.requireValidity(chain[0]);
-                }
-            } catch (final TLSPolicy.TLSCheckFailedException e) {
-                throw new CertificateException(e.getMessage(), e);
-            }
-        }
     }
 
     // --- no trust decision at all --------------------------------------------------------------------
 
-    /// Accepts every certificate. Vulnerable to an interposed server by construction, which is why
-    /// the configuration naming it says so and the bridge logs it at start.
-    private static final class AcceptAnyTrustManager extends X509ExtendedTrustManager {
+    /// Establishes no trust: whoever issued the certificate, it passes. Vulnerable to an interposed
+    /// server by construction, which is why the configuration naming it says so and the bridge logs
+    /// it at start and on every connection.
+    ///
+    /// The checks on the certificate itself are not trust decisions and still apply where the
+    /// policy asks for them: an operator who accepts any issuer but asks for validity has asked for
+    /// an expired certificate to be refused.
+    private static final class CertificateOnlyTrustManager extends BridgeTrustManager {
+
+        CertificateOnlyTrustManager(final @NotNull TLSPolicy policy) {
+            super(policy);
+        }
 
         @Override
-        public void checkServerTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType) {}
-
-        @Override
-        public void checkServerTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final Socket socket) {}
-
-        @Override
-        public void checkServerTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final SSLEngine engine) {}
-
-        @Override
-        public void checkClientTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType) {}
-
-        @Override
-        public void checkClientTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final Socket socket) {}
-
-        @Override
-        public void checkClientTrusted(
-                final X509Certificate @NotNull [] chain, final @NotNull String authType, final SSLEngine engine) {}
+        void validate(
+                final X509Certificate @NotNull [] chain,
+                final @NotNull String authType,
+                final @Nullable Socket socket,
+                final @Nullable SSLEngine engine)
+                throws CertificateException {
+            requireCertificateChecks(policy, chain[0]);
+            requireIdentity(policy, chain[0], authType, socket, engine);
+        }
 
         @Override
         public X509Certificate @NotNull [] getAcceptedIssuers() {
@@ -428,7 +892,7 @@ public final class TLSValidatorBridge {
             super(new Spi(manager), new PolicyProvider(), TrustManagerFactory.getDefaultAlgorithm());
         }
 
-        private static final class Spi extends javax.net.ssl.TrustManagerFactorySpi {
+        private static final class Spi extends TrustManagerFactorySpi {
 
             private final @NotNull TrustManager @NotNull [] managers;
 
@@ -442,7 +906,7 @@ public final class TLSValidatorBridge {
             }
 
             @Override
-            protected void engineInit(final javax.net.ssl.ManagerFactoryParameters parameters) {
+            protected void engineInit(final ManagerFactoryParameters parameters) {
                 // As above.
             }
 
@@ -454,7 +918,7 @@ public final class TLSValidatorBridge {
 
         /// A provider exists only because `TrustManagerFactory`'s constructor demands one. It
         /// registers nothing and is never installed.
-        private static final class PolicyProvider extends java.security.Provider {
+        private static final class PolicyProvider extends Provider {
 
             private static final long serialVersionUID = 1L;
 

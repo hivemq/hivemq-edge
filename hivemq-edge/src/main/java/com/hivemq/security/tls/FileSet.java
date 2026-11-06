@@ -39,7 +39,12 @@ public record FileSet(
         ///
         /// Named beside the three above rather than instead of them, so a surface trusting the
         /// public authorities and a plant authority together names both and gets the union.
-        @NotNull List<String> builtins) {
+        @NotNull List<String> builtins,
+        /// Paths written in a superseded spelling that took either a file or a directory, and so
+        /// cannot say which it named. The loading stage reads a file as one source and a directory
+        /// as its regular files, in name order, refusing a directory holding none - what that
+        /// spelling has always done. No current element produces one.
+        @NotNull List<String> legacyPaths) {
 
     /// The public certificate authorities a JVM ships with, at `$JAVA_HOME/lib/security/cacerts` by
     /// default. The only name [#builtins()] takes; the loading stage refuses any other.
@@ -76,11 +81,27 @@ public record FileSet(
         directories = List.copyOf(directories);
         patterns = List.copyOf(patterns);
         builtins = List.copyOf(builtins);
+        legacyPaths = List.copyOf(legacyPaths);
+    }
+
+    /// A file set in the current spelling, which never names a legacy path.
+    public FileSet(
+            final @NotNull List<String> files,
+            final @NotNull List<Directory> directories,
+            final @NotNull List<Pattern> patterns,
+            final @NotNull List<String> builtins) {
+        this(files, directories, patterns, builtins, List.of());
     }
 
     /// One named file, which is how every surface writes its material today.
     public static @NotNull FileSet of(final @NotNull String file) {
         return new FileSet(List.of(file), List.of(), List.of(), List.of());
+    }
+
+    /// One path in a superseded spelling that took a file or a directory of files, read as that
+    /// spelling read it. Whether it is a file or a directory is decided when it is loaded, not here.
+    public static @NotNull FileSet ofLegacyPath(final @NotNull String path) {
+        return new FileSet(List.of(), List.of(), List.of(), List.of(), List.of(path));
     }
 
     /// The public certificate authorities the runtime carries, and nothing else.
@@ -90,7 +111,11 @@ public record FileSet(
 
     /// Whether this names nothing at all, which the loading stage refuses.
     public boolean isEmpty() {
-        return files.isEmpty() && directories.isEmpty() && patterns.isEmpty() && builtins.isEmpty();
+        return files.isEmpty()
+                && directories.isEmpty()
+                && patterns.isEmpty()
+                && builtins.isEmpty()
+                && legacyPaths.isEmpty();
     }
 
     /// Whether this names a path an operator gave, which is what an integrity check applies to.
@@ -98,6 +123,6 @@ public record FileSet(
     /// A file set naming only a runtime truststore needs no password: Edge read nothing the operator
     /// supplied, so there is nothing to claim is unchanged.
     public boolean namesAPath() {
-        return !files.isEmpty() || !directories.isEmpty() || !patterns.isEmpty();
+        return !files.isEmpty() || !directories.isEmpty() || !patterns.isEmpty() || !legacyPaths.isEmpty();
     }
 }

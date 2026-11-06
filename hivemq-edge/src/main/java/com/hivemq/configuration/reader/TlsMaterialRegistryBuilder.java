@@ -25,6 +25,7 @@ import com.hivemq.configuration.entity.tls.TlsTruststoreEntity;
 import com.hivemq.security.tls.FileSet;
 import com.hivemq.security.tls.MaterialRef;
 import com.hivemq.security.tls.Secret;
+import com.hivemq.security.tls.TLSConfigBridge;
 import com.hivemq.security.tls.TLSMaterialRegistry;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +67,7 @@ public final class TlsMaterialRegistryBuilder {
                         TLSMaterialRegistry.Kind.IDENTITY,
                         identity.getName(),
                         identity.getUuid(),
-                        inlineIdentity(identity));
+                        inlineIdentity(name, identity));
             }
             for (final TlsTruststoreEntity truststore : material.getTruststores()) {
                 refuseReference(
@@ -80,7 +81,7 @@ public final class TlsMaterialRegistryBuilder {
                         TLSMaterialRegistry.Kind.TRUSTSTORE,
                         truststore.getName(),
                         truststore.getUuid(),
-                        inlineTruststore(truststore));
+                        inlineTruststore(name, truststore));
             }
             for (final TlsAllowlistEntity allowlist : material.getAllowlists()) {
                 refuseReference(
@@ -96,11 +97,18 @@ public final class TlsMaterialRegistryBuilder {
                         allowlist.getUuid(),
                         new MaterialRef.Inline(
                                 null,
-                                fileSet(
-                                        allowlist.getFiles(),
-                                        allowlist.getDirectories(),
-                                        allowlist.getPatterns(),
-                                        List.of()),
+                                namedSources(
+                                        name,
+                                        TLSMaterialRegistry.Kind.ALLOW_LIST,
+                                        allowlist.getName(),
+                                        fileSet(
+                                                name,
+                                                TLSMaterialRegistry.Kind.ALLOW_LIST,
+                                                allowlist.getName(),
+                                                allowlist.getFiles(),
+                                                allowlist.getDirectories(),
+                                                allowlist.getPatterns(),
+                                                List.of())),
                                 null,
                                 null,
                                 null));
@@ -119,11 +127,18 @@ public final class TlsMaterialRegistryBuilder {
                         revocationlist.getUuid(),
                         new MaterialRef.Inline(
                                 null,
-                                fileSet(
-                                        revocationlist.getFiles(),
-                                        revocationlist.getDirectories(),
-                                        revocationlist.getPatterns(),
-                                        List.of()),
+                                namedSources(
+                                        name,
+                                        TLSMaterialRegistry.Kind.REVOCATION_LIST,
+                                        revocationlist.getName(),
+                                        fileSet(
+                                                name,
+                                                TLSMaterialRegistry.Kind.REVOCATION_LIST,
+                                                revocationlist.getName(),
+                                                revocationlist.getFiles(),
+                                                revocationlist.getDirectories(),
+                                                revocationlist.getPatterns(),
+                                                List.of())),
                                 null,
                                 null,
                                 null));
@@ -132,7 +147,9 @@ public final class TlsMaterialRegistryBuilder {
         return builder.build();
     }
 
-    private static @NotNull MaterialRef.Inline inlineIdentity(final @NotNull TlsIdentityEntity identity) {
+    private static @NotNull MaterialRef.Inline inlineIdentity(
+            final @NotNull String materialName, final @NotNull TlsIdentityEntity identity)
+            throws TLSMaterialRegistry.InvalidReferenceException {
         // A container names one file; PEM names up to three, which merge into the same set because
         // reading them is one operation either way.
         final List<String> files = new ArrayList<>();
@@ -142,7 +159,11 @@ public final class TlsMaterialRegistryBuilder {
         addIfPresent(files, identity.getChainFile());
         return new MaterialRef.Inline(
                 identity.getFormat(),
-                new FileSet(files, List.of(), List.of(), List.of()),
+                namedSources(
+                        materialName,
+                        TLSMaterialRegistry.Kind.IDENTITY,
+                        identity.getName(),
+                        new FileSet(files, List.of(), List.of(), List.of())),
                 secret(identity.getPassword(), identity.getPasswordFile()),
                 identity.getKeyEntry(),
                 // A PEM key's password and a container key entry's password never both apply, so
@@ -152,37 +173,118 @@ public final class TlsMaterialRegistryBuilder {
                         firstPresent(identity.getKeyEntryPasswordFile(), identity.getKeyPasswordFile())));
     }
 
-    private static @NotNull MaterialRef.Inline inlineTruststore(final @NotNull TlsTruststoreEntity truststore) {
-        return new MaterialRef.Inline(
-                truststore.getFormat(),
+    private static @NotNull MaterialRef.Inline inlineTruststore(
+            final @NotNull String materialName, final @NotNull TlsTruststoreEntity truststore)
+            throws TLSMaterialRegistry.InvalidReferenceException {
+        final FileSet files = namedSources(
+                materialName,
+                TLSMaterialRegistry.Kind.TRUSTSTORE,
+                truststore.getName(),
                 fileSet(
+                        materialName,
+                        TLSMaterialRegistry.Kind.TRUSTSTORE,
+                        truststore.getName(),
                         truststore.getFiles(),
                         truststore.getDirectories(),
                         truststore.getPatterns(),
-                        truststore.getBuiltins()),
-                // An operator who has no password writes skip-integrity-check instead, and the
-                // absence of both is what the policy refuses - not something to decide here.
-                truststore.isSkipIntegrityCheck()
-                        ? null
-                        : secret(truststore.getPassword(), truststore.getPasswordFile()),
-                null,
-                null);
+                        truststore.getBuiltins()));
+        return new MaterialRef.Inline(
+                truststore.getFormat(), files, integrityOf(materialName, truststore, files), null, null);
+    }
+
+    /// What opens a declared truststore: its password, or the operator's explicit waiver of the
+    /// integrity check, kept distinct from an absent password because only the waiver opens a
+    /// container unchecked. A container naming a path with neither, or a truststore naming both, is
+    /// refused: the first leaves the decision to skip the check unwritten, the second leaves it
+    /// unclear.
+    private static @Nullable Secret integrityOf(
+            final @NotNull String materialName,
+            final @NotNull TlsTruststoreEntity truststore,
+            final @NotNull FileSet files)
+            throws TLSMaterialRegistry.InvalidReferenceException {
+        final Secret password = secret(truststore.getPassword(), truststore.getPasswordFile());
+        if (truststore.isSkipIntegrityCheck()) {
+            if (password != null) {
+                throw new TLSMaterialRegistry.InvalidReferenceException(("The tls-truststore '%s' in the tls-material "
+                                + "'%s' names both a password and skip-integrity-check, so Edge cannot tell whether "
+                                + "the file is to be checked. Keep the password to check it, or skip-integrity-check "
+                                + "for a store that has none.")
+                        .formatted(truststore.getName(), materialName));
+            }
+            return new Secret.Waived();
+        }
+        if (password == null && files.namesAPath() && TLSConfigBridge.isContainerFormat(truststore.getFormat())) {
+            throw new TLSMaterialRegistry.InvalidReferenceException(("The tls-truststore '%s' in the tls-material "
+                            + "'%s' names a %s container but neither a password nor skip-integrity-check. Write the "
+                            + "password with 'password' or 'password-file', or write "
+                            + "<skip-integrity-check>true</skip-integrity-check> to read the store unchecked.")
+                    .formatted(truststore.getName(), materialName, truststore.getFormat()));
+        }
+        return password;
+    }
+
+    /// The sources a declaration names, refusing one that names none: a surface referring to it would
+    /// get material with nothing in it, and for a truststore that reads as no truststore at all.
+    private static @NotNull FileSet namedSources(
+            final @NotNull String materialName,
+            final @NotNull TLSMaterialRegistry.Kind kind,
+            final @Nullable String entryName,
+            final @NotNull FileSet files)
+            throws TLSMaterialRegistry.InvalidReferenceException {
+        if (!files.isEmpty()) {
+            return files;
+        }
+        throw new TLSMaterialRegistry.InvalidReferenceException(("The %s '%s' in the tls-material '%s' names no "
+                        + "file, directory, pattern or builtin, so a surface referring to it would get nothing. Name "
+                        + "the material it declares, or remove the declaration.")
+                .formatted(describe(kind), entryName, materialName));
     }
 
     private static @NotNull FileSet fileSet(
+            final @NotNull String materialName,
+            final @NotNull TLSMaterialRegistry.Kind kind,
+            final @Nullable String entryName,
             final @NotNull List<String> files,
             final @NotNull List<DirectoryEntity> directories,
             final @NotNull List<PatternEntity> patterns,
-            final @NotNull List<String> builtins) {
+            final @NotNull List<String> builtins)
+            throws TLSMaterialRegistry.InvalidReferenceException {
+        for (final String file : files) {
+            requireWritten(materialName, kind, entryName, "file", file);
+        }
+        for (final String builtin : builtins) {
+            requireWritten(materialName, kind, entryName, "builtin", builtin);
+        }
         final List<FileSet.Directory> asDirectories = new ArrayList<>();
         for (final DirectoryEntity directory : directories) {
-            asDirectories.add(new FileSet.Directory(directory.getLocation(), directory.isMayBeEmpty()));
+            asDirectories.add(new FileSet.Directory(
+                    requireWritten(materialName, kind, entryName, "directory", directory.getLocation()),
+                    directory.isMayBeEmpty()));
         }
         final List<FileSet.Pattern> asPatterns = new ArrayList<>();
         for (final PatternEntity pattern : patterns) {
-            asPatterns.add(new FileSet.Pattern(pattern.getLocation(), pattern.isMayBeEmpty()));
+            asPatterns.add(new FileSet.Pattern(
+                    requireWritten(materialName, kind, entryName, "pattern", pattern.getLocation()),
+                    pattern.isMayBeEmpty()));
         }
         return new FileSet(files, asDirectories, asPatterns, builtins);
+    }
+
+    /// An entry written blank is a source the operator meant to fill; dropping or keeping it would
+    /// read the declaration as naming less, or something other, than it does.
+    private static @NotNull String requireWritten(
+            final @NotNull String materialName,
+            final @NotNull TLSMaterialRegistry.Kind kind,
+            final @Nullable String entryName,
+            final @NotNull String entry,
+            final @Nullable String value)
+            throws TLSMaterialRegistry.InvalidReferenceException {
+        if (value == null || value.isBlank()) {
+            throw new TLSMaterialRegistry.InvalidReferenceException(("The %s '%s' in the tls-material '%s' has an "
+                            + "empty '%s' entry. Write the path it should name, or remove the entry.")
+                    .formatted(describe(kind), entryName, materialName, entry));
+        }
+        return value;
     }
 
     private static void refuseReference(

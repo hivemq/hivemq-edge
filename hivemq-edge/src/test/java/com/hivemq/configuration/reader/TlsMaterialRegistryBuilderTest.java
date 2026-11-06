@@ -25,9 +25,15 @@ import com.hivemq.security.tls.FileSet;
 import com.hivemq.security.tls.MaterialRef;
 import com.hivemq.security.tls.Secret;
 import com.hivemq.security.tls.TLSMaterialRegistry;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
+import javax.xml.XMLConstants;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.SchemaFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -35,8 +41,11 @@ import org.junit.jupiter.api.Test;
 /// against, and that a declaration a lookup could not resolve is refused when the registry is built
 /// rather than when a surface connects.
 ///
-/// Parses through the real reader rather than a hand-built JAXB context, since the element names and
-/// the wrapper are exactly what could be wrong.
+/// Parses with the configuration's own entity classes and schema rather than hand-built entities,
+/// since the element names and the wrapper are exactly what could be wrong. Not through the reader:
+/// it refuses a declaration the registry cannot be built from before the registry is built, which is
+/// the refusal under test here. What the reader itself refuses, the schema's refusals among it, is
+/// tested through the reader.
 class TlsMaterialRegistryBuilderTest extends AbstractConfigurationTest {
 
     @Test
@@ -379,7 +388,7 @@ class TlsMaterialRegistryBuilderTest extends AbstractConfigurationTest {
     void whenAnElementIsMisspelled_thenTheSchemaRefusesTheFile() {
         // Pins that the schema names these elements rather than admitting anything, so a typo
         // reaches the operator instead of silently leaving material unconfigured.
-        assertThatThrownBy(() -> registryFrom("""
+        assertThatThrownBy(() -> readerApplies("""
                 <tls-materials>
                     <tls-material>
                         <name>plant</name>
@@ -391,7 +400,7 @@ class TlsMaterialRegistryBuilderTest extends AbstractConfigurationTest {
 
     @Test
     void whenABuiltinIsNotTheOneName_thenTheSchemaRefusesTheFile() {
-        assertThatThrownBy(() -> registryFrom("""
+        assertThatThrownBy(() -> readerApplies("""
                 <tls-materials>
                     <tls-material>
                         <name>plant</name>
@@ -403,7 +412,7 @@ class TlsMaterialRegistryBuilderTest extends AbstractConfigurationTest {
 
     @Test
     void whenAFormatIsNotOneOfTheThree_thenTheSchemaRefusesTheFile() {
-        assertThatThrownBy(() -> registryFrom("""
+        assertThatThrownBy(() -> readerApplies("""
                 <tls-materials>
                     <tls-material>
                         <name>plant</name>
@@ -413,17 +422,42 @@ class TlsMaterialRegistryBuilderTest extends AbstractConfigurationTest {
                 """)).isInstanceOf(UnrecoverableException.class);
     }
 
-    /// The registry the given `tls-materials` block forms, parsed through the real reader so the
-    /// element names and the wrapper are exercised.
-    private @NotNull TLSMaterialRegistry registryFrom(final @NotNull String materials) throws Exception {
+    /// Two materials of one name are refused by the reader, before any reference is resolved.
+    @Test
+    void whenTwoMaterialsShareAName_thenTheReaderRefusesTheFile() {
+        assertThatThrownBy(() -> readerApplies("""
+                <tls-materials>
+                    <tls-material><name>plant</name></tls-material>
+                    <tls-material><name>plant</name></tls-material>
+                </tls-materials>
+                """)).isInstanceOf(UnrecoverableException.class);
+    }
+
+    /// The registry the given `tls-materials` block forms, unmarshalled against `config.xsd` so the
+    /// element names, the wrapper and the schema are exercised. A file the schema refuses throws the
+    /// unmarshaller's `UnmarshalException`.
+    private static @NotNull TLSMaterialRegistry registryFrom(final @NotNull String materials) throws Exception {
+        final Unmarshaller unmarshaller =
+                JAXBContext.newInstance(HiveMQConfigEntity.class).createUnmarshaller();
+        unmarshaller.setSchema(SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+                .newSchema(TlsMaterialRegistryBuilderTest.class.getResource("/config.xsd")));
+        final HiveMQConfigEntity config = unmarshaller
+                .unmarshal(
+                        new StreamSource(new StringReader("<hivemq>%s</hivemq>".formatted(materials))),
+                        HiveMQConfigEntity.class)
+                .getValue();
+        final List<TlsMaterialEntity> declared = config.getTlsMaterials();
+        return TlsMaterialRegistryBuilder.registryOf(declared);
+    }
+
+    /// The real reader applying a configuration that holds the given `tls-materials` block.
+    private void readerApplies(final @NotNull String materials) throws Exception {
         Files.writeString(xmlFile.toPath(), """
                 <?xml version="1.0" encoding="UTF-8" ?>
                 <hivemq>
                 %s
                 </hivemq>
                 """.formatted(materials), StandardCharsets.UTF_8);
-        final HiveMQConfigEntity config = reader.applyConfig();
-        final List<TlsMaterialEntity> declared = config.getTlsMaterials();
-        return TlsMaterialRegistryBuilder.registryOf(declared);
+        reader.applyConfig();
     }
 }

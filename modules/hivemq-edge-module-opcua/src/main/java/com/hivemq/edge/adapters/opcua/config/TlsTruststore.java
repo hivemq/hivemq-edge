@@ -15,11 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import static com.fasterxml.jackson.annotation.JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -139,14 +141,21 @@ public record TlsTruststore(
     }
 
     /// What a configuration file binds to; see [Tls] for why the trap comes first.
+    ///
+    /// The list-valued entries accept a single value as a one-element list. The configuration file
+    /// reader turns repeated sibling elements into a list but a single element into a scalar, so one
+    /// `<file>` would otherwise refuse to bind.
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public TlsTruststore(
             @JsonAnySetter final @Nullable Map<String, Object> unknownSettings,
             @JsonProperty("format") final @Nullable MaterialFormat format,
-            @JsonProperty("file") final @Nullable List<String> files,
-            @JsonProperty("directory") final @Nullable List<FileLocation> directories,
-            @JsonProperty("pattern") final @Nullable List<FileLocation> patterns,
-            @JsonProperty("builtin") final @Nullable List<String> builtins,
+            @JsonProperty("file") @JsonFormat(with = ACCEPT_SINGLE_VALUE_AS_ARRAY) final @Nullable List<String> files,
+            @JsonProperty("directory") @JsonFormat(with = ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                    final @Nullable List<FileLocation> directories,
+            @JsonProperty("pattern") @JsonFormat(with = ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                    final @Nullable List<FileLocation> patterns,
+            @JsonProperty("builtin") @JsonFormat(with = ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                    final @Nullable List<String> builtins,
             @JsonProperty("password") final @Nullable String password,
             @JsonProperty("password-file") final @Nullable String passwordFile,
             @JsonProperty("skip-integrity-check") final @Nullable Boolean skipIntegrityCheck,

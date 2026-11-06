@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +69,7 @@ public final class TLSConfigBridge implements TLSConfig {
     private final @NotNull TLSConstants.ValidityCheck validity;
     private final @NotNull TLSConstants.RevocationCheck revocation;
     private final @NotNull TLSConstants.KeyUsageCheck keyUsage;
+    private final boolean compatibilityPreset;
     private final @NotNull Optional<MaterialRef> identity;
     private final @NotNull Optional<MaterialRef> truststore;
     private final @NotNull Optional<MaterialRef> allowList;
@@ -85,8 +87,9 @@ public final class TLSConfigBridge implements TLSConfig {
     /// compatibility rule in one place: the format guessed from the file name, the runtime's own
     /// authorities where no truststore is named, and the checks a bridge has always performed.
     ///
-    /// The container format is not a parameter: this spelling has never had one, so it is guessed
-    /// from the file name exactly as it is for a bridge read from a configuration file.
+    /// The container format is guessed from the file name exactly as it is for a bridge read from a
+    /// configuration file, which has never had a format element.
+    @TestOnly
     @SuppressWarnings("checkstyle:ParameterNumber")
     public static @NotNull TLSConfigBridge fromSupersededSettings(
             final @NotNull String bridgeId,
@@ -100,6 +103,47 @@ public final class TLSConfigBridge implements TLSConfig {
             final boolean verifyHostname,
             final int handshakeTimeoutSeconds)
             throws InvalidTlsConfigException {
+        return fromSupersededSettings(
+                bridgeId,
+                keystorePath,
+                keystorePassword,
+                privateKeyPassword,
+                null,
+                truststorePath,
+                truststorePassword,
+                null,
+                protocols,
+                cipherSuites,
+                verifyHostname,
+                handshakeTimeoutSeconds);
+    }
+
+    /// As [#fromSupersededSettings(String, String, String, String, String, String, List, List, boolean, int)],
+    /// with the container type of each store as the REST API states it.
+    ///
+    /// A stated type wins over the file name, because the REST model has always carried one and a
+    /// store named `client.p12` may well be a Java key store. `JKS` and `PKCS12` (also `P12`) are
+    /// read, in any case; a type left out or blank is guessed from the file name as before. Any
+    /// other type is refused here rather than when the bridge connects.
+    ///
+    /// @throws InvalidTlsConfigException if a stated type is not one a bridge store can be read as
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public static @NotNull TLSConfigBridge fromSupersededSettings(
+            final @NotNull String bridgeId,
+            final @Nullable String keystorePath,
+            final @Nullable String keystorePassword,
+            final @Nullable String privateKeyPassword,
+            final @Nullable String keystoreType,
+            final @Nullable String truststorePath,
+            final @Nullable String truststorePassword,
+            final @Nullable String truststoreType,
+            final @NotNull List<String> protocols,
+            final @NotNull List<String> cipherSuites,
+            final boolean verifyHostname,
+            final int handshakeTimeoutSeconds)
+            throws InvalidTlsConfigException {
+        final String keystoreFormat = statedFormat(bridgeId, "keystoreType", keystoreType);
+        final String truststoreFormat = statedFormat(bridgeId, "truststoreType", truststoreType);
         final BridgeTlsEntity entity = new BridgeTlsEntity();
         entity.setEnabled(true);
         entity.setProtocols(new ArrayList<>(protocols));
@@ -119,7 +163,24 @@ public final class TLSConfigBridge implements TLSConfig {
             truststore.setPassword(truststorePassword == null ? "" : truststorePassword);
             entity.setTrustStore(truststore);
         }
-        return new TLSConfigBridge(bridgeId, entity);
+        return new TLSConfigBridge(bridgeId, entity, keystoreFormat, truststoreFormat, true);
+    }
+
+    /// The format a stated store type names, or `null` where none is stated.
+    private static @Nullable String statedFormat(
+            final @NotNull String bridgeId, final @NotNull String field, final @Nullable String type)
+            throws InvalidTlsConfigException {
+        if (type == null || type.isBlank()) {
+            return null;
+        }
+        return switch (type.strip().toLowerCase(Locale.ROOT)) {
+            case "jks" -> "jks";
+            case "pkcs12", "p12" -> "p12";
+            default ->
+                throw new InvalidTlsConfigException(("Bridge '%s': %s '%s' is not a store type a bridge reads. "
+                                + "State JKS or PKCS12, or leave it out to have the type guessed from the file name.")
+                        .formatted(bridgeId, field, type));
+        };
     }
 
     /// Resolves a bridge's TLS configuration.
@@ -128,6 +189,29 @@ public final class TLSConfigBridge implements TLSConfig {
     ///     an operator searching the file for which
     /// @throws InvalidTlsConfigException if the configuration cannot be carried out as written
     public TLSConfigBridge(final @NotNull String bridgeId, final @NotNull BridgeTlsEntity tls)
+            throws InvalidTlsConfigException {
+        this(bridgeId, tls, null, null, true);
+    }
+
+    /// Resolves a bridge's TLS configuration as the constructor does, refusing what it refuses, but
+    /// logs none of its warnings. For a check of a configuration before it is applied: the warnings
+    /// belong to the bridge being built from it, which logs them then, once.
+    ///
+    /// @throws InvalidTlsConfigException if the configuration cannot be carried out as written
+    public static @NotNull TLSConfigBridge withoutWarnings(
+            final @NotNull String bridgeId, final @NotNull BridgeTlsEntity tls) throws InvalidTlsConfigException {
+        return new TLSConfigBridge(bridgeId, tls, null, null, false);
+    }
+
+    /// Resolves a bridge's TLS configuration with the container format of each superseded store
+    /// stated rather than guessed; `null` guesses it from the file name. `warnings` is whether to log
+    /// the warnings a bridge's configuration earns.
+    private TLSConfigBridge(
+            final @NotNull String bridgeId,
+            final @NotNull BridgeTlsEntity tls,
+            final @Nullable String keystoreFormat,
+            final @Nullable String truststoreFormat,
+            final boolean warnings)
             throws InvalidTlsConfigException {
 
         refuseMixedSpellings(bridgeId, tls);
@@ -139,6 +223,7 @@ public final class TLSConfigBridge implements TLSConfig {
         this.validity = checks.validity();
         this.revocation = checks.revocation();
         this.keyUsage = checks.keyUsage();
+        this.compatibilityPreset = isCompatibilityPreset(tls);
 
         // Revocation is decided while a certification path is built, and no trust mode other than
         // CHAIN builds one. A check that quietly does nothing is worse than a refusal.
@@ -159,12 +244,14 @@ public final class TLSConfigBridge implements TLSConfig {
 
         if (namesSupersedingMaterial(tls)) {
             this.identity = inlineIdentity(bridgeId, tls.getTlsIdentity());
-            this.truststore = inlineTruststore(bridgeId, tls.getTlsTruststore(), this.trustMode, tls.isEnabled());
+            this.truststore =
+                    inlineTruststore(bridgeId, tls.getTlsTruststore(), this.trustMode, warnings && tls.isEnabled());
             this.allowList = inlineAllowList(bridgeId, tls.getTlsAllowlist());
             this.revocationList = inlineRevocationList(bridgeId, tls.getTlsRevocationlist());
         } else {
-            this.identity = supersededIdentity(tls.getKeyStore());
-            this.truststore = supersededTruststore(tls.getTrustStore(), this.trustMode, tls.isEnabled());
+            this.identity = supersededIdentity(tls.getKeyStore(), keystoreFormat);
+            this.truststore = supersededTruststore(
+                    bridgeId, tls.getTrustStore(), truststoreFormat, this.trustMode, warnings && tls.isEnabled());
             // A bridge has never had either of these in the superseded spelling.
             this.allowList = Optional.empty();
             this.revocationList = Optional.empty();
@@ -180,6 +267,18 @@ public final class TLSConfigBridge implements TLSConfig {
     @Override
     public boolean isEnabled() {
         return enabled;
+    }
+
+    /// Whether the bridge is on the preset that keeps what a bridge validated before upgrading: it
+    /// names neither `tls-checks` nor `tls-checks-full`, or names [#BRIDGE_DEFAULT_PRESET] in any
+    /// spelling the preset is read in. A configuration built by `fromSupersededSettings` names
+    /// neither, so it is on that preset.
+    ///
+    /// Not the same as comparing the five checks: `tls-checks-full` can write exactly the values the
+    /// preset sets and still asks for the checks as written rather than for the compatibility rules.
+    @TestOnly
+    public boolean isCompatibilityPreset() {
+        return compatibilityPreset;
     }
 
     @Override
@@ -247,6 +346,53 @@ public final class TLSConfigBridge implements TLSConfig {
     @Override
     public @NotNull Duration handshakeTimeout() {
         return handshakeTimeout;
+    }
+
+    /// Equal when every resolved check and every description of the material is equal, so two reads
+    /// of the same configuration text are equal and a change to any check, file name, password or
+    /// reference is not. The material is compared as written, not as read: whether a file changed
+    /// on disk is a question for whoever reads it.
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof final TLSConfigBridge that)) {
+            return false;
+        }
+        return enabled == that.enabled
+                && compatibilityPreset == that.compatibilityPreset
+                && trustMode == that.trustMode
+                && hostname == that.hostname
+                && validity == that.validity
+                && revocation == that.revocation
+                && keyUsage == that.keyUsage
+                && identity.equals(that.identity)
+                && truststore.equals(that.truststore)
+                && allowList.equals(that.allowList)
+                && revocationList.equals(that.revocationList)
+                && protocols.equals(that.protocols)
+                && cipherSuites.equals(that.cipherSuites)
+                && handshakeTimeout.equals(that.handshakeTimeout);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                enabled,
+                compatibilityPreset,
+                trustMode,
+                hostname,
+                validity,
+                revocation,
+                keyUsage,
+                identity,
+                truststore,
+                allowList,
+                revocationList,
+                protocols,
+                cipherSuites,
+                handshakeTimeout);
     }
 
     @Override
@@ -342,7 +488,7 @@ public final class TLSConfigBridge implements TLSConfig {
     private static @NotNull Checks fromPreset(
             final @NotNull String bridgeId, final @NotNull String preset, final boolean verifyHostname)
             throws InvalidTlsConfigException {
-        return switch (preset.trim().toUpperCase(Locale.ROOT).replace("-", "_")) {
+        return switch (normalisedPreset(preset)) {
             case "TLS_BRIDGE_DEFAULT" ->
                 new Checks(
                         TLSConstants.TrustMode.CHAIN,
@@ -390,6 +536,21 @@ public final class TLSConfigBridge implements TLSConfig {
                                 + "TLS_BRIDGE_DEFAULT, or use tls-checks-full to set the checks individually.")
                         .formatted(bridgeId, preset));
         };
+    }
+
+    /// A preset name in the one spelling the presets are compared in: surrounding whitespace
+    /// dropped, upper case, `-` read as `_`.
+    /// Whether a bridge's written `<tls>` is on the compatibility preset: it names neither
+    /// `tls-checks-full` nor a preset other than `TLS_BRIDGE_DEFAULT`, in any spelling the preset
+    /// is read in.
+    public static boolean isCompatibilityPreset(final @NotNull BridgeTlsEntity tls) {
+        final String preset = tls.getTlsChecks();
+        return tls.getTlsChecksFull() == null
+                && (preset == null || BRIDGE_DEFAULT_PRESET.equals(normalisedPreset(preset)));
+    }
+
+    private static @NotNull String normalisedPreset(final @NotNull String preset) {
+        return preset.trim().toUpperCase(Locale.ROOT).replace("-", "_");
     }
 
     /// One check value, matched case-insensitively and tolerating missing separators, with an
@@ -480,6 +641,11 @@ public final class TLSConfigBridge implements TLSConfig {
     }
 
     // --- naming the material, superseding spelling ------------------------------------------------
+    // An element that is present names its material, by reference or inline, and never both. An
+    // element present with nothing in it is refused rather than read as absent: absence of the
+    // truststore means the runtime's own authorities, so reading an empty one as absent would widen
+    // trust exactly where a source was lost, and an empty identity or revocation list would leave
+    // less checked than the configuration says.
 
     private static @NotNull Optional<MaterialRef> inlineIdentity(
             final @NotNull String bridgeId, final @Nullable TlsIdentityEntity identity)
@@ -489,7 +655,21 @@ public final class TLSConfigBridge implements TLSConfig {
         }
         final Optional<MaterialRef> reference =
                 referenceOf(bridgeId, "tls-identity", identity.getReferenceName(), identity.getReferenceUuid());
+        final List<String> inlineContent = new ArrayList<>();
+        addIfWritten(inlineContent, "format", identity.getFormat());
+        addIfWritten(inlineContent, "file", identity.getFile());
+        addIfWritten(inlineContent, "key-file", identity.getKeyFile());
+        addIfWritten(inlineContent, "certificate-file", identity.getCertificateFile());
+        addIfWritten(inlineContent, "chain-file", identity.getChainFile());
+        addIfWritten(inlineContent, "password", identity.getPassword());
+        addIfWritten(inlineContent, "password-file", identity.getPasswordFile());
+        addIfWritten(inlineContent, "key-entry", identity.getKeyEntry());
+        addIfWritten(inlineContent, "key-entry-password", identity.getKeyEntryPassword());
+        addIfWritten(inlineContent, "key-entry-password-file", identity.getKeyEntryPasswordFile());
+        addIfWritten(inlineContent, "key-password", identity.getKeyPassword());
+        addIfWritten(inlineContent, "key-password-file", identity.getKeyPasswordFile());
         if (reference.isPresent()) {
+            refuseInlineBesideReference(bridgeId, "tls-identity", inlineContent);
             return reference;
         }
         final List<String> files = new ArrayList<>();
@@ -498,7 +678,11 @@ public final class TLSConfigBridge implements TLSConfig {
         addIfPresent(files, identity.getCertificateFile());
         addIfPresent(files, identity.getChainFile());
         if (files.isEmpty()) {
-            return Optional.empty();
+            throw new InvalidTlsConfigException(("Bridge '%s': the 'tls-identity' element names no file and no "
+                            + "reference, so there is no key to present. Name the container with 'file', the PEM "
+                            + "parts with 'key-file' and 'certificate-file', or shared material with "
+                            + "'reference-name'; or remove the element if the bridge presents no certificate.")
+                    .formatted(bridgeId));
         }
         // A PEM key's password and a container key entry's password never both apply, so whichever
         // the operator wrote is the one that unlocks the key.
@@ -525,25 +709,83 @@ public final class TLSConfigBridge implements TLSConfig {
         }
         final Optional<MaterialRef> reference =
                 referenceOf(bridgeId, "tls-truststore", truststore.getReferenceName(), truststore.getReferenceUuid());
+        final List<String> inlineContent = new ArrayList<>();
+        addIfWritten(inlineContent, "format", truststore.getFormat());
+        addIfWritten(inlineContent, "file", truststore.getFiles());
+        addIfWritten(inlineContent, "directory", truststore.getDirectories());
+        addIfWritten(inlineContent, "pattern", truststore.getPatterns());
+        addIfWritten(inlineContent, "builtin", truststore.getBuiltins());
+        addIfWritten(inlineContent, "password", truststore.getPassword());
+        addIfWritten(inlineContent, "password-file", truststore.getPasswordFile());
+        if (truststore.isSkipIntegrityCheck()) {
+            inlineContent.add("skip-integrity-check");
+        }
         if (reference.isPresent()) {
+            refuseInlineBesideReference(bridgeId, "tls-truststore", inlineContent);
             return reference;
         }
         final FileSet files = fileSetOf(
-                truststore.getFiles(), truststore.getDirectories(), truststore.getPatterns(), truststore.getBuiltins());
+                bridgeId,
+                "tls-truststore",
+                truststore.getFiles(),
+                truststore.getDirectories(),
+                truststore.getPatterns(),
+                truststore.getBuiltins());
         if (files.isEmpty()) {
-            return runtimeAuthoritiesWhereAPathIsBuilt(bridgeId, trustMode, tlsEnabled, "tls-truststore");
+            throw new InvalidTlsConfigException(("Bridge '%s': the 'tls-truststore' element names no file, "
+                            + "directory, pattern, builtin or reference, so nothing could be trusted through it. Name "
+                            + "the authority that signed the broker's certificate, name the runtime's own with "
+                            + "<builtin>%s</builtin>, or remove the element to trust the runtime's own authorities "
+                            + "as a bridge without a truststore does.")
+                    .formatted(bridgeId, FileSet.JVM_CACERTS));
         }
         return Optional.of(new MaterialRef.Inline(
-                truststore.getFormat(),
-                files,
-                // An operator with no password writes skip-integrity-check instead; the absence of
-                // both is what the reading stage refuses, not something to decide here.
-                truststore.isSkipIntegrityCheck()
-                        ? null
-                        : secretOrFile(
-                                bridgeId, "tls-truststore", truststore.getPassword(), truststore.getPasswordFile()),
-                null,
-                null));
+                truststore.getFormat(), files, integrityOf(bridgeId, truststore, files), null, null));
+    }
+
+    /// What opens a truststore naming files: its password, or the operator's explicit waiver of the
+    /// integrity check, which is not the same as having no password.
+    ///
+    /// A container's password keys a code over the file that proves it is the file somebody built;
+    /// giving that up is the operator's decision to write, so a container naming a path with neither
+    /// is refused. A PEM file has no such code, so a PEM truststore naming neither reads exactly as
+    /// one with the waiver. Writing both is refused: Edge could not tell whether the file is to be
+    /// checked.
+    private static @Nullable Secret integrityOf(
+            final @NotNull String bridgeId, final @NotNull TlsTruststoreEntity truststore, final @NotNull FileSet files)
+            throws InvalidTlsConfigException {
+        final Secret password =
+                secretOrFile(bridgeId, "tls-truststore", truststore.getPassword(), truststore.getPasswordFile());
+        if (truststore.isSkipIntegrityCheck()) {
+            if (password != null) {
+                throw new InvalidTlsConfigException(("Bridge '%s': the 'tls-truststore' element names both a "
+                                + "password and skip-integrity-check, so Edge cannot tell whether the file is to be "
+                                + "checked. Keep the password to check it, or skip-integrity-check for a store "
+                                + "that has none.")
+                        .formatted(bridgeId));
+            }
+            return new Secret.Waived();
+        }
+        if (password == null && files.namesAPath() && isContainerFormat(truststore.getFormat())) {
+            throw new InvalidTlsConfigException(("Bridge '%s': the 'tls-truststore' element names a %s container "
+                            + "but neither a password nor skip-integrity-check. The password lets Edge confirm the "
+                            + "file is the one somebody built; write it with 'password' or 'password-file', or write "
+                            + "<skip-integrity-check>true</skip-integrity-check> to read the store unchecked.")
+                    .formatted(bridgeId, truststore.getFormat()));
+        }
+        return password;
+    }
+
+    /// Whether a material format names a container (PKCS#12 or JKS), which carries an integrity
+    /// code its password keys, as opposed to PEM, which has none.
+    public static boolean isContainerFormat(final @Nullable String format) {
+        if (format == null) {
+            return false;
+        }
+        return switch (format.trim().toLowerCase(Locale.ROOT)) {
+            case "p12", "pkcs12", "jks" -> true;
+            default -> false;
+        };
     }
 
     private static @NotNull Optional<MaterialRef> inlineAllowList(
@@ -555,11 +797,26 @@ public final class TLSConfigBridge implements TLSConfig {
         final Optional<MaterialRef> reference =
                 referenceOf(bridgeId, "tls-allowlist", allowList.getReferenceName(), allowList.getReferenceUuid());
         if (reference.isPresent()) {
+            refuseInlineBesideReference(
+                    bridgeId,
+                    "tls-allowlist",
+                    inlineSources(allowList.getFiles(), allowList.getDirectories(), allowList.getPatterns()));
             return reference;
         }
-        final FileSet files =
-                fileSetOf(allowList.getFiles(), allowList.getDirectories(), allowList.getPatterns(), null);
-        return files.isEmpty() ? Optional.empty() : Optional.of(new MaterialRef.Inline(null, files, null, null, null));
+        final FileSet files = fileSetOf(
+                bridgeId,
+                "tls-allowlist",
+                allowList.getFiles(),
+                allowList.getDirectories(),
+                allowList.getPatterns(),
+                null);
+        if (files.isEmpty()) {
+            throw new InvalidTlsConfigException(("Bridge '%s': the 'tls-allowlist' element names no file, "
+                            + "directory, pattern or reference, so no fingerprint could be read from it. Name the "
+                            + "file holding the fingerprints, or remove the element.")
+                    .formatted(bridgeId));
+        }
+        return Optional.of(new MaterialRef.Inline(null, files, null, null, null));
     }
 
     private static @NotNull Optional<MaterialRef> inlineRevocationList(
@@ -571,23 +828,82 @@ public final class TLSConfigBridge implements TLSConfig {
         final Optional<MaterialRef> reference = referenceOf(
                 bridgeId, "tls-revocationlist", revocationList.getReferenceName(), revocationList.getReferenceUuid());
         if (reference.isPresent()) {
+            refuseInlineBesideReference(
+                    bridgeId,
+                    "tls-revocationlist",
+                    inlineSources(
+                            revocationList.getFiles(), revocationList.getDirectories(), revocationList.getPatterns()));
             return reference;
         }
         final FileSet files = fileSetOf(
-                revocationList.getFiles(), revocationList.getDirectories(), revocationList.getPatterns(), null);
-        return files.isEmpty() ? Optional.empty() : Optional.of(new MaterialRef.Inline(null, files, null, null, null));
+                bridgeId,
+                "tls-revocationlist",
+                revocationList.getFiles(),
+                revocationList.getDirectories(),
+                revocationList.getPatterns(),
+                null);
+        if (files.isEmpty()) {
+            throw new InvalidTlsConfigException(("Bridge '%s': the 'tls-revocationlist' element names no file, "
+                            + "directory, pattern or reference, so no revocation list could be read from it. Name "
+                            + "the revocation lists, or remove the element.")
+                    .formatted(bridgeId));
+        }
+        return Optional.of(new MaterialRef.Inline(null, files, null, null, null));
+    }
+
+    /// Refuses a reference written beside material of its own.
+    ///
+    /// The two could name different material - a narrow local authority beside a broader shared
+    /// one - and taking either silently would leave the operator reading the line that has no
+    /// effect.
+    private static void refuseInlineBesideReference(
+            final @NotNull String bridgeId, final @NotNull String element, final @NotNull List<String> inlineContent)
+            throws InvalidTlsConfigException {
+        if (inlineContent.isEmpty()) {
+            return;
+        }
+        throw new InvalidTlsConfigException(("Bridge '%s': the '%s' element references shared material and also "
+                        + "writes %s of its own. The two could name different material, so Edge cannot tell which "
+                        + "was meant. Keep the reference, or remove it and keep the material written here.")
+                .formatted(bridgeId, element, String.join(", ", inlineContent)));
+    }
+
+    private static @NotNull List<String> inlineSources(
+            final @Nullable List<String> files,
+            final @Nullable List<DirectoryEntity> directories,
+            final @Nullable List<PatternEntity> patterns) {
+        final List<String> written = new ArrayList<>();
+        addIfWritten(written, "file", files);
+        addIfWritten(written, "directory", directories);
+        addIfWritten(written, "pattern", patterns);
+        return written;
+    }
+
+    private static void addIfWritten(
+            final @NotNull List<String> into, final @NotNull String element, final @Nullable String value) {
+        if (value != null) {
+            into.add(element);
+        }
+    }
+
+    private static void addIfWritten(
+            final @NotNull List<String> into, final @NotNull String element, final @Nullable List<?> values) {
+        if (values != null && !values.isEmpty()) {
+            into.add(element);
+        }
     }
 
     // --- naming the material, superseded spelling -------------------------------------------------
 
     /// The bridge's own key store: one container, whose format is guessed from the file name, with
     /// the two passwords that open it. Exactly the reach this element always had.
-    private static @NotNull Optional<MaterialRef> supersededIdentity(final @Nullable KeystoreEntity keystore) {
+    private static @NotNull Optional<MaterialRef> supersededIdentity(
+            final @Nullable KeystoreEntity keystore, final @Nullable String statedFormat) {
         if (keystore == null || keystore.getPath() == null || keystore.getPath().isBlank()) {
             return Optional.empty();
         }
         return Optional.of(new MaterialRef.Inline(
-                formatFromFileName(keystore.getPath()),
+                statedFormat != null ? statedFormat : formatFromFileName(keystore.getPath()),
                 FileSet.of(keystore.getPath()),
                 secretOf(keystore.getPassword()),
                 null,
@@ -595,20 +911,24 @@ public final class TLSConfigBridge implements TLSConfig {
     }
 
     private static @NotNull Optional<MaterialRef> supersededTruststore(
+            final @NotNull String bridgeId,
             final @Nullable TruststoreEntity truststore,
+            final @Nullable String statedFormat,
             final @NotNull TLSConstants.TrustMode trustMode,
             final boolean tlsEnabled) {
         if (truststore != null
                 && truststore.getPath() != null
                 && !truststore.getPath().isBlank()) {
             return Optional.of(new MaterialRef.Inline(
-                    formatFromFileName(truststore.getPath()),
+                    statedFormat != null ? statedFormat : formatFromFileName(truststore.getPath()),
                     FileSet.of(truststore.getPath()),
                     secretOf(truststore.getPassword()),
                     null,
                     null));
         }
-        return runtimeAuthoritiesWhereAPathIsBuilt(null, trustMode, tlsEnabled, "truststore");
+        // Named as the superseding element even here: the remedy the warning gives is a builtin, which
+        // only <tls-truststore> takes.
+        return runtimeAuthoritiesWhereAPathIsBuilt(bridgeId, trustMode, tlsEnabled, "tls-truststore");
     }
 
     /// The container format the superseded spelling guesses from the file name.
@@ -638,7 +958,7 @@ public final class TLSConfigBridge implements TLSConfig {
     /// names `JVM-cacerts` exactly as an operator would write it, so the stage that reads files sees
     /// no special case.
     private static @NotNull Optional<MaterialRef> runtimeAuthoritiesWhereAPathIsBuilt(
-            final @Nullable String bridgeId,
+            final @NotNull String bridgeId,
             final @NotNull TLSConstants.TrustMode trustMode,
             final boolean tlsEnabled,
             final @NotNull String element) {
@@ -651,7 +971,7 @@ public final class TLSConfigBridge implements TLSConfig {
                             + "configured, so the certificate authorities the runtime ships with are trusted. Name "
                             + "them explicitly with <{}><builtin>JVM-cacerts</builtin></{}> to keep this behaviour, "
                             + "or point <{}> at the authority that signed the broker's certificate.",
-                    bridgeId == null ? "" : bridgeId,
+                    bridgeId,
                     element,
                     element,
                     element);
@@ -690,40 +1010,60 @@ public final class TLSConfigBridge implements TLSConfig {
         }
     }
 
+    /// The files an element names, refusing an entry written blank: an empty `<file/>` or a
+    /// location left empty is a source the operator meant to fill, and dropping it would read the
+    /// element as naming less than it does.
     private static @NotNull FileSet fileSetOf(
+            final @NotNull String bridgeId,
+            final @NotNull String element,
             final @Nullable List<String> files,
             final @Nullable List<DirectoryEntity> directories,
             final @Nullable List<PatternEntity> patterns,
-            final @Nullable List<String> builtins) {
+            final @Nullable List<String> builtins)
+            throws InvalidTlsConfigException {
         final List<String> named = new ArrayList<>();
         if (files != null) {
             for (final String file : files) {
-                addIfPresent(named, file);
+                named.add(requireWritten(bridgeId, element, "file", file));
             }
         }
         final List<FileSet.Directory> asDirectories = new ArrayList<>();
         if (directories != null) {
             for (final DirectoryEntity directory : directories) {
-                if (present(directory.getLocation())) {
-                    asDirectories.add(new FileSet.Directory(directory.getLocation(), directory.isMayBeEmpty()));
-                }
+                asDirectories.add(new FileSet.Directory(
+                        requireWritten(bridgeId, element, "directory", directory.getLocation()),
+                        directory.isMayBeEmpty()));
             }
         }
         final List<FileSet.Pattern> asPatterns = new ArrayList<>();
         if (patterns != null) {
             for (final PatternEntity pattern : patterns) {
-                if (present(pattern.getLocation())) {
-                    asPatterns.add(new FileSet.Pattern(pattern.getLocation(), pattern.isMayBeEmpty()));
-                }
+                asPatterns.add(new FileSet.Pattern(
+                        requireWritten(bridgeId, element, "pattern", pattern.getLocation()), pattern.isMayBeEmpty()));
             }
         }
         final List<String> runtimeStores = new ArrayList<>();
         if (builtins != null) {
             for (final String builtin : builtins) {
-                addIfPresent(runtimeStores, builtin);
+                runtimeStores.add(requireWritten(bridgeId, element, "builtin", builtin));
             }
         }
         return new FileSet(named, asDirectories, asPatterns, runtimeStores);
+    }
+
+    private static @NotNull String requireWritten(
+            final @NotNull String bridgeId,
+            final @NotNull String element,
+            final @NotNull String entry,
+            final @Nullable String value)
+            throws InvalidTlsConfigException {
+        if (!present(value)) {
+            throw new InvalidTlsConfigException(
+                    ("Bridge '%s': the '%s' element has an empty '%s' entry. Write the path it should name, or "
+                                    + "remove the entry.")
+                            .formatted(bridgeId, element, entry));
+        }
+        return Objects.requireNonNull(value);
     }
 
     /// A password as written or as a file to read it from, refusing both at once: they could

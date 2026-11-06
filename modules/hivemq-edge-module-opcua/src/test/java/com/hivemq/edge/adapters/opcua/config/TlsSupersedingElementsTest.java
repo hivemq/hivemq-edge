@@ -159,9 +159,9 @@ class TlsSupersedingElementsTest {
         assertThat(truststore.files().directories()).containsExactly(new FileSet.Directory("/etc/edge/ca.d", true));
         assertThat(truststore.files().patterns()).containsExactly(new FileSet.Pattern("/etc/edge/*.pem", false));
         assertThat(truststore.files().builtins()).containsExactly(FileSet.JVM_CACERTS);
-        // skip-integrity-check means no password is carried, which is what the reading stage needs
-        // in order not to refuse a truststore the operator has no password for.
-        assertThat(truststore.password()).isNull();
+        // skip-integrity-check is carried as the waiver, which the reading stage opens unchecked
+        // rather than with an empty password.
+        assertThat(truststore.password()).isEqualTo(new Secret.Waived());
     }
 
     @Test

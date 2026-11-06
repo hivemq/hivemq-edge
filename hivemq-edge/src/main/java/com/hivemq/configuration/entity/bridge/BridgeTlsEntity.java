@@ -151,6 +151,17 @@ public class BridgeTlsEntity {
         return tlsRevocationlist;
     }
 
+    /// Whether any element that supersedes the older `keystore` / `truststore` / `verify-hostname`
+    /// spelling is written: settings the REST model cannot express.
+    public boolean hasSupersedingElements() {
+        return tlsChecks != null
+                || tlsChecksFull != null
+                || tlsIdentity != null
+                || tlsTruststore != null
+                || tlsAllowlist != null
+                || tlsRevocationlist != null;
+    }
+
     public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
     }

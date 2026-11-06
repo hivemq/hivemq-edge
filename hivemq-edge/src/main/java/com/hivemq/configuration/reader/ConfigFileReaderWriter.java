@@ -517,6 +517,14 @@ public class ConfigFileReaderWriter {
                 if (!validationErrors.isEmpty()) {
                     throw new JAXBException("Parsing failed");
                 }
+                final List<String> tlsRefusals = BridgeExtractor.tlsRefusalsOf(entity);
+                if (!tlsRefusals.isEmpty()) {
+                    tlsRefusals.forEach(refusal -> log.error("{}", refusal));
+                    log.error(
+                            "The configuration file {} is refused: the TLS configuration above cannot be carried out",
+                            configFile.getAbsolutePath());
+                    return ReloadOutcome.REJECTED_INVALID;
+                }
 
                 configEntity.set(entity);
                 // Only now: this configuration is the one that will be written back out, so these are

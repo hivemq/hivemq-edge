@@ -56,6 +56,7 @@ import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5RetainHandling;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5Subscription;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.configuration.HivemqId;
+import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
@@ -81,6 +82,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -544,6 +546,11 @@ public class BridgeMqttClient {
                 return;
             }
             log.info("Bridge '{}' connected to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
+            final BridgeTls connectedTls = bridge.getBridgeTls();
+            if (connectedTls != null && connectedTls.getEffectiveTls() != null) {
+                TLSValidatorBridge.connectionWarning(connectedTls.getEffectiveTls(), bridge.getId(), endpoint())
+                        .ifPresent(log::warn);
+            }
             connected.set(true);
             // Visited before anything is forwarded, on every connect rather than only the first, so
             // that a test can attach its oracle to the remote broker while the bridge is held here.
@@ -597,6 +604,10 @@ public class BridgeMqttClient {
                 if (reasonString.isPresent()) {
                     message += " Reason: " + reasonString.get();
                 }
+            }
+            final Optional<String> refusal = TLSValidatorBridge.describeRefusal(cause);
+            if (refusal.isPresent()) {
+                message += " " + refusal.get();
             }
             log.warn(
                     "Bridge '{}' disconnected from {}:{}: {}",
@@ -671,7 +682,7 @@ public class BridgeMqttClient {
                 sslConfigBuilder = sslConfigBuilder.protocols(bridgeTls.getProtocols());
             }
             sslConfigBuilder = bridgeTls.getEffectiveTls() != null
-                    ? applyPolicy(sslConfigBuilder, bridgeTls.getEffectiveTls())
+                    ? applyPolicy(sslConfigBuilder, bridgeTls.getEffectiveTls(), bridgeTls.getConfiguredTls())
                     : applySettingsDirectly(sslConfigBuilder, bridgeTls);
             builder.sslConfig(sslConfigBuilder
                     .handshakeTimeout(bridgeTls.getHandshakeTimeout(), TimeUnit.SECONDS)
@@ -692,12 +703,14 @@ public class BridgeMqttClient {
      */
     /// Hands the MQTT client library what the bridge's certificate-validation policy amounts to.
     ///
-    /// Reads the files and builds the validator here, at connect time, rather than when the
-    /// configuration was read: a certificate an operator replaces between reloads is then picked up
-    /// on the next connection attempt, and a broken file refuses this one bridge rather than the
-    /// whole configuration.
+    /// Reads the files and builds the validator here, when the client is created (bridge start,
+    /// and every restart a reload or an update causes), rather than when the configuration was read:
+    /// a broken file then refuses this one bridge rather than the whole configuration. Reconnects
+    /// reuse the client and do not read the files again.
     private @NotNull MqttClientSslConfigBuilder applyPolicy(
-            @NotNull MqttClientSslConfigBuilder sslConfigBuilder, final @NotNull TLSConfig effectiveTls) {
+            @NotNull MqttClientSslConfigBuilder sslConfigBuilder,
+            final @NotNull TLSConfig effectiveTls,
+            final @Nullable BridgeTlsEntity configuredTls) {
         final TLSPolicy policy;
         try {
             policy = new TLSPolicy(effectiveTls);
@@ -712,13 +725,24 @@ public class BridgeMqttClient {
                     sslConfigBuilder.keyManagerFactory(policy.identity().get().keyManagerFactory());
         }
         try {
-            sslConfigBuilder = sslConfigBuilder.trustManagerFactory(TLSValidatorBridge.trustManagerFactoryFor(policy));
+            sslConfigBuilder = sslConfigBuilder.trustManagerFactory(
+                    BridgeTls.isCompatibilityPreset(configuredTls)
+                            ? TLSValidatorBridge.compatibilityTrustManagerFactoryFor(policy)
+                            : TLSValidatorBridge.trustManagerFactoryFor(policy));
         } catch (final TLSPolicy.TLSMaterialException e) {
             throw new IllegalStateException("Bridge '%s': %s".formatted(bridge.getId(), e.reason()), e);
         }
-        // Null means the library's own verifier, which implements the wildcard rules correctly.
+        for (final String warning : TLSValidatorBridge.startupWarnings(policy, bridge.getId(), endpoint())) {
+            log.warn(warning);
+        }
+        // Null means no verifier: the library then asks the TLS engine for HTTPS endpoint
+        // identification, which the trust manager above performs against the connected host.
         final HostnameVerifier verifier = TLSValidatorBridge.hostnameVerifierFor(policy);
         return verifier == null ? sslConfigBuilder : sslConfigBuilder.hostnameVerifier(verifier);
+    }
+
+    private @NotNull String endpoint() {
+        return bridge.getHost() + ":" + bridge.getPort();
     }
 
     /// The path for a bridge assembled in code rather than read from a configuration file, which

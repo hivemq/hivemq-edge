@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
+import com.hivemq.edge.adapters.opcua.config.AllowList;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
@@ -28,8 +29,12 @@ import com.hivemq.edge.adapters.opcua.security.TLSValidatorOpcUA;
 import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
 import com.hivemq.security.tls.TLSConfig;
 import com.hivemq.security.tls.TLSConfigResolved;
+import com.hivemq.security.tls.TLSConstants;
 import com.hivemq.security.tls.TLSMaterialRegistry;
 import com.hivemq.security.tls.TLSPolicy;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -141,6 +146,14 @@ public record ParsedConfig(
             // step that touches a filesystem, and the one that refuses a surface whose material
             // cannot be read: a truststore that will not open is a configuration error, never a
             // reason to fall back to trusting less.
+            final Optional<String> allowListDirectory = supersededAllowListDirectory(checks, tlsConfig);
+            if (allowListDirectory.isPresent()) {
+                return Failure.of(("The allowList path '%s' is a directory. allowList reads one file of "
+                                + "fingerprints: name that file, or write <tls-allowlist><directory><location>%s"
+                                + "</location></directory></tls-allowlist> instead of allowList to read every file "
+                                + "in the directory.")
+                        .formatted(allowListDirectory.get(), allowListDirectory.get()));
+            }
             final TLSPolicy policy;
             try {
                 policy = new TLSPolicy(checks);
@@ -204,14 +217,6 @@ public record ParsedConfig(
                                 + "same anchor would be accepted. Enable it with tlsChecks=ALL or "
                                 + "tlsChecksFull.hostname=HOSTNAME.",
                         endpointUri);
-            }
-
-            if (checks.trustMode() == com.hivemq.security.tls.TLSConstants.TrustMode.ALLOW_LIST) {
-                log.info(
-                        "OPC UA adapter endpoint '{}': server certificates are trusted by fingerprint; "
-                                + "{} fingerprint(s) loaded.",
-                        endpointUri,
-                        policy.allowedFingerprints().size());
             }
 
             if (checks.trustMode() != com.hivemq.security.tls.TLSConstants.TrustMode.ALLOW_LIST
@@ -324,6 +329,26 @@ public record ParsedConfig(
      */
     public boolean anyCertificateValidatorActive() {
         return tlsEnabled && effectiveChecks.trustMode() == com.hivemq.security.tls.TLSConstants.TrustMode.ANY_CERT;
+    }
+
+    /// The superseded `allowList` path, where it names a directory that fingerprint trust would read.
+    ///
+    /// `allowList` has only ever read a single file; a directory there fails when it is read anyway,
+    /// so this changes the message, not the outcome, and only where the allow-list is read at all.
+    /// Unlike `revocationList`, which has always taken a directory too.
+    private static @NotNull Optional<String> supersededAllowListDirectory(
+            final @NotNull TLSConfig checks, final @NotNull Tls tlsConfig) {
+        final AllowList allowList = tlsConfig.allowList();
+        final String path = allowList == null ? null : allowList.path();
+        if (checks.trustMode() != TLSConstants.TrustMode.ALLOW_LIST || path == null || path.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Files.isDirectory(Path.of(path)) ? Optional.of(path) : Optional.empty();
+        } catch (final InvalidPathException _) {
+            // Not a path at all; reading it reports that.
+            return Optional.empty();
+        }
     }
 
     /** A path that is null, empty or whitespace-only is no path at all. */

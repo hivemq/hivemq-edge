@@ -22,8 +22,11 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.security.tls.MaterialRef;
 import com.hivemq.security.tls.TLSMaterialProvider;
 import com.hivemq.security.tls.TLSMaterialRegistry;
+import jakarta.xml.bind.JAXBContext;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import javax.xml.transform.stream.StreamSource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -107,7 +110,7 @@ class TlsMaterialConfiguratorTest extends AbstractConfigurationTest {
                 </tls-materials>
                 """));
 
-        final Configurator.ConfigResult result = configurator.applyConfig(configWith("""
+        final Configurator.ConfigResult result = configurator.applyConfig(unreadConfigWith("""
                 <tls-materials>
                     <tls-material>
                         <name>plant</name>
@@ -157,5 +160,16 @@ class TlsMaterialConfiguratorTest extends AbstractConfigurationTest {
                 </hivemq>
                 """.formatted(materials), StandardCharsets.UTF_8);
         return reader.applyConfig();
+    }
+
+    /// The configuration as unmarshalled, without the checks the reader makes before applying it: the
+    /// reader refuses a declaration that cannot be indexed, so this is how one reaches the configurator,
+    /// whose own refusal is the defence under test.
+    private static @NotNull HiveMQConfigEntity unreadConfigWith(final @NotNull String materials) throws Exception {
+        final String xml = "<hivemq>%s</hivemq>".formatted(materials);
+        return JAXBContext.newInstance(HiveMQConfigEntity.class)
+                .createUnmarshaller()
+                .unmarshal(new StreamSource(new StringReader(xml)), HiveMQConfigEntity.class)
+                .getValue();
     }
 }

@@ -362,7 +362,6 @@
     </protocol-adapters>
     <data-combiners/>
     <asset-mappers/>
-    <tls-materials/>
     <pulse>
         <managed-assets/>
     </pulse>

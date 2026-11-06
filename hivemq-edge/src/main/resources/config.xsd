@@ -875,12 +875,37 @@
                                                                 minOccurs="0"/>
                                                     <xs:element name="tls-identity" type="tlsIdentityEntity"
                                                                 minOccurs="0"/>
-                                                    <xs:element name="tls-truststore" type="tlsTruststoreEntity"
-                                                                minOccurs="0"/>
-                                                    <xs:element name="tls-allowlist" type="tlsAllowlistEntity"
-                                                                minOccurs="0"/>
-                                                    <xs:element name="tls-revocationlist"
-                                                                type="tlsRevocationlistEntity" minOccurs="0"/>
+                                                    <xs:element name="tls-truststore" type="tlsTruststoreEntity" minOccurs="0">
+                                                        <xs:unique name="bridgeTlsTruststoreSingleValues">
+                                                            <xs:selector xpath="."/>
+                                                            <xs:field xpath="name"/>
+                                                            <xs:field xpath="uuid"/>
+                                                            <xs:field xpath="reference-name"/>
+                                                            <xs:field xpath="reference-uuid"/>
+                                                            <xs:field xpath="format"/>
+                                                            <xs:field xpath="password"/>
+                                                            <xs:field xpath="password-file"/>
+                                                            <xs:field xpath="skip-integrity-check"/>
+                                                        </xs:unique>
+                                                    </xs:element>
+                                                    <xs:element name="tls-allowlist" type="tlsAllowlistEntity" minOccurs="0">
+                                                        <xs:unique name="bridgeTlsAllowlistSingleValues">
+                                                            <xs:selector xpath="."/>
+                                                            <xs:field xpath="name"/>
+                                                            <xs:field xpath="uuid"/>
+                                                            <xs:field xpath="reference-name"/>
+                                                            <xs:field xpath="reference-uuid"/>
+                                                        </xs:unique>
+                                                    </xs:element>
+                                                    <xs:element name="tls-revocationlist" type="tlsRevocationlistEntity" minOccurs="0">
+                                                        <xs:unique name="bridgeTlsRevocationlistSingleValues">
+                                                            <xs:selector xpath="."/>
+                                                            <xs:field xpath="name"/>
+                                                            <xs:field xpath="uuid"/>
+                                                            <xs:field xpath="reference-name"/>
+                                                            <xs:field xpath="reference-uuid"/>
+                                                        </xs:unique>
+                                                    </xs:element>
                                                 </xs:all>
                                             </xs:complexType>
                                         </xs:element>
@@ -1422,55 +1447,67 @@
         </xs:all>
     </xs:complexType>
 
-    <!-- Four presets plus the compatibility one. APPLICATION_URI is omitted, which without the
+    <!-- The check values are matched by the effective-configuration stage, which accepts them in
+         any case and with the separators written or left out (a preset accepts a hyphen for an
+         underscore), as the reference promises, and refuses any other word with a message listing
+         the values. An enumeration here would refuse those variants before that stage reads them, so
+         the schema checks only the shape and the documentation lists the values.
+
+         Four presets plus the compatibility one. APPLICATION_URI is omitted, which without the
          application-identifier check would say nothing that chain trust alone does not.
          TLS_BRIDGE_DEFAULT is what a bridge writing no checks validates, named for why it exists
          because no name of reasonable length carries five values. -->
     <xs:simpleType name="bridgeTlsPreset">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="STANDARD"/>
-            <xs:enumeration value="ALL"/>
-            <xs:enumeration value="SELF_SIGNED"/>
-            <xs:enumeration value="NO_VERIFICATION"/>
-            <xs:enumeration value="TLS_BRIDGE_DEFAULT"/>
+        <xs:annotation>
+            <xs:documentation>STANDARD, ALL, SELF_SIGNED, NO_VERIFICATION, TLS_BRIDGE_DEFAULT</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z]+([_\-][A-Za-z]+)*"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="bridgeTlsTrustMode">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="CHAIN"/>
-            <xs:enumeration value="ALLOW_LIST"/>
-            <xs:enumeration value="ANY_CERT"/>
+        <xs:annotation>
+            <xs:documentation>CHAIN, ALLOW_LIST, ANY_CERT</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="bridgeTlsHostnameCheck">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NONE"/>
-            <xs:enumeration value="HOSTNAME"/>
+        <xs:annotation>
+            <xs:documentation>NONE, HOSTNAME</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="bridgeTlsValidityCheck">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NONE"/>
-            <xs:enumeration value="NOT_BEFORE_OR_AFTER"/>
+        <xs:annotation>
+            <xs:documentation>NONE, NOT_BEFORE_OR_AFTER</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="bridgeTlsRevocationCheck">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NONE"/>
-            <xs:enumeration value="CHECK"/>
-            <xs:enumeration value="REQUIRE_CRLS"/>
+        <xs:annotation>
+            <xs:documentation>NONE, CHECK, REQUIRE_CRLS</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="bridgeTlsKeyUsageCheck">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NONE"/>
-            <xs:enumeration value="KEY_USAGE"/>
-            <xs:enumeration value="SERVER_AUTH"/>
+        <xs:annotation>
+            <xs:documentation>NONE, KEY_USAGE, SERVER_AUTH</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -1488,9 +1525,37 @@
             <xs:element name="uuid" type="xs:string" minOccurs="0"/>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="tls-identity" type="tlsIdentityEntity"/>
-                <xs:element name="tls-truststore" type="tlsTruststoreEntity"/>
-                <xs:element name="tls-allowlist" type="tlsAllowlistEntity"/>
-                <xs:element name="tls-revocationlist" type="tlsRevocationlistEntity"/>
+                <xs:element name="tls-truststore" type="tlsTruststoreEntity">
+                    <xs:unique name="materialTlsTruststoreSingleValues">
+                        <xs:selector xpath="."/>
+                        <xs:field xpath="name"/>
+                        <xs:field xpath="uuid"/>
+                        <xs:field xpath="reference-name"/>
+                        <xs:field xpath="reference-uuid"/>
+                        <xs:field xpath="format"/>
+                        <xs:field xpath="password"/>
+                        <xs:field xpath="password-file"/>
+                        <xs:field xpath="skip-integrity-check"/>
+                    </xs:unique>
+                </xs:element>
+                <xs:element name="tls-allowlist" type="tlsAllowlistEntity">
+                    <xs:unique name="materialTlsAllowlistSingleValues">
+                        <xs:selector xpath="."/>
+                        <xs:field xpath="name"/>
+                        <xs:field xpath="uuid"/>
+                        <xs:field xpath="reference-name"/>
+                        <xs:field xpath="reference-uuid"/>
+                    </xs:unique>
+                </xs:element>
+                <xs:element name="tls-revocationlist" type="tlsRevocationlistEntity">
+                    <xs:unique name="materialTlsRevocationlistSingleValues">
+                        <xs:selector xpath="."/>
+                        <xs:field xpath="name"/>
+                        <xs:field xpath="uuid"/>
+                        <xs:field xpath="reference-name"/>
+                        <xs:field xpath="reference-uuid"/>
+                    </xs:unique>
+                </xs:element>
             </xs:choice>
         </xs:sequence>
     </xs:complexType>
@@ -1531,7 +1596,11 @@
 
     <!-- One unordered choice rather than a sequence, since the repeated file, directory, pattern and
          builtin elements merge into one set and an operator should not have to learn an order among
-         them or against the password. How many of each may appear is the resolving stage's to say. -->
+         them or against the password. A choice cannot say that the single-valued elements (name,
+         reference, format, password, the integrity switch) appear at most once, and binding keeps only
+         the last of two, so each element declaring this type, and the two list types below, carries
+         an identity constraint whose fields are those elements: a field matching twice is a
+         validation error. -->
     <xs:complexType name="tlsTruststoreEntity">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element name="name" type="xs:string"/>

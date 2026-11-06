@@ -44,4 +44,15 @@ public sealed interface Secret {
             return "Secret.FromFile(" + path + ")";
         }
     }
+
+    /// No password: the operator wrote that the store is to be read without checking its integrity.
+    ///
+    /// Distinct from an absent password, which a container store is opened with as an empty one and
+    /// so still checked; only this waiver opens a store unchecked.
+    record Waived() implements Secret {
+        @Override
+        public @NotNull String toString() {
+            return "Secret.Waived";
+        }
+    }
 }
