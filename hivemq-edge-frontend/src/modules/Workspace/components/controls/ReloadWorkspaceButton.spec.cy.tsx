@@ -2,8 +2,12 @@ import type { ReactElement } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import type { Edge, Node } from '@xyflow/react'
 
-import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
+import { IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.ts'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
 import ReloadWorkspaceButton from './ReloadWorkspaceButton.tsx'
 
@@ -12,6 +16,12 @@ const wrapper = ({ children }: { children: ReactElement }) => (
     <ReactFlowProvider>{children}</ReactFlowProvider>
   </EdgeFlowProvider>
 )
+
+/** Builds the graph from the server's lists, as the workspace canvas does beside the button. */
+const Canvas = () => {
+  useGetFlowElements()
+  return null
+}
 
 const node = (id: string, type: NodeTypes, data: Record<string, unknown> = {}): Node => ({
   id,
@@ -100,6 +110,69 @@ describe('ReloadWorkspaceButton', () => {
       expect(nodes[0].position).to.deep.equal({ x: 321, y: 123 })
       // The server's data landed.
       expect(nodes[0].data).to.deep.equal({ id: 'kept', name: 'fresh' })
+    })
+  })
+
+  // One entity per list shape the reload reads back: adapters and bridges are cached as arrays,
+  // combiners inside their envelope.
+  const deletedElsewhere = [
+    {
+      entity: 'an adapter',
+      url: '/api/v1/management/protocol-adapters/adapters',
+      item: mockAdapter,
+      nodeId: `${IdStubs.ADAPTER_NODE}@${mockAdapter.id}`,
+      type: NodeTypes.ADAPTER_NODE,
+    },
+    {
+      entity: 'a bridge',
+      url: '/api/v1/management/bridges',
+      item: mockBridge,
+      nodeId: `${IdStubs.BRIDGE_NODE}@${mockBridge.id}`,
+      type: NodeTypes.BRIDGE_NODE,
+    },
+    {
+      entity: 'a combiner',
+      url: '/api/v1/management/combiners',
+      item: mockCombiner,
+      nodeId: mockCombiner.id,
+      type: NodeTypes.COMBINER_NODE,
+    },
+  ]
+
+  deletedElsewhere.forEach(({ entity, url, item, nodeId, type }) => {
+    it(`should remove the node of ${entity} deleted after the canvas loaded`, () => {
+      // The entity exists when the canvas loads and is deleted elsewhere before the reload, so only the
+      // reload's own fetch knows it is gone.
+      let deleted = false
+      cy.intercept('/api/v1/management/protocol-adapters/types', {
+        statusCode: 200,
+        body: { items: [mockProtocolAdapter] },
+        log: false,
+      })
+      cy.intercept(url, (req) => {
+        req.reply({ statusCode: 200, body: { items: deleted ? [] : [item] } })
+      }).as('getList')
+
+      useWorkspaceStore.setState({ nodes: [node(nodeId, type, { id: item.id })], edges: [] })
+
+      cy.mountWithProviders(
+        <>
+          <Canvas />
+          <ReloadWorkspaceButton />
+        </>,
+        { wrapper }
+      )
+
+      cy.wait('@getList').then(() => {
+        deleted = true
+      })
+      cy.getByTestId('reload-workspace-trigger').click()
+      cy.getByTestId('reload-workspace-confirm').click()
+      cy.getByTestId('reload-workspace-dialog').should('not.exist')
+
+      cy.wrap(null).should(() => {
+        expect(useWorkspaceStore.getState().nodes.map((item) => item.id)).not.to.include(nodeId)
+      })
     })
   })
 
