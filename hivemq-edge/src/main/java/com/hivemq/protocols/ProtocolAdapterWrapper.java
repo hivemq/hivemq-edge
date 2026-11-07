@@ -32,6 +32,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
@@ -835,6 +836,31 @@ public class ProtocolAdapterWrapper {
         return writingAdapter;
     }
 
+    /// With writing disabled nothing subscribes to the topics of the southbound mappings, so the messages
+    /// sent there are dropped without a trace. Say so once, at start, where an operator reads the log.
+    private void warnIfSouthboundMappingsAreNotStarted() {
+        if (protocolAdapterWritingService.writingEnabled()) {
+            return;
+        }
+        if (!adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)
+                || !(getAdapter() instanceof WritingProtocolAdapter)) {
+            return;
+        }
+        final int southboundMappingCount = getSouthboundMappings().size();
+        if (southboundMappingCount == 0) {
+            return;
+        }
+        final String cause = protocolAdapterWritingService instanceof WritingServiceProvider.WritingServiceNoop
+                ? "the commercial bidirectional module is not loaded"
+                : "no valid license is present";
+        LOGGER.warn(
+                "Protocol adapter '{}' does not start its {} southbound mapping(s) because {}. Messages sent to "
+                        + "their topics are dropped. Southbound writes and OPC UA method calls require a license.",
+                getId(),
+                southboundMappingCount,
+                cause);
+    }
+
     /**
      * Start writing for this adapter.
      * Called after all connections are established during {@link #start()}.
@@ -842,6 +868,7 @@ public class ProtocolAdapterWrapper {
      * @return {@code true} if writing was started or not needed, {@code false} if writing setup failed
      */
     protected boolean startWriting() {
+        warnIfSouthboundMappingsAreNotStarted();
         final WritingProtocolAdapter writingAdapter = getWritingAdapterForStart();
         if (writingAdapter == null) {
             return true;
