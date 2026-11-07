@@ -30,6 +30,7 @@ import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
 import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
+import com.hivemq.configuration.reader.TlsMaterialConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
@@ -81,7 +82,8 @@ public class ConfigurationBootstrap {
                         new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                         new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                         new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
-                        new InternalConfigurator(configurationService.internalConfigurationService())));
+                        new InternalConfigurator(configurationService.internalConfigurationService()),
+                        new TlsMaterialConfigurator(configurationService.tlsMaterialProvider())));
 
         final DataCombiningScopeMigrator migrator = new DataCombiningScopeMigrator();
         configFileReader.registerPostApplyCallback(migrator::migrateUnscopedTags);

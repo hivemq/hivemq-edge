@@ -11,10 +11,9 @@
               "path" : {
                 "type" : "string",
                 "title" : "Allow-list path",
-                "description" : "Path on the local file system to the server-certificate allow-list: one SHA-256 certificate fingerprint per line, hexadecimal, optional ':' separators, '#' for comments. Required when the effective trust mode is ALLOW_LIST."
+                "description" : "Path on the local file system to the server-certificate allow-list: one SHA-256 certificate fingerprint per line, hexadecimal, optional ':' separators, '#' for comments. Required when the effective trust mode is ALLOW_LIST. Superseded by tls-allowlist, which also takes several files, directories and glob patterns."
               }
             },
-            "required" : [ "path" ],
             "title" : "Certificate allow-list",
             "description" : "Allow-list of permitted server-certificate SHA-256 fingerprints. Required when the effective trust mode is ALLOW_LIST (preset SELF_SIGNED, or tlsChecksFull.trustMode=ALLOW_LIST)."
           },
@@ -52,12 +51,326 @@
               "path" : {
                 "type" : "string",
                 "title" : "Revocation list path",
-                "description" : "Path on the local file system to a certificate revocation list, or to a directory of them. PEM or DER. Required for revocation=CHECK or revocation=REQUIRE_CRLS whenever the certification path runs through a CA; a path that is trusted directly has no issuer to check and needs none."
+                "description" : "Path on the local file system to a certificate revocation list, or to a directory of them. PEM or DER. Needed for revocation=CHECK or revocation=REQUIRE_CRLS whenever the certification path runs through a CA; a path that is trusted directly has no issuer to check and needs none. Superseded by tls-revocationlist, which also takes several files, directories and glob patterns."
               }
             },
-            "required" : [ "path" ],
             "title" : "Certificate revocation lists",
-            "description" : "Location of the certificate revocation lists used by revocation=CHECK and revocation=REQUIRE_CRLS. A file or a directory of them, PEM or DER. Needed whenever the certification path runs through a CA: without CRLs the issuer's revocation status is unknown, and unknown fails closed."
+            "description" : "Location of the certificate revocation lists used by revocation=CHECK and revocation=REQUIRE_CRLS. A file or a directory of them, PEM or DER. Needed whenever the certification path runs through a CA: without CRLs the issuer's revocation status is unknown, and unknown fails closed. Superseded by tls-revocationlist."
+          },
+          "tls-allowlist" : {
+            "title" : "Certificate allow-list",
+            "description" : "The individual server certificates Edge accepts, by SHA-256 fingerprint. Supersedes 'allowList', and adds several files, directories and glob patterns.",
+            "type" : "object",
+            "properties" : {
+              "directory" : {
+                "title" : "Directories",
+                "description" : "Directories whose readable entries all belong to this material.",
+                "type" : "array",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "location" : {
+                      "type" : "string",
+                      "title" : "Location",
+                      "description" : "Path to the directory, or the glob pattern the files match."
+                    },
+                    "may-be-empty" : {
+                      "type" : "boolean",
+                      "title" : "May be empty",
+                      "description" : "Whether naming no file is acceptable. Defaults to false, which refuses a configuration whose directory or pattern finds nothing.",
+                      "default" : false
+                    }
+                  },
+                  "required" : [ "location" ]
+                }
+              },
+              "file" : {
+                "title" : "Files",
+                "description" : "The files belonging to this material.",
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              },
+              "pattern" : {
+                "title" : "Patterns",
+                "description" : "Glob patterns whose matches belong to this material.",
+                "type" : "array",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "location" : {
+                      "type" : "string",
+                      "title" : "Location",
+                      "description" : "Path to the directory, or the glob pattern the files match."
+                    },
+                    "may-be-empty" : {
+                      "type" : "boolean",
+                      "title" : "May be empty",
+                      "description" : "Whether naming no file is acceptable. Defaults to false, which refuses a configuration whose directory or pattern finds nothing.",
+                      "default" : false
+                    }
+                  },
+                  "required" : [ "location" ]
+                }
+              },
+              "reference-name" : {
+                "type" : "string",
+                "title" : "Reference by name",
+                "description" : "Name of an entry declared in a shared tls-material, written 'material-name::entry-name'."
+              },
+              "reference-uuid" : {
+                "type" : "string",
+                "title" : "Reference by uuid",
+                "description" : "The uuid of an entry declared in a shared tls-material."
+              }
+            }
+          },
+          "tls-identity" : {
+            "type" : "object",
+            "properties" : {
+              "certificate-file" : {
+                "type" : "string",
+                "title" : "Certificate file",
+                "description" : "The certificate belonging to the key. For pem, where it is required."
+              },
+              "chain-file" : {
+                "type" : "string",
+                "title" : "Chain file",
+                "description" : "The intermediate certificates vouching for the certificate. For pem, where it is optional."
+              },
+              "file" : {
+                "type" : "string",
+                "title" : "File",
+                "description" : "The container holding the key and its certificate chain. For p12 or jks."
+              },
+              "format" : {
+                "title" : "Format",
+                "description" : "p12, jks or pem. Declared rather than guessed from the file name.",
+                "type" : "string",
+                "enum" : [ "P12", "JKS", "PEM" ]
+              },
+              "key-entry" : {
+                "type" : "string",
+                "title" : "Key entry",
+                "description" : "Which key inside the container to present, by the name keytool -list prints under 'Alias name'. Required where the container holds several keys."
+              },
+              "key-file" : {
+                "type" : "string",
+                "title" : "Key file",
+                "description" : "The private key. For pem."
+              },
+              "key-password" : {
+                "type" : "string",
+                "title" : "Key password",
+                "description" : "The password decrypting a PEM key file."
+              },
+              "key-password-file" : {
+                "type" : "string",
+                "title" : "Key password file",
+                "description" : "A file holding the PEM key password."
+              },
+              "keyentry-password" : {
+                "type" : "string",
+                "title" : "Key entry password",
+                "description" : "The password unlocking one key entry inside a p12 or jks container."
+              },
+              "keyentry-password-file" : {
+                "type" : "string",
+                "title" : "Key entry password file",
+                "description" : "A file holding the key entry password."
+              },
+              "password" : {
+                "type" : "string",
+                "title" : "Password",
+                "description" : "The password that opens a p12 or jks container."
+              },
+              "password-file" : {
+                "type" : "string",
+                "title" : "Password file",
+                "description" : "A file holding the container password, for a deployment that projects secrets as files rather than writing them in the configuration."
+              },
+              "reference-name" : {
+                "type" : "string",
+                "title" : "Reference by name",
+                "description" : "Name of an identity declared in a shared tls-material, written 'material-name::entry-name'. An alternative to naming the files here."
+              },
+              "reference-uuid" : {
+                "type" : "string",
+                "title" : "Reference by uuid",
+                "description" : "The uuid of an identity declared in a shared tls-material."
+              }
+            },
+            "title" : "Identity",
+            "description" : "The private key and certificate chain Edge presents. Supersedes 'keystore', and adds PEM, passwords read from files, and references to shared tls-material. Mutually exclusive with keystore, truststore, allowList and revocationList."
+          },
+          "tls-revocationlist" : {
+            "title" : "Certificate revocation lists",
+            "description" : "The certificates authorities have withdrawn. Supersedes 'revocationList', and adds several files, directories and glob patterns.",
+            "type" : "object",
+            "properties" : {
+              "directory" : {
+                "title" : "Directories",
+                "description" : "Directories whose readable entries all belong to this material.",
+                "type" : "array",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "location" : {
+                      "type" : "string",
+                      "title" : "Location",
+                      "description" : "Path to the directory, or the glob pattern the files match."
+                    },
+                    "may-be-empty" : {
+                      "type" : "boolean",
+                      "title" : "May be empty",
+                      "description" : "Whether naming no file is acceptable. Defaults to false, which refuses a configuration whose directory or pattern finds nothing.",
+                      "default" : false
+                    }
+                  },
+                  "required" : [ "location" ]
+                }
+              },
+              "file" : {
+                "title" : "Files",
+                "description" : "The files belonging to this material.",
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              },
+              "pattern" : {
+                "title" : "Patterns",
+                "description" : "Glob patterns whose matches belong to this material.",
+                "type" : "array",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "location" : {
+                      "type" : "string",
+                      "title" : "Location",
+                      "description" : "Path to the directory, or the glob pattern the files match."
+                    },
+                    "may-be-empty" : {
+                      "type" : "boolean",
+                      "title" : "May be empty",
+                      "description" : "Whether naming no file is acceptable. Defaults to false, which refuses a configuration whose directory or pattern finds nothing.",
+                      "default" : false
+                    }
+                  },
+                  "required" : [ "location" ]
+                }
+              },
+              "reference-name" : {
+                "type" : "string",
+                "title" : "Reference by name",
+                "description" : "Name of an entry declared in a shared tls-material, written 'material-name::entry-name'."
+              },
+              "reference-uuid" : {
+                "type" : "string",
+                "title" : "Reference by uuid",
+                "description" : "The uuid of an entry declared in a shared tls-material."
+              }
+            }
+          },
+          "tls-truststore" : {
+            "type" : "object",
+            "properties" : {
+              "builtin" : {
+                "title" : "Built-in truststores",
+                "description" : "A truststore the runtime carries. JVM-cacerts is the only name, and it is the public certificate authorities the JVM ships with.",
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              },
+              "directory" : {
+                "title" : "Directories",
+                "description" : "Directories whose readable entries all hold trusted certificates.",
+                "type" : "array",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "location" : {
+                      "type" : "string",
+                      "title" : "Location",
+                      "description" : "Path to the directory, or the glob pattern the files match."
+                    },
+                    "may-be-empty" : {
+                      "type" : "boolean",
+                      "title" : "May be empty",
+                      "description" : "Whether naming no file is acceptable. Defaults to false, which refuses a configuration whose directory or pattern finds nothing.",
+                      "default" : false
+                    }
+                  },
+                  "required" : [ "location" ]
+                }
+              },
+              "file" : {
+                "title" : "Files",
+                "description" : "Files holding trusted certificates.",
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              },
+              "format" : {
+                "title" : "Format",
+                "description" : "p12, jks or pem.",
+                "type" : "string",
+                "enum" : [ "P12", "JKS", "PEM" ]
+              },
+              "password" : {
+                "type" : "string",
+                "title" : "Password",
+                "description" : "The password that opens a p12 or jks container."
+              },
+              "password-file" : {
+                "type" : "string",
+                "title" : "Password file",
+                "description" : "A file holding the container password."
+              },
+              "pattern" : {
+                "title" : "Patterns",
+                "description" : "Glob patterns whose matches hold trusted certificates.",
+                "type" : "array",
+                "items" : {
+                  "type" : "object",
+                  "properties" : {
+                    "location" : {
+                      "type" : "string",
+                      "title" : "Location",
+                      "description" : "Path to the directory, or the glob pattern the files match."
+                    },
+                    "may-be-empty" : {
+                      "type" : "boolean",
+                      "title" : "May be empty",
+                      "description" : "Whether naming no file is acceptable. Defaults to false, which refuses a configuration whose directory or pattern finds nothing.",
+                      "default" : false
+                    }
+                  },
+                  "required" : [ "location" ]
+                }
+              },
+              "reference-name" : {
+                "type" : "string",
+                "title" : "Reference by name",
+                "description" : "Name of a truststore declared in a shared tls-material, written 'material-name::entry-name'."
+              },
+              "reference-uuid" : {
+                "type" : "string",
+                "title" : "Reference by uuid",
+                "description" : "The uuid of a truststore declared in a shared tls-material."
+              },
+              "skip-integrity-check" : {
+                "type" : "boolean",
+                "title" : "Skip integrity check",
+                "description" : "Read the certificates without verifying the file is unchanged. For a truststore an operator has no password for.",
+                "default" : false
+              }
+            },
+            "title" : "Truststore",
+            "description" : "The authorities whose certificates Edge accepts. Supersedes 'truststore', and adds PEM, several files, directories, glob patterns and the runtime's own authorities."
           },
           "tlsChecks" : {
             "type" : "string",
@@ -133,7 +446,7 @@
   },
   "uiSchema" : {
     "tls" : {
-      "ui:order" : [ "enabled", "tlsChecks", "tlsChecksFull", "allowList", "revocationList", "keystore", "truststore", "*" ],
+      "ui:order" : [ "enabled", "tlsChecks", "tlsChecksFull", "tls-identity", "tls-truststore", "tls-allowlist", "tls-revocationlist", "allowList", "revocationList", "keystore", "truststore", "*" ],
       "tlsChecks" : {
         "ui:enumNames" : [ "NONE: Chain validation only - the trust chain is still built.", "APPLICATION_URI: Chain validation plus the Application URI check.", "STANDARD: Default - chain, Application URI, validity period and revocation.", "ALL: STANDARD plus hostname verification and key-usage enforcement.", "SELF_SIGNED: Fingerprint allow-list plus Application URI, hostname and validity - for servers without a CA.", "NO_VERIFICATION: Accept any certificate - vulnerable to MITM, prefer SELF_SIGNED." ]
       },
@@ -151,6 +464,18 @@
       },
       "truststore" : {
         "ui:order" : [ "path", "password" ]
+      },
+      "tls-identity" : {
+        "ui:order" : [ "format", "file", "key-file", "certificate-file", "chain-file", "password", "password-file", "key-entry", "keyentry-password", "keyentry-password-file", "key-password", "key-password-file", "reference-name", "reference-uuid", "*" ]
+      },
+      "tls-truststore" : {
+        "ui:order" : [ "format", "file", "directory", "pattern", "builtin", "password", "password-file", "skip-integrity-check", "reference-name", "reference-uuid", "*" ]
+      },
+      "tls-allowlist" : {
+        "ui:order" : [ "file", "directory", "pattern", "reference-name", "reference-uuid", "*" ]
+      },
+      "tls-revocationlist" : {
+        "ui:order" : [ "file", "directory", "pattern", "reference-name", "reference-uuid", "*" ]
       }
     }
   }

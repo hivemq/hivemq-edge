@@ -18,43 +18,34 @@ package com.hivemq.edge.adapters.opcua.client;
 import com.hivemq.edge.adapters.opcua.config.AllowList;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
-import com.hivemq.edge.adapters.opcua.config.EffectiveChecks;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.RevocationList;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
+import com.hivemq.edge.adapters.opcua.config.TLSConfigOpcUA;
 import com.hivemq.edge.adapters.opcua.config.Tls;
-import com.hivemq.edge.adapters.opcua.config.TlsChecksProjection;
-import com.hivemq.edge.adapters.opcua.config.TrustMode;
 import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
-import com.hivemq.edge.adapters.opcua.security.AllowListCertificateValidator;
-import com.hivemq.edge.adapters.opcua.security.CertificateFingerprints;
-import com.hivemq.edge.adapters.opcua.security.CertificateRevocationLists;
-import com.hivemq.edge.adapters.opcua.security.CertificateTrustListManager;
-import com.hivemq.edge.adapters.opcua.security.CheckOnlyCertificateValidator;
+import com.hivemq.edge.adapters.opcua.security.TLSValidatorOpcUA;
 import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
-import java.io.File;
-import java.io.IOException;
+import com.hivemq.security.tls.TLSConfig;
+import com.hivemq.security.tls.TLSConfigResolved;
+import com.hivemq.security.tls.TLSConstants;
+import com.hivemq.security.tls.TLSMaterialRegistry;
+import com.hivemq.security.tls.TLSPolicy;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.eclipse.milo.opcua.sdk.client.identity.CompositeProvider;
 import org.eclipse.milo.opcua.sdk.client.identity.IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.identity.UsernameProvider;
 import org.eclipse.milo.opcua.sdk.client.identity.X509IdentityProvider;
 import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
-import org.eclipse.milo.opcua.stack.core.security.DefaultClientCertificateValidator;
-import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
-import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -62,7 +53,8 @@ import org.slf4j.LoggerFactory;
 
 public record ParsedConfig(
         boolean tlsEnabled,
-        @NotNull EffectiveChecks effectiveChecks,
+        /// The checks and the material, with any reference into shared material already resolved.
+        @NotNull TLSConfig effectiveChecks,
         @Nullable KeystoreUtil.KeyPairWithChain keyPairWithChain,
         @Nullable CertificateValidator clientCertificateValidator,
         @NotNull IdentityProvider identityProvider,
@@ -70,17 +62,36 @@ public record ParsedConfig(
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ParsedConfig.class);
 
+    /// For a deployment that declares no shared TLS material, where every reference is therefore
+    /// unresolvable and every adapter writes its material where it is used.
     public static Result<ParsedConfig, String> fromConfig(final OpcUaSpecificAdapterConfig adapterConfig) {
+        return fromConfig(adapterConfig, TLSMaterialRegistry.empty());
+    }
+
+    /// @param materials the TLS material this deployment declares, which the adapter's references
+    ///     are resolved against
+    public static Result<ParsedConfig, String> fromConfig(
+            final OpcUaSpecificAdapterConfig adapterConfig, final @NotNull TLSMaterialRegistry materials) {
         final Tls tlsConfig = adapterConfig.getTls();
         final boolean tlsEnabled = tlsConfig.enabled();
         final String endpointUri = adapterConfig.getUri();
 
         // Read-time projection: the configuration itself is never rewritten, so writing it back out
         // returns exactly what the operator wrote.
-        final EffectiveChecks checks;
+        final TLSConfigOpcUA written;
         try {
-            checks = TlsChecksProjection.project(tlsConfig);
-        } catch (final TlsChecksProjection.InvalidTlsChecksConfigException e) {
+            written = new TLSConfigOpcUA(tlsConfig);
+        } catch (final TLSConfigOpcUA.InvalidTlsConfigException e) {
+            return Failure.of(e.reason());
+        }
+
+        // Whatever the adapter named in a shared tls-material, replaced by the material itself.
+        // Resolved before anything is read, and resolved here only: a reference resolved in two
+        // places is a reference that can be resolved two ways.
+        final TLSConfig checks;
+        try {
+            checks = new TLSConfigResolved(written, materials);
+        } catch (final TLSMaterialRegistry.InvalidReferenceException e) {
             return Failure.of(e.reason());
         }
 
@@ -100,14 +111,20 @@ public record ParsedConfig(
         // at all, no fixture or documented example has one, and the documentation already states that
         // a store without a path stops the adapter. Absence is still spelled by leaving the element
         // out, which is what the "system truststore" example in the documentation does.
-        if (truststore != null && isBlank(truststore.path())) {
-            return Failure.of("Truststore is configured but has no 'path'. Add "
-                    + "<truststore><path>...</path></truststore>, or remove the truststore element "
-                    + "entirely to trust the JVM cacerts.");
-        }
-        if (truststore != null && truststore.password() == null) {
-            return Failure.of("Truststore is configured but has no 'password'. Add "
-                    + "<truststore><password>...</password></truststore>.");
+        //
+        // Guards the superseded element only. Its superseding counterpart, <tls-truststore>, takes
+        // several files, a directory, a glob pattern, the runtime's own authorities or a reference, so
+        // "has no path" is not a defect there; what it requires is checked where it is translated.
+        if (truststore != null) {
+            if (isBlank(truststore.path())) {
+                return Failure.of("Truststore is configured but has no 'path'. Add "
+                        + "<truststore><path>...</path></truststore>, or remove the truststore element "
+                        + "entirely to trust the JVM cacerts.");
+            }
+            if (truststore.password() == null) {
+                return Failure.of("Truststore is configured but has no 'password'. Add "
+                        + "<truststore><password>...</password></truststore>.");
+            }
         }
 
         if (tlsEnabled && adapterConfig.getSecurity().policy() == SecPolicy.NONE) {
@@ -123,114 +140,87 @@ public record ParsedConfig(
         }
 
         CertificateValidator certValidator = null;
+        KeystoreUtil.KeyPairWithChain keyPairWithChain = null;
         if (tlsEnabled) {
-            switch (checks.trustMode()) {
-                case CHAIN -> {
-                    final var trustedCertsOpt = getTrustedCerts(truststore);
-                    if (trustedCertsOpt.isEmpty()) {
-                        // Reachable only when the user explicitly configured a truststore path that
-                        // is missing or unreadable. "No truststore configured" silently falls back
-                        // to JVM cacerts inside getTrustedCerts and does NOT land here.
-                        return Failure.of("Truststore is configured but the file is missing or unreadable. "
-                                + "Either correct the path, leave the truststore unset to use the JVM cacerts, "
-                                + "or use trustMode=ALLOW_LIST to trust specific certificates by fingerprint.");
-                    }
-                    final List<X509CRL> revocationLists;
-                    try {
-                        revocationLists = loadRevocationLists(tlsConfig.revocationList());
-                    } catch (final IOException | IllegalArgumentException e) {
-                        // Same posture as the allow-list: a revocation list the operator configured
-                        // but that cannot be read is a configuration error, not a reason to fall back
-                        // to checking nothing.
-                        return Failure.of(String.valueOf(e.getMessage()));
-                    }
-                    if (!revocationLists.isEmpty()) {
-                        final RevocationList configured = tlsConfig.revocationList();
-                        log.info(
-                                "OPC UA adapter endpoint '{}': {} certificate revocation list(s) loaded from '{}'.",
-                                endpointUri,
-                                revocationLists.size(),
-                                configured == null ? "" : configured.path());
-                    } else if (checks.isRevocation() && containsCaCertificate(trustedCertsOpt.get())) {
-                        // Logged once at start, not per connect. Revocation is decided while the path is
-                        // built, from the CRLs the trust-list manager offers; with none, the status of
-                        // every issuing CA is "unknown", and unknown fails closed. That refusal is
-                        // correct, but it arrives at connect time as Bad_CertificateRevocationUnknown
-                        // with nothing pointing at the missing input, which is how a correctly trusted
-                        // CA-signed server looks indistinguishable from an untrusted one.
-                        //
-                        // Deliberately a warning and not a start-up refusal, and deliberately conditional
-                        // on the truststore actually holding a CA: a truststore of end-entity
-                        // certificates is direct trust, where no issuer appears in the path and
-                        // revocation is satisfied vacuously. Warning there would fire on the majority of
-                        // working deployments and train operators to ignore it.
-                        log.warn(
-                                "OPC UA adapter endpoint '{}': revocation={} is enforced and the truststore contains "
-                                        + "a CA, but no certificate revocation list is configured. The issuer's "
-                                        + "revocation status is therefore unknown, and unknown fails closed - a "
-                                        + "server certificate signed by that CA will be refused with "
-                                        + "Bad_CertificateRevocationUnknown however correct the rest of the "
-                                        + "configuration is. Point <revocationList><path>...</path></revocationList> "
-                                        + "at the CA's CRL (a file, or a directory of them), or set "
-                                        + "tlsChecksFull.revocation=NONE to accept an unchecked revocation status.",
-                                endpointUri,
-                                checks.revocation());
-                    }
-                    certValidator = createServerCertificateValidator(trustedCertsOpt.get(), revocationLists, checks);
-                    if (!checks.isHostname()) {
-                        // Logged once at start (not per-connect): the certificate is trusted via its
-                        // chain, but is not verified to belong to this endpoint's hostname, so a
-                        // substituted server whose certificate chains to the same anchor is accepted.
-                        log.warn(
-                                "OPC UA adapter endpoint '{}': TLS hostname verification is not enabled. The server "
-                                        + "certificate is trusted via its chain but is not checked against the "
-                                        + "endpoint hostname, so a substituted server whose certificate chains to the "
-                                        + "same anchor would be accepted. Enable it with tlsChecks=ALL or "
-                                        + "tlsChecksFull.hostname=HOSTNAME.",
-                                endpointUri);
-                    }
-                }
-                case ALLOW_LIST -> {
-                    final String allowListPath;
-                    try {
-                        allowListPath = TlsChecksProjection.requireAllowListPath(tlsConfig.allowList());
-                    } catch (final TlsChecksProjection.InvalidTlsChecksConfigException e) {
-                        // Unreachable while project() above validates ALLOW_LIST configurations, but a
-                        // future caller that skips projection gets the operator-facing error rather
-                        // than a NullPointerException.
-                        return Failure.of(e.reason());
-                    }
-                    final Set<String> fingerprints;
-                    try {
-                        fingerprints = CertificateFingerprints.loadAllowList(Path.of(allowListPath));
-                    } catch (final IOException e) {
-                        // The message is already operator-facing and names the path and the specific
-                        // problem; interpolating the exception itself only added a Java class name and a
-                        // second copy of the path.
-                        return Failure.of(String.valueOf(e.getMessage()));
-                    } catch (final IllegalArgumentException e) {
-                        return Failure.of(String.valueOf(e.getMessage()));
-                    }
-                    log.info(
-                            "OPC UA adapter endpoint '{}': server certificates are trusted by fingerprint; "
-                                    + "{} fingerprint(s) loaded from '{}'.",
-                            endpointUri,
-                            fingerprints.size(),
-                            allowListPath);
-                    certValidator = new AllowListCertificateValidator(fingerprints, checks, endpointUri);
-                }
-                case ANY_CERT ->
-                    // No trust is established at all. Whatever else is configured is still enforced on
-                    // the presented certificate, which is what keeps the axes orthogonal.
-                    certValidator = checks.hasStandaloneEndEntityChecks()
-                            ? new CheckOnlyCertificateValidator(checks)
-                            : new CertificateValidator.InsecureCertificateValidator();
+            // Everything the configuration named, read once, before any connection exists. The one
+            // step that touches a filesystem, and the one that refuses a surface whose material
+            // cannot be read: a truststore that will not open is a configuration error, never a
+            // reason to fall back to trusting less.
+            final Optional<String> allowListDirectory = supersededAllowListDirectory(checks, tlsConfig);
+            if (allowListDirectory.isPresent()) {
+                return Failure.of(("The allowList path '%s' is a directory. allowList reads one file of "
+                                + "fingerprints: name that file, or write <tls-allowlist><directory><location>%s"
+                                + "</location></directory></tls-allowlist> instead of allowList to read every file "
+                                + "in the directory.")
+                        .formatted(allowListDirectory.get(), allowListDirectory.get()));
+            }
+            final TLSPolicy policy;
+            try {
+                policy = new TLSPolicy(checks);
+            } catch (final TLSPolicy.TLSMaterialException e) {
+                return Failure.of(e.reason());
             }
 
-            final AllowList configuredAllowList = tlsConfig.allowList();
-            if (checks.trustMode() != TrustMode.ALLOW_LIST
-                    && configuredAllowList != null
-                    && TlsChecksProjection.hasAllowListPath(configuredAllowList)) {
+            // Edge's own key, from the one read above. Reshaped rather than read again, so there is
+            // no second place that could open a different file or pick a different key entry.
+            if (policy.identity().isPresent()) {
+                keyPairWithChain = keyPairWithChainFrom(policy.identity().get());
+            }
+
+            // Which validator the trust mode calls for, and what it asks the OPC UA stack to check.
+            certValidator = TLSValidatorOpcUA.validatorFor(policy, endpointUri);
+
+            if (!policy.revocationLists().isEmpty()) {
+                log.info(
+                        "OPC UA adapter endpoint '{}': {} certificate revocation list(s) loaded.",
+                        endpointUri,
+                        policy.revocationLists().size());
+            } else if (checks.isChainBuilt() && checks.isRevocation() && anchorsIncludeACa(policy)) {
+                // Logged once at start, not per connect. Revocation is decided while the path is
+                // built, from the revocation lists the trust list offers; with none, the status of
+                // every issuing CA is "unknown", and unknown fails closed. That refusal is correct,
+                // but it arrives at connect time as Bad_CertificateRevocationUnknown with nothing
+                // pointing at the missing input, which is how a correctly trusted CA-signed server
+                // looks indistinguishable from an untrusted one.
+                //
+                // Deliberately a warning and not a start-up refusal, and deliberately conditional on
+                // the truststore actually holding a CA: a truststore of end-entity certificates is
+                // direct trust, where no issuer appears in the path and revocation is satisfied
+                // vacuously. Warning there would fire on the majority of working deployments and
+                // train operators to ignore it.
+                log.warn(
+                        "OPC UA adapter endpoint '{}': revocation={} is enforced and the truststore contains "
+                                + "a CA, but no certificate revocation list is configured. The issuer's "
+                                + "revocation status is therefore unknown, and unknown fails closed - a "
+                                + "server certificate signed by that CA will be refused with "
+                                + "Bad_CertificateRevocationUnknown however correct the rest of the "
+                                + "configuration is. Point <revocationList><path>...</path></revocationList> "
+                                + "at the CA's CRL (a file, or a directory of them), or set "
+                                + "tlsChecksFull.revocation=NONE to accept an unchecked revocation status.",
+                        endpointUri,
+                        checks.revocation());
+            }
+
+            // No warning here for a path built with no trust anchors: it cannot happen. Where the
+            // trust mode builds a path and the configuration names no truststore, the effective
+            // configuration substitutes the runtime's own authorities and warns there, and a
+            // truststore that holds no certificate is refused when it is read.
+
+            if (checks.isChainBuilt() && !checks.isHostname()) {
+                // Logged once at start (not per-connect): the certificate is trusted via its chain,
+                // but is not verified to belong to this endpoint's hostname, so a substituted server
+                // whose certificate chains to the same anchor is accepted.
+                log.warn(
+                        "OPC UA adapter endpoint '{}': TLS hostname verification is not enabled. The server "
+                                + "certificate is trusted via its chain but is not checked against the "
+                                + "endpoint hostname, so a substituted server whose certificate chains to the "
+                                + "same anchor would be accepted. Enable it with tlsChecks=ALL or "
+                                + "tlsChecksFull.hostname=HOSTNAME.",
+                        endpointUri);
+            }
+
+            if (checks.trustMode() != com.hivemq.security.tls.TLSConstants.TrustMode.ALLOW_LIST
+                    && TLSConfigOpcUA.hasAllowList(tlsConfig)) {
                 // Logged once at start, not per connect. The file is read only under
                 // trustMode=ALLOW_LIST, so an allow-list configured under any other trust mode is
                 // inert - and an operator who believes they have pinned a specific set of
@@ -239,63 +229,66 @@ public record ParsedConfig(
                 // adapter is not less safe than that configuration asks for, only less safe than the
                 // operator probably intends.
                 log.warn(
-                        "OPC UA adapter endpoint '{}': a certificate allow-list is configured ('{}') but the "
-                                + "effective trust mode is {}, which never reads it. No server certificate is "
-                                + "pinned by its fingerprint. Set tlsChecks=SELF_SIGNED or "
-                                + "tlsChecksFull.trustMode=ALLOW_LIST to enforce the allow-list, or remove the "
-                                + "'allowList' element.",
+                        "OPC UA adapter endpoint '{}': a certificate allow-list is configured but the effective "
+                                + "trust mode is {}, which never reads it. No server certificate is pinned by its "
+                                + "fingerprint. Set tlsChecks=SELF_SIGNED or tlsChecksFull.trustMode=ALLOW_LIST to "
+                                + "enforce the allow-list, or remove the allow-list element.",
                         endpointUri,
-                        configuredAllowList.path(),
                         checks.trustMode());
             }
 
-            final RevocationList configuredRevocationList = tlsConfig.revocationList();
-            if (checks.trustMode() != TrustMode.CHAIN
-                    && TlsChecksProjection.hasRevocationListPath(configuredRevocationList)) {
+            if (checks.trustMode() != com.hivemq.security.tls.TLSConstants.TrustMode.CHAIN
+                    && TLSConfigOpcUA.hasRevocationList(tlsConfig)) {
                 // The same shape as the inert allow-list above, and inert for the same structural
                 // reason: CRLs are consulted only while a certification path is built, which only
                 // CHAIN does. An operator who supplied CRLs believes revocation is being enforced.
-                // Not an error - the projection already refuses revocation without CHAIN, so the
-                // effective configuration is exactly what was asked for, just not what was meant.
+                // Not an error - the effective configuration already refuses revocation without
+                // CHAIN, so what runs is exactly what was asked for, just not what was meant.
                 log.warn(
-                        "OPC UA adapter endpoint '{}': certificate revocation lists are configured ('{}') but the "
+                        "OPC UA adapter endpoint '{}': certificate revocation lists are configured but the "
                                 + "effective trust mode is {}, which builds no certification path and never reads "
                                 + "them. No revocation status is checked. Set tlsChecksFull.trustMode=CHAIN to "
-                                + "enforce revocation, or remove the 'revocationList' element.",
+                                + "enforce revocation, or remove the revocation-list element.",
                         endpointUri,
-                        Objects.requireNonNull(configuredRevocationList).path(),
                         checks.trustMode());
             }
         }
 
         final Keystore keystore = adapterConfig.getTls().keystore();
-        KeystoreUtil.KeyPairWithChain keyPairWithChain = null;
-        // The component is declared non-null, but a keystore element whose <path> child is missing
+        // Guards the superseded element only. Its superseding counterpart, <tls-identity>, names a
+        // PEM key and certificate in separate elements and may carry no container password at all, so
+        // these three say nothing about it; what it requires is checked where it is translated.
+        //
+        // The components are declared nullable, but a keystore element whose <path> child is missing
         // (or misspelled, and therefore dropped by the unknown-setting handling core applies to this
-        // record) binds a null anyway. Without this guard that null surfaces as a NullPointerException
-        // at adapter start instead of a configuration error naming the element to fix.
+        // record) binds a null anyway. Without these guards that null surfaces as a
+        // NullPointerException at adapter start instead of a configuration error naming the element.
         // Blank counts as absent here for the same reason it does on the truststore above: a present
         // element with an empty <path> used to skip every guard below and leave the adapter with no
         // client certificate, which surfaces as a connection failure under a security policy that
         // needs one, or under X509 authentication - far from the element that caused it.
-        if (keystore != null && isBlank(keystore.path())) {
-            return Failure.of("Keystore is configured but has no 'path'. Add "
-                    + "<keystore><path>...</path></keystore>, or remove the keystore element entirely.");
-        }
-        if (keystore != null && keystore.password() == null) {
-            return Failure.of("Keystore is configured but has no 'password'. Add "
-                    + "<keystore><password>...</password></keystore>.");
-        }
-        if (keystore != null && keystore.privateKeyPassword() == null) {
-            return Failure.of("Keystore is configured but has no 'privateKeyPassword'. Add "
-                    + "<keystore><privateKeyPassword>...</privateKeyPassword></keystore>.");
-        }
         if (keystore != null) {
-            final var kpWithChain = getKeyPairWithChain(keystore);
-            if (kpWithChain.isEmpty()) {
-                return Failure.of("Failed to load keypair with chain from keystore, check keystore configuration");
+            if (isBlank(keystore.path())) {
+                return Failure.of("Keystore is configured but has no 'path'. Add "
+                        + "<keystore><path>...</path></keystore>, or remove the keystore element entirely.");
             }
-            keyPairWithChain = kpWithChain.get();
+            if (keystore.password() == null) {
+                return Failure.of("Keystore is configured but has no 'password'. Add "
+                        + "<keystore><password>...</password></keystore>.");
+            }
+            if (keystore.privateKeyPassword() == null) {
+                return Failure.of("Keystore is configured but has no 'privateKeyPassword'. Add "
+                        + "<keystore><privateKeyPassword>...</privateKeyPassword></keystore>.");
+            }
+        }
+        // An identity configured while TLS is disabled is never read: the policy is built only when
+        // TLS is on, and with it off no certificate is exchanged for the key to appear in.
+        if ((keystore != null || adapterConfig.getTls().tlsIdentity() != null) && !tlsEnabled) {
+            log.warn(
+                    "OPC UA adapter endpoint '{}': a keystore is configured but TLS is disabled, so no client "
+                            + "certificate is presented. Enable TLS with <tls><enabled>true</enabled></tls>, or "
+                            + "remove the keystore element.",
+                    endpointUri);
         }
 
         final Optional<IdentityProvider> identityProvider =
@@ -335,7 +328,27 @@ public record ParsedConfig(
      * that matters.
      */
     public boolean anyCertificateValidatorActive() {
-        return tlsEnabled && effectiveChecks.trustMode() == TrustMode.ANY_CERT;
+        return tlsEnabled && effectiveChecks.trustMode() == com.hivemq.security.tls.TLSConstants.TrustMode.ANY_CERT;
+    }
+
+    /// The superseded `allowList` path, where it names a directory that fingerprint trust would read.
+    ///
+    /// `allowList` has only ever read a single file; a directory there fails when it is read anyway,
+    /// so this changes the message, not the outcome, and only where the allow-list is read at all.
+    /// Unlike `revocationList`, which has always taken a directory too.
+    private static @NotNull Optional<String> supersededAllowListDirectory(
+            final @NotNull TLSConfig checks, final @NotNull Tls tlsConfig) {
+        final AllowList allowList = tlsConfig.allowList();
+        final String path = allowList == null ? null : allowList.path();
+        if (checks.trustMode() != TLSConstants.TrustMode.ALLOW_LIST || path == null || path.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Files.isDirectory(Path.of(path)) ? Optional.of(path) : Optional.empty();
+        } catch (final InvalidPathException _) {
+            // Not a path at all; reading it reports that.
+            return Optional.empty();
+        }
     }
 
     /** A path that is null, empty or whitespace-only is no path at all. */
@@ -343,119 +356,33 @@ public record ParsedConfig(
         return path == null || path.isBlank();
     }
 
-    private static @NotNull Optional<List<X509Certificate>> getTrustedCerts(@Nullable final Truststore truststore) {
-        // A blank path and a null password are ruled out by the caller's guards, which name the
-        // missing element in the start-up failure instead of the generic missing-or-unreadable
-        // message below. Only a genuinely absent truststore reaches the cacerts fallback.
-        if (truststore != null) {
-            final File truststoreFile = new File(truststore.path());
-            if (!truststoreFile.exists() || !truststoreFile.canRead()) {
-                log.error(
-                        "Truststore configuration is not valid. Truststore file does not exist or is not readable: {}",
-                        truststoreFile.getPath());
-                return Optional.empty();
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("Loading truststore from path: {}", truststore.path());
-            }
-            final String trustStorePath = truststore.path();
-            final String trustStorePassword = truststore.password();
-            return Optional.of(KeystoreUtil.getCertificatesFromTruststore("JKS", trustStorePath, trustStorePassword));
-        }
-
-        log.info("OPC UA adapter has no user truststore configured; falling back to JVM cacerts. "
-                + "If the server presents a self-signed certificate that does not chain to a public CA, "
-                + "use tlsChecks=SELF_SIGNED to trust it by fingerprint instead.");
-        return Optional.of(KeystoreUtil.getCertificatesFromDefaultTruststore());
+    /// Whether any trust anchor is a certificate authority, and so whether an issuer can appear in a
+    /// certification path at all - which is what decides whether a missing revocation list matters.
+    ///
+    /// The discriminator between the two shapes of a chain-trust truststore: a CA to chain through,
+    /// where revocation is a real question and needs a revocation list to answer, and directly
+    /// trusted end-entity certificates, where the server's own certificate is the anchor, no issuer
+    /// is consulted and revocation is satisfied vacuously.
+    ///
+    /// `getBasicConstraints()` returns the path-length constraint for a CA and `-1` for anything
+    /// else, which is exactly this question.
+    private static boolean anchorsIncludeACa(final @NotNull TLSPolicy policy) {
+        return policy.trustAnchors().stream()
+                .anyMatch(anchor -> anchor.getTrustedCert().getBasicConstraints() != -1);
     }
 
-    /**
-     * Builds the chain-validating validator for {@code trustMode=CHAIN}. The Milo
-     * {@link ValidationCheck} set is assembled from the five non-trust axes, one contribution each, so
-     * a change on one axis cannot disturb another.
-     */
-    private static @NotNull CertificateValidator createServerCertificateValidator(
-            final @NotNull List<X509Certificate> trustedCerts,
-            final @NotNull List<X509CRL> revocationLists,
-            final @NotNull EffectiveChecks checks) {
-        return new DefaultClientCertificateValidator(
-                new CertificateTrustListManager(trustedCerts, revocationLists),
-                toValidationChecks(checks),
-                new MemoryCertificateQuarantine());
-    }
-
-    /**
-     * Whether any trust anchor is a CA, and so whether an issuer can appear in the certification path.
-     *
-     * <p>The discriminator between the two shapes of a CHAIN truststore: a CA to chain through, where
-     * revocation is a real question and needs CRLs to answer, and directly trusted end-entity
-     * certificates, where the server's own certificate is the anchor, no issuer is consulted and
-     * revocation is satisfied vacuously.
-     *
-     * <p>{@code getBasicConstraints()} returns the path-length constraint for a CA and {@code -1} for
-     * anything else, which is exactly this question.
-     */
-    private static boolean containsCaCertificate(final @NotNull List<X509Certificate> trustedCerts) {
-        return trustedCerts.stream().anyMatch(cert -> cert.getBasicConstraints() != -1);
-    }
-
-    /**
-     * The configured revocation lists, or none when the element is absent. Absence is legitimate:
-     * only a path through a CA needs them.
-     */
-    static @NotNull List<X509CRL> loadRevocationLists(final @Nullable RevocationList revocationList)
-            throws IOException {
-        if (!TlsChecksProjection.hasRevocationListPath(revocationList)) {
-            return List.of();
-        }
-        return CertificateRevocationLists.load(
-                Path.of(Objects.requireNonNull(revocationList).path()));
-    }
-
-    /**
-     * Maps the effective axes onto the Milo optional-check set. Package-private so the mapping can be
-     * asserted directly against the check sets the legacy presets have always produced.
-     */
-    static @NotNull Set<ValidationCheck> toValidationChecks(final @NotNull EffectiveChecks checks) {
-        final EnumSet<ValidationCheck> validationChecks = EnumSet.noneOf(ValidationCheck.class);
-        if (checks.isSanUri()) {
-            validationChecks.add(ValidationCheck.APPLICATION_URI);
-        }
-        if (checks.isHostname()) {
-            validationChecks.add(ValidationCheck.HOSTNAME);
-        }
-        if (checks.isValidity()) {
-            validationChecks.add(ValidationCheck.VALIDITY);
-        }
-        if (checks.isRevocation()) {
-            validationChecks.add(ValidationCheck.REVOCATION);
-        }
-        if (checks.isRevocationLists()) {
-            validationChecks.add(ValidationCheck.REVOCATION_LISTS);
-        }
-        if (checks.isKeyUsage()) {
-            validationChecks.add(ValidationCheck.KEY_USAGE_END_ENTITY);
-        }
-        if (checks.isExtendedKeyUsage()) {
-            validationChecks.add(ValidationCheck.EXTENDED_KEY_USAGE_END_ENTITY);
-        }
-        return Set.copyOf(validationChecks);
-    }
-
-    private static @NotNull Optional<KeystoreUtil.KeyPairWithChain> getKeyPairWithChain(
-            final @NotNull Keystore keystore) {
-        final File keystoreFile = new File(keystore.path());
-        if (!keystoreFile.exists()) {
-            log.error("Keystore file {} does not exist", keystoreFile.getAbsolutePath());
-            return Optional.empty();
-        }
-        if (!keystoreFile.canRead()) {
-            log.error("Keystore file {} is not readable", keystoreFile.getAbsolutePath());
-            return Optional.empty();
-        }
-        return Optional.of(KeystoreUtil.getKeysFromKeystore(
-                "JKS", keystore.path(), keystore.password(), keystore.privateKeyPassword()));
+    /// Edge's own key and certificate chain, in the shape Eclipse Milo asks for.
+    ///
+    /// Reads nothing: the policy already opened the material, whatever format it was in and whether
+    /// it was written here or declared in a shared `tls-material`. This only reshapes what the
+    /// policy holds, so the key Milo signs with is the key the policy loaded.
+    private static @NotNull KeystoreUtil.KeyPairWithChain keyPairWithChainFrom(
+            final @NotNull TLSPolicy.Identity identity) {
+        return new KeystoreUtil.KeyPairWithChain(
+                identity.privateKey(),
+                identity.certificate(),
+                identity.chain().toArray(new X509Certificate[0]),
+                identity.applicationUri());
     }
 
     private static @NotNull Optional<IdentityProvider> createIdentityProvider(

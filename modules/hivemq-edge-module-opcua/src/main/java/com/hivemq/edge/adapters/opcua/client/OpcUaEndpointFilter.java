@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
+import com.hivemq.edge.adapters.opcua.config.Tls;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -77,13 +78,15 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
                     if (policyUri.equals(SecurityPolicy.None.getUri())) {
                         return true;
                     }
-                    if (adapterConfig.getTls().enabled()
-                            && adapterConfig.getTls().keystore() != null) {
-                        // if security policy is not 'None', then skip the policy if no keystore is available
+                    final Tls tls = adapterConfig.getTls();
+                    // A policy other than 'None' needs a client certificate: either the superseded
+                    // keystore or the tls-identity that supersedes it. Skip the policy without one.
+                    if (tls.enabled() && (tls.keystore() != null || tls.tlsIdentity() != null)) {
                         return true;
                     }
                     log.warn(
-                            "OPC UA Security policy '{}' for protocol adapter '{}' requires a keystore, cannot connect.",
+                            "OPC UA Security policy '{}' for protocol adapter '{}' requires a client certificate "
+                                    + "(tls-identity or keystore), cannot connect.",
                             policyUri,
                             adapterId);
                     return false;

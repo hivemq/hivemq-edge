@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
  * normalization in the constructor: presets are not expanded into axes, omitted axes are not filled
  * in, nothing is derived. That is what makes writing an unchanged configuration back out a no-op.
  * Resolution to the flags that actually drive the checks happens at read time, in
- * {@link TlsChecksProjection#project(Tls)}.
+ * {@link TLSConfigOpcUA}.
  *
  * <p>For the same reason neither {@link #tlsChecks()} nor {@link #tlsChecksFull()} declares a
  * {@code defaultValue}: it would surface as a JSON-schema {@code default}, and the UI's form library
@@ -122,9 +122,47 @@ public record Tls(
                 description = "Location of the certificate revocation lists used by revocation=CHECK and "
                         + "revocation=REQUIRE_CRLS. A file or a directory of them, PEM or DER. Needed whenever the "
                         + "certification path runs through a CA: without CRLs the issuer's revocation status is "
-                        + "unknown, and unknown fails closed.")
+                        + "unknown, and unknown fails closed. Superseded by tls-revocationlist.")
         @Nullable
         RevocationList revocationList,
+
+        @JsonProperty("tls-identity")
+        @JsonInclude(NON_NULL)
+        @ModuleConfigField(
+                title = "Identity",
+                description = "The private key and certificate chain Edge presents. Supersedes 'keystore', "
+                        + "and adds PEM, passwords read from files, and references to shared tls-material. "
+                        + "Mutually exclusive with keystore, truststore, allowList and revocationList.")
+        @Nullable
+        TlsIdentity tlsIdentity,
+
+        @JsonProperty("tls-truststore")
+        @JsonInclude(NON_NULL)
+        @ModuleConfigField(
+                title = "Truststore",
+                description = "The authorities whose certificates Edge accepts. Supersedes 'truststore', "
+                        + "and adds PEM, several files, directories, glob patterns and the runtime's own "
+                        + "authorities.")
+        @Nullable
+        TlsTruststore tlsTruststore,
+
+        @JsonProperty("tls-allowlist")
+        @JsonInclude(NON_NULL)
+        @ModuleConfigField(
+                title = "Certificate allow-list",
+                description = "The individual server certificates Edge accepts, by SHA-256 fingerprint. "
+                        + "Supersedes 'allowList', and adds several files, directories and glob patterns.")
+        @Nullable
+        TlsFileList tlsAllowlist,
+
+        @JsonProperty("tls-revocationlist")
+        @JsonInclude(NON_NULL)
+        @ModuleConfigField(
+                title = "Certificate revocation lists",
+                description = "The certificates authorities have withdrawn. Supersedes 'revocationList', "
+                        + "and adds several files, directories and glob patterns.")
+        @Nullable
+        TlsFileList tlsRevocationlist,
 
         /**
          * The settings this element carried that the model does not know, or an empty map when every
@@ -135,7 +173,7 @@ public record Tls(
          * it lands <em>inside</em> the map and is refused like any other unknown entry (pinned in
          * {@code TlsChecksParsingTest}). It exists so that "the operator wrote a setting this element
          * does not have" survives deserialization as far as
-         * {@link TlsChecksProjection#project(Tls)}, which refuses the adapter naming the entry. The
+         * {@link TLSConfigOpcUA}, which refuses the adapter naming the entry. The
          * application-wide unknown-setting handling only warns and drops, which is the wrong posture
          * here: a dropped certificate-validation setting silently runs the adapter under the
          * {@code STANDARD} default instead of whatever the entry was meant to select.
@@ -174,7 +212,11 @@ public record Tls(
             @JsonProperty("keystore") final @Nullable Keystore keystore,
             @JsonProperty("truststore") final @Nullable Truststore truststore,
             @JsonProperty("allowList") final @Nullable AllowList allowList,
-            @JsonProperty("revocationList") final @Nullable RevocationList revocationList) {
+            @JsonProperty("revocationList") final @Nullable RevocationList revocationList,
+            @JsonProperty("tls-identity") final @Nullable TlsIdentity tlsIdentity,
+            @JsonProperty("tls-truststore") final @Nullable TlsTruststore tlsTruststore,
+            @JsonProperty("tls-allowlist") final @Nullable TlsFileList tlsAllowlist,
+            @JsonProperty("tls-revocationlist") final @Nullable TlsFileList tlsRevocationlist) {
         this(
                 enabled,
                 tlsChecks,
@@ -183,15 +225,19 @@ public record Tls(
                 truststore,
                 allowList,
                 revocationList,
+                tlsIdentity,
+                tlsTruststore,
+                tlsAllowlist,
+                tlsRevocationlist,
                 unknownSettings == null ? Map.of() : unknownSettings);
     }
 
     /**
      * The shape configuration is built from in code; only deserialization can fill the trap.
      *
-     * <p>Kept at six arguments when {@code revocationList} was added, rather than growing: it has
-     * forty-odd call sites that have nothing to say about revocation lists, and a configuration that
-     * does not mention one is exactly what {@code null} means here.
+     * <p>Kept at six arguments when {@code revocationList} was added, and kept again when the
+     * {@code tls-*} elements were: it has forty-odd call sites that have nothing to say about either,
+     * and a configuration that does not mention one is exactly what {@code null} means here.
      */
     public Tls(
             final boolean enabled,
@@ -200,7 +246,7 @@ public record Tls(
             final @Nullable Keystore keystore,
             final @Nullable Truststore truststore,
             final @Nullable AllowList allowList) {
-        this(enabled, tlsChecks, tlsChecksFull, keystore, truststore, allowList, null, Map.of());
+        this(enabled, tlsChecks, tlsChecksFull, keystore, truststore, allowList, null);
     }
 
     /** As above, for the configurations that do supply revocation lists. */
@@ -212,7 +258,49 @@ public record Tls(
             final @Nullable Truststore truststore,
             final @Nullable AllowList allowList,
             final @Nullable RevocationList revocationList) {
-        this(enabled, tlsChecks, tlsChecksFull, keystore, truststore, allowList, revocationList, Map.of());
+        this(
+                enabled,
+                tlsChecks,
+                tlsChecksFull,
+                keystore,
+                truststore,
+                allowList,
+                revocationList,
+                null,
+                null,
+                null,
+                null,
+                Map.of());
+    }
+
+    /**
+     * The superseding spelling, for a configuration built in code from the {@code tls-*} elements.
+     *
+     * <p>A static factory rather than a constructor: with every material argument null the two
+     * seven-argument constructors would be indistinguishable, so a caller could not say which
+     * spelling it meant - and the compiler would not let it try.
+     */
+    public static @NotNull Tls superseding(
+            final boolean enabled,
+            final @Nullable TlsChecks tlsChecks,
+            final @Nullable TlsChecksFull tlsChecksFull,
+            final @Nullable TlsIdentity tlsIdentity,
+            final @Nullable TlsTruststore tlsTruststore,
+            final @Nullable TlsFileList tlsAllowlist,
+            final @Nullable TlsFileList tlsRevocationlist) {
+        return new Tls(
+                enabled,
+                tlsChecks,
+                tlsChecksFull,
+                null,
+                null,
+                null,
+                null,
+                tlsIdentity,
+                tlsTruststore,
+                tlsAllowlist,
+                tlsRevocationlist,
+                Map.of());
     }
 
     /**
