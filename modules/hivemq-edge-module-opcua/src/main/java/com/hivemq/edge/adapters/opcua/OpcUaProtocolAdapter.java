@@ -1317,6 +1317,20 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     output);
             return;
         }
+        final String refusal = payload.refusal();
+        if (refusal != null) {
+            // Edge refused the request after its envelope passed -- the tag's schema rejected the arguments --
+            // and asks for an answer instead of a quarantine. The device is not touched.
+            refuseWithResponse(
+                    client,
+                    opcuaTag,
+                    methodName,
+                    payload,
+                    StatusCodes.Bad_InvalidArgument,
+                    "the request to method '" + methodName + "' on tag '" + tagName + "' is invalid: " + refusal,
+                    output);
+            return;
+        }
 
         // No check on the reply address here, deliberately. "Is this a publishable MQTT topic" is a question
         // about MQTT, and it is answered where the answer will be published: Edge validates the address while
@@ -1639,7 +1653,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         log.error("Refused a method call on tag '{}': {}", opcuaTag.getName(), reason);
 
-        final MethodCallResult refusal = new MethodCallResult(new StatusCode(statusCode), Map.of(), Map.of());
+        final MethodCallResult refusal = new MethodCallResult(new StatusCode(statusCode), Map.of(), Map.of(), reason);
         publishMethodResponse(
                 client, opcuaTag, methodName, payload.correlationData(), publishableReplyTopic(payload), refusal);
 

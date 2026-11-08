@@ -151,11 +151,15 @@ public final class MethodResponse {
         final boolean failed = !result.succeeded();
         final boolean hasArguments = failed && !result.argumentStatuses().isEmpty();
         final boolean hasDeviceOutput = failed && !result.outputArguments().isEmpty();
-        if (!hasArguments && !hasDeviceOutput && undecodable.isEmpty()) {
+        final String reason = result.reason();
+        if (!hasArguments && !hasDeviceOutput && reason == null && undecodable.isEmpty()) {
             return;
         }
 
         final var statusInfo = parameters.startObject(MethodRequestFieldsOpcUa.STATUS_INFO);
+        if (reason != null) {
+            statusInfo.put(MethodRequestFieldsOpcUa.REASON, reason);
+        }
         if (hasArguments) {
             final var arguments = statusInfo.startObject("arguments");
             // Keyed by the name the request used, not the position the server reported. The caller never saw the

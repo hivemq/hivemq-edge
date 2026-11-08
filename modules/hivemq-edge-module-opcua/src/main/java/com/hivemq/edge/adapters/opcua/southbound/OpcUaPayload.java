@@ -52,7 +52,9 @@ public record OpcUaPayload(@JsonProperty("value") @NotNull JsonNode rawValue) im
             /// The caller's correlation token, echoed unchanged on the response. Opaque to the adapter.
             @Nullable String correlationData,
             /// Where the caller wants the response published, overriding the northbound mapping's own topic.
-            @Nullable String responseTopic) {}
+            @Nullable String responseTopic,
+            /// Why Edge refused the request, or null when it did not. A refused request calls no method.
+            @Nullable String refusal) {}
 
     /// A payload that writes a value and calls no method.
     ///
@@ -93,7 +95,14 @@ public record OpcUaPayload(@JsonProperty("value") @NotNull JsonNode rawValue) im
         return new RequestParameters(
                 text(parameters, MethodRequestFieldsOpcUa.METHOD_NAME),
                 text(parameters, MethodRequestFieldsOpcUa.CORRELATION_DATA),
-                text(parameters, MethodRequestFieldsOpcUa.RESPONSE_TOPIC));
+                text(parameters, MethodRequestFieldsOpcUa.RESPONSE_TOPIC),
+                text(parameters, MethodRequestFieldsOpcUa.REFUSAL));
+    }
+
+    /// Why Edge refused the request, or null when it did not.
+    public @Nullable String refusal() {
+        final RequestParameters parameters = parameters();
+        return parameters == null ? null : parameters.refusal();
     }
 
     private static @Nullable String text(final @NotNull JsonNode parameters, final @NotNull String field) {
