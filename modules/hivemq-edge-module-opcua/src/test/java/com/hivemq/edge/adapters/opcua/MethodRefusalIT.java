@@ -122,6 +122,98 @@ class MethodRefusalIT {
         assertOnlyTheControlRuns(adapter);
     }
 
+    /// A refused request is answered while the adapter has no connection to its device: the refusal needs no
+    /// device, and Edge no longer quarantines the request, so a failed write would leave the caller nothing.
+    @Test
+    void aRefusedRequestWithoutAConnection_isAnswered() throws Exception {
+        final OpcUaProtocolAdapter adapter =
+                startedOn("opc.tcp://127.0.0.1:1/unreachable", new OpcuaTagDefinition("ns=1;i=1", OpcuaTagKind.METHOD));
+
+        final WritingOutput refused =
+                write(adapter, "Square", "{\"input1\":3}", "c-outage", "reply/outage", "$.value.input1: string found");
+
+        verify(refused, timeout(WAIT.toMillis())).fail(anyString());
+        assertIsTheRefusal(answer(0), "c-outage", "reply/outage");
+    }
+
+    /// A valid request that arrives while there is no connection to the device is answered with
+    /// `Bad_NotConnected`: the call is not sent, and the caller learns so instead of waiting out its timeout.
+    @Test
+    void aValidRequestWithoutAConnection_isAnsweredAsNotConnected() throws Exception {
+        final OpcUaProtocolAdapter adapter =
+                startedOn("opc.tcp://127.0.0.1:1/unreachable", new OpcuaTagDefinition("ns=1;i=1", OpcuaTagKind.METHOD));
+
+        final WritingOutput output = write(adapter, "Square", "{\"input1\":3}", "c-down", "reply/down", null);
+
+        verify(output, timeout(WAIT.toMillis())).fail(anyString());
+        verify(output, never()).finish();
+        final JsonNode answer = answer(0);
+        assertThat(answer.path(MethodRequestFieldsOpcUa.ERROR_CODE).asText()).isEqualTo("Bad_NotConnected");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.CORRELATION_DATA).asText())
+                .isEqualTo("c-down");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_TOPIC).asText())
+                .isEqualTo("reply/down");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_METHOD_NAME).asText())
+                .isEqualTo("Square");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.STATUS_INFO)
+                        .path(MethodRequestFieldsOpcUa.REASON)
+                        .asText())
+                .contains("Square", TAG_NAME, "no connection");
+    }
+
+    /// A request to a method tag whose mapping does not carry method calls is answered with `Bad_MethodInvalid`
+    /// and the setting to change, also while there is no connection to the device.
+    @Test
+    void aRequestWithMethodCallsOffWithoutAConnection_isAnswered() throws Exception {
+        final OpcUaProtocolAdapter adapter =
+                startedOn("opc.tcp://127.0.0.1:1/unreachable", new OpcuaTagDefinition("ns=1;i=1", OpcuaTagKind.METHOD));
+
+        final WritingOutput output = writeWithoutParameters(adapter, "{\"input1\":3}");
+
+        verify(output, timeout(WAIT.toMillis())).fail(anyString());
+        final JsonNode answer = answer(0);
+        assertThat(answer.path(MethodRequestFieldsOpcUa.ERROR_CODE).asText()).isEqualTo("Bad_MethodInvalid");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_METHOD_NAME).asText())
+                .isEmpty();
+        assertThat(answer.path(MethodRequestFieldsOpcUa.STATUS_INFO)
+                        .path(MethodRequestFieldsOpcUa.REASON)
+                        .asText())
+                .contains(TAG_NAME, "this mapping carries method calls");
+    }
+
+    /// A refused request to a tag that is not a method tag is answered too, instead of failing on the tag's kind.
+    /// The server is reachable here, and still runs nothing.
+    @Test
+    void aRefusedRequestToAValueTag_isAnswered() throws Exception {
+        final String object = namespace().addCountingMethodObject("Counter").toParseableString();
+        final OpcUaProtocolAdapter adapter =
+                startedOn(opcUaServerExtension.getServerUri(), new OpcuaTagDefinition(object, OpcuaTagKind.VALUE));
+
+        final WritingOutput refused =
+                write(adapter, "Square", "{\"input1\":3}", "c-value", "reply/value", "$.value.input1: string found");
+
+        verify(refused, timeout(WAIT.toMillis())).fail(anyString());
+        assertIsTheRefusal(answer(0), "c-value", "reply/value");
+        assertThat(namespace().countedCalls()).isZero();
+    }
+
+    private void assertIsTheRefusal(
+            final @NotNull JsonNode answer,
+            final @NotNull String correlationData,
+            final @NotNull String responseTopic) {
+        assertThat(answer.path(MethodRequestFieldsOpcUa.ERROR_CODE).asText()).isEqualTo("Bad_InvalidArgument");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.CORRELATION_DATA).asText())
+                .isEqualTo(correlationData);
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_TOPIC).asText())
+                .isEqualTo(responseTopic);
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_METHOD_NAME).asText())
+                .isEqualTo("Square");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.STATUS_INFO)
+                        .path(MethodRequestFieldsOpcUa.REASON)
+                        .asText())
+                .contains("Square", TAG_NAME, "$.value.input1: string found");
+    }
+
     /// The same request without the mark runs the method once and is answered with its output and no
     /// `statusInfo`.
     @Test
@@ -180,7 +272,18 @@ class MethodRefusalIT {
 
     private @NotNull OpcUaProtocolAdapter started() {
         final String object = namespace().addCountingMethodObject("Counter").toParseableString();
-        final OpcuaTag tag = new OpcuaTag(TAG_NAME, "", new OpcuaTagDefinition(object, OpcuaTagKind.METHOD));
+        final OpcUaProtocolAdapter adapter =
+                startedOn(opcUaServerExtension.getServerUri(), new OpcuaTagDefinition(object, OpcuaTagKind.METHOD));
+
+        verify(protocolAdapterState, timeout(WAIT.toMillis()))
+                .setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        return adapter;
+    }
+
+    /// An adapter started on `serverUri` with one tag, without waiting for it to connect.
+    private @NotNull OpcUaProtocolAdapter startedOn(
+            final @NotNull String serverUri, final @NotNull OpcuaTagDefinition definition) {
+        final OpcuaTag tag = new OpcuaTag(TAG_NAME, "", definition);
 
         final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
         when(adapterInformation.getProtocolId()).thenReturn("opcua");
@@ -191,7 +294,7 @@ class MethodRefusalIT {
         when(input.getProtocolAdapterState()).thenReturn(protocolAdapterState);
         when(input.getConfig())
                 .thenReturn(new OpcUaSpecificAdapterConfig(
-                        opcUaServerExtension.getServerUri(),
+                        serverUri,
                         false,
                         null,
                         null,
@@ -209,9 +312,6 @@ class MethodRefusalIT {
         when(startInput.moduleServices()).thenReturn(moduleServices);
         adapter.start(
                 ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
-
-        verify(protocolAdapterState, timeout(WAIT.toMillis()))
-                .setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         return adapter;
     }
 
@@ -240,6 +340,21 @@ class MethodRefusalIT {
         final WritingInput writingInput = mock(WritingInput.class);
         when(writingInput.getWritingContext()).thenReturn(writingContext);
         when(writingInput.getWritingPayload()).thenReturn(OpcUaPayload.ofValue(value));
+
+        final WritingOutput output = mock(WritingOutput.class);
+        adapter.write(writingInput, output);
+        return output;
+    }
+
+    /// Hands the adapter a write as Edge's writer builds it for a mapping that does not carry method calls: the
+    /// value alone, with no request parameters.
+    private @NotNull WritingOutput writeWithoutParameters(
+            final @NotNull OpcUaProtocolAdapter adapter, final @NotNull String value) throws Exception {
+        final WritingContext writingContext = mock(WritingContext.class);
+        when(writingContext.getTagName()).thenReturn(TAG_NAME);
+        final WritingInput writingInput = mock(WritingInput.class);
+        when(writingInput.getWritingContext()).thenReturn(writingContext);
+        when(writingInput.getWritingPayload()).thenReturn(OpcUaPayload.ofValue(mapper.readTree(value)));
 
         final WritingOutput output = mock(WritingOutput.class);
         adapter.write(writingInput, output);
