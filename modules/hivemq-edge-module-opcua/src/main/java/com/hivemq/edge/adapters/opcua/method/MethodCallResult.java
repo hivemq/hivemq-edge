@@ -43,11 +43,20 @@ public record MethodCallResult(
         @NotNull Map<String, Variant> outputArguments,
         /// Per-input-argument status by argument name, for the arguments the server reported one for. Empty when
         /// it reported none, which is the common case even on failure.
-        @NotNull Map<String, StatusCode> argumentStatuses) {
+        @NotNull Map<String, StatusCode> argumentStatuses,
+        /// Why Edge refused the request, in words, or null for an answer the device gave.
+        @Nullable String reason) {
 
     public MethodCallResult {
         outputArguments = Map.copyOf(outputArguments);
         argumentStatuses = Map.copyOf(argumentStatuses);
+    }
+
+    public MethodCallResult(
+            final @NotNull StatusCode statusCode,
+            final @NotNull Map<String, Variant> outputArguments,
+            final @NotNull Map<String, StatusCode> argumentStatuses) {
+        this(statusCode, outputArguments, argumentStatuses, null);
     }
 
     /// Whether the method ran.

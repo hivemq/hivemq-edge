@@ -84,6 +84,13 @@ public final class MethodRequestFieldsOpcUa {
     /// Request only: where to publish the answer, instead of the northbound mapping's own topic.
     public static final @NotNull String RESPONSE_TOPIC = "responseTopic";
 
+    /// Request only, and only across the adapter border: Edge has refused the request, and this says why. The
+    /// adapter calls no method and answers with this text.
+    public static final @NotNull String REFUSAL = "refusal";
+
+    /// Response only: why Edge refused a request, in words, present only on a refusal Edge made.
+    public static final @NotNull String REASON = "reason";
+
     /// Response only: the OPC UA status code by name, present only when the call failed.
     public static final @NotNull String ERROR_CODE = "errorCode";
 
