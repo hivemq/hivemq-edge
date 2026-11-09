@@ -136,6 +136,51 @@ class MethodRefusalIT {
         assertIsTheRefusal(answer(0), "c-outage", "reply/outage");
     }
 
+    /// A valid request that arrives while there is no connection to the device is answered with
+    /// `Bad_NotConnected`: the call is not sent, and the caller learns so instead of waiting out its timeout.
+    @Test
+    void aValidRequestWithoutAConnection_isAnsweredAsNotConnected() throws Exception {
+        final OpcUaProtocolAdapter adapter =
+                startedOn("opc.tcp://127.0.0.1:1/unreachable", new OpcuaTagDefinition("ns=1;i=1", OpcuaTagKind.METHOD));
+
+        final WritingOutput output = write(adapter, "Square", "{\"input1\":3}", "c-down", "reply/down", null);
+
+        verify(output, timeout(WAIT.toMillis())).fail(anyString());
+        verify(output, never()).finish();
+        final JsonNode answer = answer(0);
+        assertThat(answer.path(MethodRequestFieldsOpcUa.ERROR_CODE).asText()).isEqualTo("Bad_NotConnected");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.CORRELATION_DATA).asText())
+                .isEqualTo("c-down");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_TOPIC).asText())
+                .isEqualTo("reply/down");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_METHOD_NAME).asText())
+                .isEqualTo("Square");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.STATUS_INFO)
+                        .path(MethodRequestFieldsOpcUa.REASON)
+                        .asText())
+                .contains("Square", TAG_NAME, "no connection");
+    }
+
+    /// A request to a method tag whose mapping does not carry method calls is answered with `Bad_MethodInvalid`
+    /// and the setting to change, also while there is no connection to the device.
+    @Test
+    void aRequestWithMethodCallsOffWithoutAConnection_isAnswered() throws Exception {
+        final OpcUaProtocolAdapter adapter =
+                startedOn("opc.tcp://127.0.0.1:1/unreachable", new OpcuaTagDefinition("ns=1;i=1", OpcuaTagKind.METHOD));
+
+        final WritingOutput output = writeWithoutParameters(adapter, "{\"input1\":3}");
+
+        verify(output, timeout(WAIT.toMillis())).fail(anyString());
+        final JsonNode answer = answer(0);
+        assertThat(answer.path(MethodRequestFieldsOpcUa.ERROR_CODE).asText()).isEqualTo("Bad_MethodInvalid");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_METHOD_NAME).asText())
+                .isEmpty();
+        assertThat(answer.path(MethodRequestFieldsOpcUa.STATUS_INFO)
+                        .path(MethodRequestFieldsOpcUa.REASON)
+                        .asText())
+                .contains(TAG_NAME, "this mapping carries method calls");
+    }
+
     /// A refused request to a tag that is not a method tag is answered too, instead of failing on the tag's kind.
     /// The server is reachable here, and still runs nothing.
     @Test
@@ -295,6 +340,21 @@ class MethodRefusalIT {
         final WritingInput writingInput = mock(WritingInput.class);
         when(writingInput.getWritingContext()).thenReturn(writingContext);
         when(writingInput.getWritingPayload()).thenReturn(OpcUaPayload.ofValue(value));
+
+        final WritingOutput output = mock(WritingOutput.class);
+        adapter.write(writingInput, output);
+        return output;
+    }
+
+    /// Hands the adapter a write as Edge's writer builds it for a mapping that does not carry method calls: the
+    /// value alone, with no request parameters.
+    private @NotNull WritingOutput writeWithoutParameters(
+            final @NotNull OpcUaProtocolAdapter adapter, final @NotNull String value) throws Exception {
+        final WritingContext writingContext = mock(WritingContext.class);
+        when(writingContext.getTagName()).thenReturn(TAG_NAME);
+        final WritingInput writingInput = mock(WritingInput.class);
+        when(writingInput.getWritingContext()).thenReturn(writingContext);
+        when(writingInput.getWritingPayload()).thenReturn(OpcUaPayload.ofValue(mapper.readTree(value)));
 
         final WritingOutput output = mock(WritingOutput.class);
         adapter.write(writingInput, output);

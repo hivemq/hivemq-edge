@@ -1032,9 +1032,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // from convenience. **This half is a value tag that answers nobody**, by design and for every adapter,
         // so a log line and a failed write are the whole of what is available; inventing a reply channel for it
         // would be the same leak in the other direction. A request the schema refused never gets here: it was
-        // answered above, on its own reply address. The other half -- a method tag with no parameters --
-        // has a return path by construction and is answered at the METHOD dispatch below, where the client's
-        // encoding context exists.
+        // answered above, on its own reply address. The other half -- a method tag with no parameters -- has a
+        // return path by construction and is answered right after this one. Like the schema's refusal it needs
+        // no device, so it comes before the connection checks and is answered during an outage too.
         //
         // Reported by QA as P19 on EDG-1116.
         final boolean isMethodTag = opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD;
@@ -1059,9 +1059,38 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
+        if (isMethodTag && !carriesParameters) {
+            // The other half: the mapping that feeds a method tag does not carry method calls, so the request
+            // names no method and none can be called. Edge never read the request's reply address or token, so
+            // the answer goes to the mapping's own topic with an empty method name -- still the one place the
+            // operator learns which setting to switch on.
+            log.warn(
+                    "A request to method tag '{}' carries no method parameters, so the southbound mapping that "
+                            + "feeds it does not have method calls enabled. Switch 'this mapping carries method "
+                            + "calls' on for that mapping.",
+                    tagName);
+            refuseWithResponse(
+                    Decoding.none(),
+                    opcuaTag,
+                    "",
+                    opcUAWritePayload,
+                    StatusCodes.Bad_MethodInvalid,
+                    "the southbound mapping for tag '"
+                            + tagName
+                            + "' does not have method calls enabled, so the request named no method and none can "
+                            + "be called. Switch 'this mapping carries method calls' on for that mapping",
+                    output);
+            return;
+        }
+
         final OpcUaClientConnection conn = opcUaClientConnection.get();
         if (conn == null) {
-            output.fail("Discovery failed: ClientConnection not connected or not initialized");
+            failWithoutConnection(
+                    isMethodTag,
+                    opcuaTag,
+                    opcUAWritePayload,
+                    "Discovery failed: ClientConnection not connected or not initialized",
+                    output);
             return;
         }
 
@@ -1106,36 +1135,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             // A method tag names an object, so there is no Value attribute to assign to: the
                             // request names a method and this calls it.
                             if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD) {
-                                // The other half of the pair checked at the top of `write`, answered here
-                                // because a response needs the client's encoding context and this is the first
-                                // point that has one. Still before the object is browsed and before the device
-                                // is touched.
-                                //
-                                // Previously this fell through into the method path, which found no method name
-                                // and refused with an empty one -- naming no method, carrying no token, and
-                                // saying nothing about the setting to change. The caller could not match the
-                                // answer to its request and the operator was not told what to switch on.
-                                if (!carriesParameters) {
-                                    log.warn(
-                                            "A request to method tag '{}' carries no method parameters, so the "
-                                                    + "southbound mapping that feeds it does not have method calls "
-                                                    + "enabled. Switch 'this mapping carries method calls' on for "
-                                                    + "that mapping.",
-                                            tagName);
-                                    refuseWithResponse(
-                                            client,
-                                            opcuaTag,
-                                            "",
-                                            opcUAWritePayload,
-                                            StatusCodes.Bad_MethodInvalid,
-                                            "the southbound mapping for tag '"
-                                                    + tagName
-                                                    + "' does not have method calls enabled, so the request named "
-                                                    + "no method and none can be called. Switch 'this mapping "
-                                                    + "carries method calls' on for that mapping",
-                                            output);
-                                    return;
-                                }
                                 callMethod(client, nodeId, opcUAWritePayload, opcuaTag, output);
                                 return;
                             }
@@ -1187,7 +1186,41 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                         }
                                     });
                         },
-                        () -> output.fail("Discovery failed: Client not connected or not initialized"));
+                        () -> failWithoutConnection(
+                                isMethodTag,
+                                opcuaTag,
+                                opcUAWritePayload,
+                                "Discovery failed: Client not connected or not initialized",
+                                output));
+    }
+
+    /// Fails a write that arrived while there is no connection to the device. A method request is answered with
+    /// `Bad_NotConnected` as well, since its caller waits for an answer and this one needs no device; the call is
+    /// not sent, so the caller may retry once the adapter reports the connection again. A value write has no reply
+    /// address and only fails.
+    private void failWithoutConnection(
+            final boolean isMethodTag,
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull OpcUaPayload payload,
+            final @NotNull String failure,
+            final @NotNull WritingOutput output) {
+        if (!isMethodTag) {
+            output.fail(failure);
+            return;
+        }
+        final String methodName = Objects.requireNonNullElse(payload.methodName(), "");
+        refuseWithResponse(
+                Decoding.none(),
+                opcuaTag,
+                methodName,
+                payload,
+                StatusCodes.Bad_NotConnected,
+                "the request to method '"
+                        + methodName
+                        + "' on tag '"
+                        + opcuaTag.getName()
+                        + "' was not sent: there is no connection to the device",
+                output);
     }
 
     /**
