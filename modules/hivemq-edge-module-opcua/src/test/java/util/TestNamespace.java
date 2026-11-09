@@ -1028,6 +1028,35 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         return objectId;
     }
 
+    private final @NotNull AtomicInteger countedCalls = new AtomicInteger();
+
+    /// How many times the server ran a method of {@link #addCountingMethodObject}.
+    public int countedCalls() {
+        return countedCalls.get();
+    }
+
+    /// An object with one method, `Square(input1: Int32) -> output1: Int32`, whose every run the server counts.
+    ///
+    /// The count is the server's own record, so a test can tell a request that reached the device from one the
+    /// client answered by itself. A response alone does not prove that the server never received the call.
+    public @NotNull NodeId addCountingMethodObject(final @NotNull String objectName) {
+        final NodeId objectId = addBareObject(objectName);
+        addDeclaredMethod(
+                objectId,
+                "Square",
+                new Argument[] {argument("input1", NodeIds.Int32)},
+                new Argument[] {argument("output1", NodeIds.Int32)},
+                (context, request) -> {
+                    countedCalls.incrementAndGet();
+                    final Integer value = (Integer) request.getInputArguments()[0].getValue();
+                    return new CallMethodResult(
+                            StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[] {
+                                Variant.of(value * value)
+                            });
+                });
+        return objectId;
+    }
+
     /** One method node that declares its arguments, hung off {@code parentNodeId} by {@code HasComponent}. */
     private void addDeclaredMethod(
             final @NotNull NodeId parentNodeId,
