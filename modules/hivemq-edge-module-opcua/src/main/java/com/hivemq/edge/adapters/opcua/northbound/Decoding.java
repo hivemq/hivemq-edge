@@ -83,6 +83,14 @@ public record Decoding(
                 });
     }
 
+    /// Decoding with neither part, for an answer that has no outputs to decode, such as a refusal made while no
+    /// client is connected.
+    public static @NotNull Decoding none() {
+        return withoutTypes(() -> {
+            throw new IllegalStateException("no encoding context is available");
+        });
+    }
+
     /// Decoding with an encoding context and no hierarchy, for a caller that has none at hand.
     public static @NotNull Decoding withoutTypes(final @NotNull Supplier<EncodingContext> context) {
         return new Decoding(context, () -> {

@@ -122,6 +122,53 @@ class MethodRefusalIT {
         assertOnlyTheControlRuns(adapter);
     }
 
+    /// A refused request is answered while the adapter has no connection to its device: the refusal needs no
+    /// device, and Edge no longer quarantines the request, so a failed write would leave the caller nothing.
+    @Test
+    void aRefusedRequestWithoutAConnection_isAnswered() throws Exception {
+        final OpcUaProtocolAdapter adapter =
+                startedOn("opc.tcp://127.0.0.1:1/unreachable", new OpcuaTagDefinition("ns=1;i=1", OpcuaTagKind.METHOD));
+
+        final WritingOutput refused =
+                write(adapter, "Square", "{\"input1\":3}", "c-outage", "reply/outage", "$.value.input1: string found");
+
+        verify(refused, timeout(WAIT.toMillis())).fail(anyString());
+        assertIsTheRefusal(answer(0), "c-outage", "reply/outage");
+    }
+
+    /// A refused request to a tag that is not a method tag is answered too, instead of failing on the tag's kind.
+    /// The server is reachable here, and still runs nothing.
+    @Test
+    void aRefusedRequestToAValueTag_isAnswered() throws Exception {
+        final String object = namespace().addCountingMethodObject("Counter").toParseableString();
+        final OpcUaProtocolAdapter adapter =
+                startedOn(opcUaServerExtension.getServerUri(), new OpcuaTagDefinition(object, OpcuaTagKind.VALUE));
+
+        final WritingOutput refused =
+                write(adapter, "Square", "{\"input1\":3}", "c-value", "reply/value", "$.value.input1: string found");
+
+        verify(refused, timeout(WAIT.toMillis())).fail(anyString());
+        assertIsTheRefusal(answer(0), "c-value", "reply/value");
+        assertThat(namespace().countedCalls()).isZero();
+    }
+
+    private void assertIsTheRefusal(
+            final @NotNull JsonNode answer,
+            final @NotNull String correlationData,
+            final @NotNull String responseTopic) {
+        assertThat(answer.path(MethodRequestFieldsOpcUa.ERROR_CODE).asText()).isEqualTo("Bad_InvalidArgument");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.CORRELATION_DATA).asText())
+                .isEqualTo(correlationData);
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_TOPIC).asText())
+                .isEqualTo(responseTopic);
+        assertThat(answer.path(MethodRequestFieldsOpcUa.RESPONSE_METHOD_NAME).asText())
+                .isEqualTo("Square");
+        assertThat(answer.path(MethodRequestFieldsOpcUa.STATUS_INFO)
+                        .path(MethodRequestFieldsOpcUa.REASON)
+                        .asText())
+                .contains("Square", TAG_NAME, "$.value.input1: string found");
+    }
+
     /// The same request without the mark runs the method once and is answered with its output and no
     /// `statusInfo`.
     @Test
@@ -180,7 +227,18 @@ class MethodRefusalIT {
 
     private @NotNull OpcUaProtocolAdapter started() {
         final String object = namespace().addCountingMethodObject("Counter").toParseableString();
-        final OpcuaTag tag = new OpcuaTag(TAG_NAME, "", new OpcuaTagDefinition(object, OpcuaTagKind.METHOD));
+        final OpcUaProtocolAdapter adapter =
+                startedOn(opcUaServerExtension.getServerUri(), new OpcuaTagDefinition(object, OpcuaTagKind.METHOD));
+
+        verify(protocolAdapterState, timeout(WAIT.toMillis()))
+                .setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        return adapter;
+    }
+
+    /// An adapter started on `serverUri` with one tag, without waiting for it to connect.
+    private @NotNull OpcUaProtocolAdapter startedOn(
+            final @NotNull String serverUri, final @NotNull OpcuaTagDefinition definition) {
+        final OpcuaTag tag = new OpcuaTag(TAG_NAME, "", definition);
 
         final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
         when(adapterInformation.getProtocolId()).thenReturn("opcua");
@@ -191,7 +249,7 @@ class MethodRefusalIT {
         when(input.getProtocolAdapterState()).thenReturn(protocolAdapterState);
         when(input.getConfig())
                 .thenReturn(new OpcUaSpecificAdapterConfig(
-                        opcUaServerExtension.getServerUri(),
+                        serverUri,
                         false,
                         null,
                         null,
@@ -209,9 +267,6 @@ class MethodRefusalIT {
         when(startInput.moduleServices()).thenReturn(moduleServices);
         adapter.start(
                 ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
-
-        verify(protocolAdapterState, timeout(WAIT.toMillis()))
-                .setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         return adapter;
     }
 

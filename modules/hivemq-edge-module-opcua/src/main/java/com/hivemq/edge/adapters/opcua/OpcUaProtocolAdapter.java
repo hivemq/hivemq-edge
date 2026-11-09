@@ -993,6 +993,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
+        // Edge refused the request after its own fields passed, and no longer quarantines it, so this answer is
+        // the only trace the caller gets. It comes before every check below that can fail the write: the answer
+        // needs neither the device nor a tag of a particular kind, only the tag to publish it on.
+        final String refusal = opcUAWritePayload.refusal();
+        if (refusal != null) {
+            final String methodName = Objects.requireNonNullElse(opcUAWritePayload.methodName(), "");
+            refuseWithResponse(
+                    Decoding.none(),
+                    opcuaTag,
+                    methodName,
+                    opcUAWritePayload,
+                    StatusCodes.Bad_InvalidArgument,
+                    "the request to method '" + methodName + "' on tag '" + tagName + "' is invalid: " + refusal,
+                    output);
+            return;
+        }
+
         // Second line of defence. The tag's write schema already describes a shape that accepts nothing, but
         // a schema is a description and this is the refusal: an event subscription names a notifier, and
         // writing a value to a notifier is meaningless rather than merely unsupported.
@@ -1014,7 +1031,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // The two halves are answered differently, and the asymmetry follows from what each tag is rather than
         // from convenience. **This half is a value tag that answers nobody**, by design and for every adapter,
         // so a log line and a failed write are the whole of what is available; inventing a reply channel for it
-        // would be the same leak in the other direction. The other half -- a method tag with no parameters --
+        // would be the same leak in the other direction. A request the schema refused never gets here: it was
+        // answered above, on its own reply address. The other half -- a method tag with no parameters --
         // has a return path by construction and is answered at the METHOD dispatch below, where the client's
         // encoding context exists.
         //
@@ -1317,21 +1335,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     output);
             return;
         }
-        final String refusal = payload.refusal();
-        if (refusal != null) {
-            // Edge refused the request after its envelope passed -- the tag's schema rejected the arguments --
-            // and asks for an answer instead of a quarantine. The device is not touched.
-            refuseWithResponse(
-                    client,
-                    opcuaTag,
-                    methodName,
-                    payload,
-                    StatusCodes.Bad_InvalidArgument,
-                    "the request to method '" + methodName + "' on tag '" + tagName + "' is invalid: " + refusal,
-                    output);
-            return;
-        }
-
         // No check on the reply address here, deliberately. "Is this a publishable MQTT topic" is a question
         // about MQTT, and it is answered where the answer will be published: Edge validates the address while
         // assembling the request's parameters, before the message reaches the data policy, and quarantines a
@@ -1608,7 +1611,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // the message, not for the write, and publishing after completing the write would let a fast caller
             // see its request acknowledged while the answer is still in flight.
             publishMethodResponse(
-                    client, opcuaTag, methodName, payload.correlationData(), publishableReplyTopic(payload), result);
+                    Decoding.of(client),
+                    opcuaTag,
+                    methodName,
+                    payload.correlationData(),
+                    publishableReplyTopic(payload),
+                    result);
 
             if (result.succeeded()) {
                 log.debug("Called '{}' on tag '{}'", methodName, tagName);
@@ -1650,12 +1658,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final long statusCode,
             final @NotNull String reason,
             final @NotNull WritingOutput output) {
+        refuseWithResponse(Decoding.of(client), opcuaTag, methodName, payload, statusCode, reason, output);
+    }
+
+    /// As above, for a caller that may have no connected client. A refusal has no outputs, so nothing here reads
+    /// `decoding` unless the answer's status detail asks for it.
+    private void refuseWithResponse(
+            final @NotNull Decoding decoding,
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull String methodName,
+            final @NotNull OpcUaPayload payload,
+            final long statusCode,
+            final @NotNull String reason,
+            final @NotNull WritingOutput output) {
 
         log.error("Refused a method call on tag '{}': {}", opcuaTag.getName(), reason);
 
         final MethodCallResult refusal = new MethodCallResult(new StatusCode(statusCode), Map.of(), Map.of(), reason);
         publishMethodResponse(
-                client, opcuaTag, methodName, payload.correlationData(), publishableReplyTopic(payload), refusal);
+                decoding, opcuaTag, methodName, payload.correlationData(), publishableReplyTopic(payload), refusal);
 
         output.fail(reason);
     }
@@ -1701,7 +1722,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      * and a method call is not generally safe to repeat.
      */
     private void publishMethodResponse(
-            final @NotNull OpcUaClient client,
+            final @NotNull Decoding decoding,
             final @NotNull OpcuaTag opcuaTag,
             final @NotNull String methodName,
             final @Nullable String correlationData,
@@ -1731,8 +1752,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // hierarchy: do not reach for a thing until a value's own type says it is needed.
             // A failure to fetch either reaches putVariant's own handler, which reports the output as undecodable
             // and publishes the answer -- or, for the hierarchy, the converter's fallback to the string form.
-            final var undecodable = MethodResponse.write(
-                    builder, methodName, correlationData, responseTopic, result, Decoding.of(client));
+            final var undecodable =
+                    MethodResponse.write(builder, methodName, correlationData, responseTopic, result, decoding);
             builder.endDataPoint();
             publisher.publish();
 
