@@ -16,11 +16,13 @@
 package com.hivemq.embedded.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
+import com.hivemq.edge.utils.InstallationId;
 import com.hivemq.extension.sdk.api.ExtensionMain;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -89,6 +92,21 @@ public class EmbeddedHiveMQImplTest {
         FileUtils.write(new File(conf, "config.xml"), noListenerConfig, StandardCharsets.UTF_8);
 
         TestExtensionUtil.shrinkwrapExtension(extensions, extensionName, Main.class, true);
+    }
+
+    /// The installation id is written only with usage tracking on, so its absence shows nothing phoned home.
+    @Test
+    @Timeout(20)
+    public void embeddedHiveMQ_startsWithUsageTrackingOff() throws Exception {
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
+        try {
+            // join() ignores the interrupt @Timeout sends; 15 s stays inside its 20 s so the finally still runs
+            embeddedHiveMQ.start().get(15, TimeUnit.SECONDS);
+
+            assertFalse(new File(data, InstallationId.FILE_NAME).exists());
+        } finally {
+            embeddedHiveMQ.stop().join();
+        }
     }
 
     @Test
