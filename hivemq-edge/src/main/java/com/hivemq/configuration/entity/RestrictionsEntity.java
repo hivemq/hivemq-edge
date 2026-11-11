@@ -26,6 +26,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * The {@code <restrictions>} section. The first five fields always write their value; the fields added from 2026.15
+ * on are null when unset and write nothing, because the previous release refuses to start on an element it does not
+ * know. A new field follows the second rule; {@code PreviousReleaseRollbackTest} fails otherwise.
+ *
  * @author Dominik Obermaier
  * @author Florian Limpöck
  */
