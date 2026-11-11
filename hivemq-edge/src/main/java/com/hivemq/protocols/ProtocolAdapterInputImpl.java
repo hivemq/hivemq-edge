@@ -27,11 +27,14 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.security.tls.TLSMaterialProvider;
+import com.hivemq.security.tls.TLSMaterialSource;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
-public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterInput<T> {
+public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig>
+        implements ProtocolAdapterInput<T>, TLSMaterialSource {
     private final AdapterFactories adapterFactories = new AdapterFactories() {
         @Override
         public @NotNull DataPointFactory dataPointFactory() {
@@ -58,6 +61,7 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull List<Tag> tags;
     private final @NotNull List<PollingContext> pollingContexts;
+    private final @NotNull TLSMaterialProvider tlsMaterialProvider;
 
     public ProtocolAdapterInputImpl(
             final @NotNull String adapterId,
@@ -67,7 +71,8 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
             final @NotNull String version,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ModuleServices moduleServices,
-            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            final @NotNull TLSMaterialProvider tlsMaterialProvider) {
         this.adapterId = adapterId;
         this.configObject = configObject;
         this.version = version;
@@ -75,6 +80,7 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
         this.moduleServices = moduleServices;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.tags = tags;
+        this.tlsMaterialProvider = tlsMaterialProvider;
         this.pollingContexts =
                 northboundMappings.stream().map(PollingContextWrapper::from).collect(Collectors.toList());
     }
@@ -122,5 +128,10 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
     @Override
     public @NotNull List<PollingContext> getPollingContexts() {
         return pollingContexts;
+    }
+
+    @Override
+    public @NotNull TLSMaterialProvider tlsMaterialProvider() {
+        return tlsMaterialProvider;
     }
 }

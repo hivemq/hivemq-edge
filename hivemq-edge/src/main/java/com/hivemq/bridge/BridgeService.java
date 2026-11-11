@@ -19,6 +19,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.hivemq.bridge.config.BridgeTls;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
@@ -28,6 +29,7 @@ import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.metrics.HiveMQMetrics;
+import com.hivemq.security.tls.TLSPolicy;
 import com.hivemq.util.Checkpoints;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -263,6 +265,16 @@ public class BridgeService {
             if (active.bridge().equals(newBridge)) {
                 log.debug("Not restarting bridge {} because config is unchanged", bridgeId);
             } else {
+                try {
+                    requireReadableTls(newBridge);
+                } catch (final TLSPolicy.TLSMaterialException e) {
+                    log.error(
+                            "Bridge '{}' keeps running on its previous configuration, because the TLS material"
+                                    + " of the changed configuration cannot be read: {}",
+                            bridgeId,
+                            e.reason());
+                    return;
+                }
                 log.info("Restarting bridge {} because config has changed", bridgeId);
                 // Through restartBridge rather than stop-with-an-empty-retain-list, which cleared
                 // every queue of the bridge whatever had changed: editing one subscription's filter
@@ -287,6 +299,22 @@ public class BridgeService {
                 activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(newBridge, client));
             }
         });
+    }
+
+    /// Reads the TLS material the bridge names, as connecting to the remote broker will.
+    ///
+    /// Called before a running bridge is replaced, so that a configuration whose truststore or
+    /// identity cannot be read leaves the running bridge connected instead of stopping it for a
+    /// replacement that cannot connect. A bridge that is not running is not checked here: it reads its
+    /// material when it connects, and a broken file then refuses that one bridge.
+    ///
+    /// @throws TLSPolicy.TLSMaterialException if a file the bridge's TLS settings name cannot be read
+    ///     as what they say it is
+    public void requireReadableTls(final @NotNull MqttBridge bridge) throws TLSPolicy.TLSMaterialException {
+        final BridgeTls tls = bridge.getBridgeTls();
+        if (tls != null && tls.getEffectiveTls() != null) {
+            new TLSPolicy(tls.getEffectiveTls());
+        }
     }
 
     public @Nullable Throwable getLastError(final @NotNull String bridgeName) {

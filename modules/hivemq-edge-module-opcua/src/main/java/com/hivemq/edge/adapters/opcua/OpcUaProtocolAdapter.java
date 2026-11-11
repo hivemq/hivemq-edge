@@ -72,6 +72,8 @@ import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import com.hivemq.edge.adapters.opcua.southbound.VariableWrites;
 import com.hivemq.edge.adapters.opcua.util.NodeIdText;
+import com.hivemq.security.tls.TLSMaterialProvider;
+import com.hivemq.security.tls.TLSMaterialSource;
 import com.hivemq.util.Topics;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -166,6 +168,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     // Stored for reconnection - set during start()
     private volatile @Nullable ParsedConfig parsedConfig;
     private volatile @Nullable ModuleServices moduleServices;
+    // The TLS material the node declares, asked for its registry at every start so a reference
+    // resolves against what is declared when the adapter starts, not when it was constructed.
+    private final @NotNull TLSMaterialProvider tlsMaterials;
 
     // Last-known-good client reference for browse operations during adapter restarts.
     // Set when a connection succeeds, cleared only on explicit stop (not during reconnect).
@@ -263,9 +268,24 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
     // endregion
 
+    /// An adapter whose references into shared TLS material resolve against what the node declares,
+    /// when Edge built the input, and against no declared material for an input built elsewhere.
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
+        this(
+                adapterInformation,
+                input,
+                input instanceof TLSMaterialSource source ? source.tlsMaterialProvider() : new TLSMaterialProvider());
+    }
+
+    /// @param tlsMaterials the TLS material the node declares, which the adapter's references into
+    ///     shared material are resolved against when it starts
+    private OpcUaProtocolAdapter(
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input,
+            final @NotNull TLSMaterialProvider tlsMaterials) {
+        this.tlsMaterials = tlsMaterials;
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = input.getProtocolAdapterState();
@@ -396,7 +416,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         }
 
         final ParsedConfig newlyParsedConfig;
-        final var result = ParsedConfig.fromConfig(config);
+        final var result = ParsedConfig.fromConfig(config, tlsMaterials.registry());
         if (result instanceof Failure<ParsedConfig, String>(final String failure)) {
             log.error("Failed to parse configuration for OPC UA client: {}", failure);
             reportInvalidConfiguration(failure);

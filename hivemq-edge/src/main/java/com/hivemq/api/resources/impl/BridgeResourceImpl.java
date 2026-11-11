@@ -51,6 +51,11 @@ import com.hivemq.edge.api.model.TlsConfiguration;
 import com.hivemq.edge.api.model.WebsocketConfiguration;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.http.error.Error;
+import com.hivemq.security.tls.TLSConfig;
+import com.hivemq.security.tls.TLSConfigBridge;
+import com.hivemq.security.tls.TLSConfigResolved;
+import com.hivemq.security.tls.TLSMaterialRegistry;
+import com.hivemq.security.tls.TLSPolicy;
 import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
@@ -60,11 +65,16 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Simon L Johnson
  */
 public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeResourceImpl.class);
 
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull BridgeService bridgeService;
@@ -118,7 +128,12 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                 return ErrorResponseUtil.errorResponse(
                         new BridgeFailedSchemaValidationError(errorMessages.toErrorList()));
             } else {
-                final MqttBridge mqttBridge = unconvert(bridge);
+                final MqttBridge mqttBridge;
+                try {
+                    mqttBridge = unconvert(bridge, null);
+                } catch (final IllegalArgumentException e) {
+                    return refusedTls(e);
+                }
                 configurationService.bridgeExtractor().addBridge(mqttBridge);
                 return Response.ok().build();
             }
@@ -207,6 +222,20 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                             return ErrorResponseUtil.errorResponse(
                                     new BridgeNotFoundError(String.format("Bridge not found by id '%s'", bridgeId)));
                         }
+                        // A restart of a running bridge whose recorded material cannot be read
+                        // (a reload that was refused for it) would take the bridge down for good.
+                        if (bridgeService.isRunning(bridgeId)) {
+                            try {
+                                bridgeService.requireReadableTls(bridgeConfig);
+                            } catch (final TLSPolicy.TLSMaterialException e) {
+                                log.warn(
+                                        "Refused the restart of bridge '{}', which keeps running: {}",
+                                        bridgeId,
+                                        e.reason());
+                                return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(
+                                        List.of(new Error(e.reason(), "tlsConfiguration"))));
+                            }
+                        }
                         bridgeService.restartBridge(bridgeId, bridgeConfig);
                     }
                 }
@@ -260,7 +289,27 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                 // the others (EDG-882 QA round 1). Replacing in place lets updateBridges classify it as
                 // an update and route it through restartBridge, which retains the surviving forwarders'
                 // queues and holds them across the hand-over.
-                final MqttBridge newBridgeConfig = unconvert(bridge);
+                final MqttBridge newBridgeConfig;
+                try {
+                    newBridgeConfig = unconvert(bridge, previousBridgeConfig.getBridgeTls());
+                } catch (final IllegalArgumentException e) {
+                    return refusedTls(e);
+                }
+                // Refused before the configuration changes: replacing it restarts a running bridge,
+                // and a replacement whose TLS material cannot be read would never reconnect.
+                if (bridgeService.isRunning(bridgeId)) {
+                    try {
+                        bridgeService.requireReadableTls(newBridgeConfig);
+                    } catch (final TLSPolicy.TLSMaterialException e) {
+                        log.warn(
+                                "Refused the update of bridge '{}', which keeps running on its previous "
+                                        + "configuration: {}",
+                                bridgeId,
+                                e.reason());
+                        return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(
+                                List.of(new Error(e.reason(), "tlsConfiguration"))));
+                    }
+                }
                 if (!configurationService.bridgeExtractor().replaceBridge(bridgeId, newBridgeConfig)) {
                     return ErrorResponseUtil.errorResponse(
                             new BridgeNotFoundError(String.format("Bridge not found by id '%s'", bridgeId)));
@@ -397,7 +446,8 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
         }
     }
 
-    private static MqttBridge unconvert(final @NotNull Bridge bridge) {
+    /// @param existingTls the TLS settings of the bridge this body replaces, or null for a new bridge
+    private static MqttBridge unconvert(final @NotNull Bridge bridge, final @Nullable BridgeTls existingTls) {
 
         final MqttBridge.Builder builder = new MqttBridge.Builder();
         builder.withCleanStart(bridge.getCleanStart())
@@ -426,7 +476,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                                         .map(BridgeResourceImpl::unconvertRemote)
                                         .collect(Collectors.toList())
                                 : List.of())
-                .withBridgeTls(convertTls(bridge.getTlsConfiguration()))
+                .withBridgeTls(convertTls(bridge.getId(), bridge.getTlsConfiguration(), existingTls))
                 .withWebsocketConfiguration(convertWebsocketConfig(bridge.getWebsocketConfiguration()))
                 .persist(bridge.getPersist() == null || bridge.getPersist());
         return builder.build();
@@ -465,9 +515,88 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
         return CustomUserProperty.of(customUserProperty.getKey(), customUserProperty.getValue());
     }
 
-    public static @Nullable BridgeTls convertTls(final @Nullable TlsConfiguration tls) {
+    /// A TLS configuration the request names but Edge cannot carry out (an unknown store type, a
+    /// contradiction between settings) is the client's error: answered with 400 and the reason, and
+    /// nothing in the configuration changes.
+    private static @NotNull Response refusedTls(final @NotNull IllegalArgumentException e) {
+        return ErrorResponseUtil.errorResponse(new BridgeFailedSchemaValidationError(
+                List.of(new Error(String.valueOf(e.getMessage()), "tlsConfiguration"))));
+    }
+
+    /// A bridge's TLS settings as the API supplies them.
+    ///
+    /// Derives the effective configuration as well as carrying the raw values, because the bridge
+    /// this produces is handed straight to the code that starts bridges - before the configuration
+    /// is written back - so a bridge created or changed through the API would otherwise connect
+    /// without going through the certificate-validation chain at all.
+    ///
+    /// The API's bridge model carries only the older fields, so what it can express is the superseded
+    /// spelling. An operator wanting PEM, a directory of authorities or shared material writes it in
+    /// the configuration file.
+    ///
+    /// @throws IllegalArgumentException if the settings cannot be carried out, which the API reports
+    ///     as a bad request rather than accepting a bridge it cannot validate for
+    @TestOnly
+    public static @Nullable BridgeTls convertTls(
+            final @Nullable String bridgeId, final @Nullable TlsConfiguration tls) {
+        return convertTls(bridgeId, tls, null);
+    }
+
+    /// As above, for a body that replaces an existing bridge.
+    ///
+    /// The REST model cannot express the settings that supersede the older fields, so the editor's
+    /// save of a bridge configured with them sends back only what GET served. Deriving from that
+    /// would silently replace the bridge's checks and material with the compatibility defaults. A
+    /// body whose TLS fields are what GET served for the existing bridge therefore keeps the existing
+    /// settings; a body that changes them is derived as for a new bridge, and replacing settings the
+    /// model could not show is logged.
+    ///
+    /// @param existingTls the TLS settings of the bridge this body replaces, or null for a new bridge
+    /// @throws IllegalArgumentException if the settings cannot be carried out
+    public static @Nullable BridgeTls convertTls(
+            final @Nullable String bridgeId,
+            final @Nullable TlsConfiguration tls,
+            final @Nullable BridgeTls existingTls) {
         if (tls == null || !tls.getEnabled()) {
             return null;
+        }
+        if (existingTls != null && servedUnchanged(tls, existingTls)) {
+            return existingTls;
+        }
+        if (existingTls != null
+                && existingTls.getConfiguredTls() != null
+                && existingTls.getConfiguredTls().hasSupersedingElements()) {
+            log.warn(
+                    "Replaced the TLS settings of bridge '{}' configured in the configuration file with the "
+                            + "keystore and truststore fields of the REST request; its tls-checks, tls-identity, "
+                            + "tls-truststore, tls-allowlist and tls-revocationlist settings no longer apply",
+                    bridgeId);
+        }
+
+        final int handshakeTimeout = Math.max(10, Objects.requireNonNullElse(tls.getHandshakeTimeout(), 10));
+        final TLSConfig effectiveTls;
+        try {
+            final TLSConfigBridge written = TLSConfigBridge.fromSupersededSettings(
+                    bridgeId == null ? "" : bridgeId,
+                    tls.getKeystorePath(),
+                    tls.getKeystorePassword(),
+                    tls.getPrivateKeyPassword(),
+                    tls.getKeystoreType(),
+                    tls.getTruststorePath(),
+                    tls.getTruststorePassword(),
+                    tls.getTruststoreType(),
+                    tls.getProtocols(),
+                    tls.getCipherSuites(),
+                    tls.getVerifyHostname(),
+                    handshakeTimeout);
+            // The same type a bridge read from the configuration file carries, so that the reread
+            // after this bridge is written back compares equal and does not restart it again.
+            effectiveTls = new TLSConfigResolved(written, TLSMaterialRegistry.empty());
+        } catch (final TLSConfigBridge.InvalidTlsConfigException e) {
+            throw new IllegalArgumentException(e.reason(), e);
+        } catch (final TLSMaterialRegistry.InvalidReferenceException e) {
+            // The superseded fields cannot name shared material, so there is no reference to miss.
+            throw new IllegalStateException(e.reason(), e);
         }
 
         return new BridgeTls(
@@ -481,7 +610,34 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                 tls.getKeystoreType(),
                 tls.getTruststoreType(),
                 tls.getVerifyHostname(),
-                Math.max(10, Objects.requireNonNullElse(tls.getHandshakeTimeout(), 10)));
+                handshakeTimeout,
+                effectiveTls);
+    }
+
+    /// Whether the body's TLS fields are what GET serves for the given settings. Compared as values:
+    /// an absent string and an empty one, or an absent list and an empty one, say the same thing.
+    private static boolean servedUnchanged(final @NotNull TlsConfiguration body, final @NotNull BridgeTls existing) {
+        final TlsConfiguration served = BridgeUtils.convertTls(existing);
+        return served != null
+                && sameText(body.getKeystorePath(), served.getKeystorePath())
+                && sameText(body.getKeystorePassword(), served.getKeystorePassword())
+                && sameText(body.getPrivateKeyPassword(), served.getPrivateKeyPassword())
+                && sameText(body.getTruststorePath(), served.getTruststorePath())
+                && sameText(body.getTruststorePassword(), served.getTruststorePassword())
+                && sameText(body.getKeystoreType(), served.getKeystoreType())
+                && sameText(body.getTruststoreType(), served.getTruststoreType())
+                && sameList(body.getProtocols(), served.getProtocols())
+                && sameList(body.getCipherSuites(), served.getCipherSuites())
+                && Objects.equals(body.getVerifyHostname(), served.getVerifyHostname())
+                && Objects.equals(body.getHandshakeTimeout(), served.getHandshakeTimeout());
+    }
+
+    private static boolean sameText(final @Nullable String a, final @Nullable String b) {
+        return Objects.requireNonNullElse(a, "").equals(Objects.requireNonNullElse(b, ""));
+    }
+
+    private static boolean sameList(final @Nullable List<String> a, final @Nullable List<String> b) {
+        return Objects.requireNonNullElse(a, List.of()).equals(Objects.requireNonNullElse(b, List.of()));
     }
 
     public static @Nullable BridgeWebsocketConfig convertWebsocketConfig(

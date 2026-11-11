@@ -34,6 +34,7 @@ import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
+import com.hivemq.security.tls.TLSMaterialProvider;
 import java.io.Writer;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -63,6 +64,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ModuleConfigurationService moduleConfigurationService;
     private final @NotNull InternalConfigurationService internalConfigurationService;
+
+    /// Created here rather than passed in: it has no configuration of its own to be given, and every
+    /// holder of this service needs the same instance - the configurator fills it, and a surface
+    /// resolving a reference reads it.
+    private final @NotNull TLSMaterialProvider tlsMaterialProvider = new TLSMaterialProvider();
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
     private final @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -132,6 +138,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public @NotNull ModuleConfigurationService commercialModuleConfigurationService() {
         return proxy(ModuleConfigurationService.class, moduleConfigurationService);
+    }
+
+    @Override
+    public @NotNull TLSMaterialProvider tlsMaterialProvider() {
+        return tlsMaterialProvider;
     }
 
     @Override
