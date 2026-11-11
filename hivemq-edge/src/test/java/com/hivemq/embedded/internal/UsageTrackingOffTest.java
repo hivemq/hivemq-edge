@@ -20,8 +20,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.utils.InstallationId;
 import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -44,7 +52,9 @@ class UsageTrackingOffTest {
     }
 
     /// The installation id is written only when the remote service starts, before it queues its startup event, so
-    /// its absence shows nothing was queued or sent although the configuration still reads as enabled.
+    /// its absence shows nothing was queued or sent although the configuration still reads as enabled. Every HTTP
+    /// connection of the JVM goes to a loopback sink for the test's length, so a regression of the forced-off flag
+    /// reaches the sink, which counts it, and not the production discovery and telemetry endpoints.
     @Test
     @Timeout(20)
     void whenConfigEnablesUsageTracking_edgeStartsWithUsageTrackingOff() throws Exception {
@@ -70,17 +80,45 @@ class UsageTrackingOffTest {
                 + "</hivemq>";
         FileUtils.write(new File(conf, "config.xml"), config, StandardCharsets.UTF_8);
 
-        // close() waits interruptibly, so the interrupt @Timeout sends ends a stuck start; 15 s stays inside its 20 s
-        try (final EmbeddedHiveMQImpl embeddedHiveMQ =
-                new EmbeddedHiveMQImpl(conf, data, newFolder("extensions"), newFolder("license"))) {
-            embeddedHiveMQ.start().get(15, TimeUnit.SECONDS);
+        final AtomicInteger connections = new AtomicInteger();
+        final ProxySelector previousProxySelector = ProxySelector.getDefault();
+        try (final ServerSocket sink = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+            final Thread acceptor = Thread.ofVirtual()
+                    .name("usage-tracking-off-test-sink")
+                    .start(() -> acceptUntilClosed(sink, connections));
+            ProxySelector.setDefault(
+                    ProxySelector.of(new InetSocketAddress(InetAddress.getLoopbackAddress(), sink.getLocalPort())));
+            try {
+                // close() waits interruptibly, so the interrupt @Timeout sends ends a stuck start; 15 s stays inside
+                // its 20 s
+                try (final EmbeddedHiveMQImpl embeddedHiveMQ =
+                        new EmbeddedHiveMQImpl(conf, data, newFolder("extensions"), newFolder("license"))) {
+                    embeddedHiveMQ.start().get(15, TimeUnit.SECONDS);
 
-            assertThat(embeddedHiveMQ
-                            .bootstrapConfig()
-                            .usageTrackingConfiguration()
-                            .isUsageTrackingEnabled())
-                    .isTrue();
-            assertThat(new File(data, InstallationId.FILE_NAME)).doesNotExist();
+                    assertThat(embeddedHiveMQ
+                                    .bootstrapConfig()
+                                    .usageTrackingConfiguration()
+                                    .isUsageTrackingEnabled())
+                            .isTrue();
+                    assertThat(new File(data, InstallationId.FILE_NAME)).doesNotExist();
+                }
+            } finally {
+                ProxySelector.setDefault(previousProxySelector);
+                sink.close();
+                acceptor.join(Duration.ofSeconds(2));
+            }
+        }
+        assertThat(connections).as("HTTP connections the stopped Edge made").hasValue(0);
+    }
+
+    /// Accepts and counts connections until `sink` is closed.
+    private static void acceptUntilClosed(final @NotNull ServerSocket sink, final @NotNull AtomicInteger connections) {
+        while (!sink.isClosed()) {
+            try (final Socket _ = sink.accept()) {
+                connections.incrementAndGet();
+            } catch (final IOException _) {
+                return;
+            }
         }
     }
 
