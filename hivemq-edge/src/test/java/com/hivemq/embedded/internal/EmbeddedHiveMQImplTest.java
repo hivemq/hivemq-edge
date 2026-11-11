@@ -98,8 +98,8 @@ public class EmbeddedHiveMQImplTest {
     @Test
     @Timeout(20)
     public void embeddedHiveMQ_startsWithUsageTrackingOff() throws Exception {
-        // close(), not stop().join(): close waits interruptibly and shuts the executor down, so the interrupt
-        // @Timeout sends ends the test even when the start is stuck; 15 s stays inside its 20 s
+        // close(), not stop().join(): close waits interruptibly, so the interrupt @Timeout sends ends the test even
+        // when a stuck start holds the executor; 15 s stays inside its 20 s
         try (final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license)) {
             embeddedHiveMQ.start().get(15, TimeUnit.SECONDS);
 
