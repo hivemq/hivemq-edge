@@ -129,6 +129,14 @@ public class InternalConfigurations {
     public static @NotNull AtomicBoolean DEFAULT_USAGE_EVENTS_ENABLED = new AtomicBoolean(true);
 
     /**
+     * Turns usage tracking off whatever the configuration says, an explicit {@code <enabled>true</enabled>} included.
+     * Only test JVMs set it, so that no Edge a test starts sends phone-home events to the production endpoint. The
+     * remote service reads it once, when it is built; the usage tracking configuration still reports the configured
+     * value.
+     */
+    public static final @NotNull AtomicBoolean USAGE_TRACKING_FORCED_OFF = new AtomicBoolean(false);
+
+    /**
      * The limit of unacknowledged messages that hivemq will handle, regardless of the client receive maximum
      */
     public static int MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 50;

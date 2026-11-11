@@ -20,17 +20,20 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
 
-/// Turns usage tracking off in every test JVM before its first Edge starts, however that Edge is started. An Edge
-/// with tracking on sends real phone-home events to the production telemetry endpoint, under the test licences.
+/// Turns usage tracking off in every test JVM before its first Edge starts, however that Edge is started and
+/// whatever its configuration says. An Edge with tracking on sends real phone-home events to the production
+/// telemetry endpoint, under the test licences.
 ///
-/// The flag is JVM-wide and the configuration parser reads it on every load, so it has this one owner and keeps
-/// one value for the life of the JVM. It sets the default only: a configuration that enables tracking explicitly
-/// still turns it on. `hivemq-edge` and `hivemq-edge-test` each carry a copy, registered in their own test
+/// Two flags: the default makes a configuration without `<usage-tracking>` read as disabled, and the forced-off flag
+/// keeps the remote service from starting even when a configuration enables tracking explicitly. Both are JVM-wide
+/// and the configuration parser reads the default on every load, so they have this one owner and keep one value for
+/// the life of the JVM. `hivemq-edge` and `hivemq-edge-test` each carry a copy, registered in their own test
 /// services file.
 public class UsageTrackingOffListener implements TestExecutionListener {
 
     @Override
     public void testPlanExecutionStarted(final @NotNull TestPlan testPlan) {
         InternalConfigurations.DEFAULT_USAGE_EVENTS_ENABLED.set(false);
+        InternalConfigurations.USAGE_TRACKING_FORCED_OFF.set(true);
     }
 }

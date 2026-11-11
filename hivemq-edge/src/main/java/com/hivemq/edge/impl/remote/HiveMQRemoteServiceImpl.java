@@ -22,6 +22,7 @@ import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
@@ -68,7 +69,8 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
 
         // -- We should only init the remote service (and thus the overhead of the threads) when
         // -- remote tracking is enabled.
-        if (configurationService.usageTrackingConfiguration().isUsageTrackingEnabled()) {
+        if (configurationService.usageTrackingConfiguration().isUsageTrackingEnabled()
+                && !InternalConfigurations.USAGE_TRACKING_FORCED_OFF.get()) {
             // before the first event: every event built from now on carries the saved id
             final File dataFolder = systemInformation.getDataFolder();
             if (dataFolder != null) {
