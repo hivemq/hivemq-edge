@@ -39,6 +39,15 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class PollingTask implements Runnable {
 
+    private static final int BACKOFF_BASE_MILLIS = 100;
+    private static final int BACKOFF_MAX_DOUBLINGS = 20;
+
+    /**
+     * Ceiling of the delay after a failed poll: the delay doubles from {@value #BACKOFF_BASE_MILLIS} ms with every
+     * failure since the last successful poll, up to {@value #BACKOFF_MAX_DOUBLINGS} doublings (about 29 hours).
+     */
+    public static final int BACKOFF_CEILING_MILLIS = BACKOFF_BASE_MILLIS << BACKOFF_MAX_DOUBLINGS;
+
     private static final @NotNull Logger log = LoggerFactory.getLogger(PollingTask.class);
 
     private final @NotNull ProtocolAdapterPollingSampler sampler;
@@ -77,13 +86,25 @@ public class PollingTask implements Runnable {
         this.currentScheduledFuture = new AtomicReference<>();
     }
 
-    private long getBackoff(final int errorCount) {
-        // -- This will backoff up to about 29 hours (2^20 * 100 ms), unless the configured max is less
-        final long max = settings.maxErrorBackoffMillis();
-        long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
-        f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
-        f = Math.min(f, max);
-        return f;
+    /**
+     * The delay after the {@code errorCount}-th failed poll in a row: doubling from {@value #BACKOFF_BASE_MILLIS} ms,
+     * plus a jitter of up to {@code errorCount} times that base, capped at {@code maxMillis}. Any {@code errorCount}
+     * is accepted: the jitter bound is computed in {@code long}, so a count past {@code Integer.MAX_VALUE / 100} (an
+     * unlimited adapter failing every second for about 250 days) does not overflow and stop polling, and a count that
+     * wrapped past {@code Integer.MAX_VALUE} keeps the longest delay.
+     */
+    @VisibleForTesting
+    static long backoffMillis(final int errorCount, final long maxMillis) {
+        final long failures = errorCount > 0 ? errorCount : Integer.MAX_VALUE;
+        final long doubledMillis = (long) BACKOFF_BASE_MILLIS << Math.min(failures, BACKOFF_MAX_DOUBLINGS);
+        final long jitterMillis = ThreadLocalRandom.current().nextLong(failures * BACKOFF_BASE_MILLIS);
+        return Math.min(doubledMillis + jitterMillis, maxMillis);
+    }
+
+    @VisibleForTesting
+    @NotNull
+    Settings settings() {
+        return settings;
     }
 
     @Override
@@ -224,8 +245,8 @@ public class PollingTask implements Runnable {
         if (errorCountTotal == 0) {
             schedule(nonNegativeDelay);
         } else {
-            final long backoff = getBackoff(errorCountTotal);
-            final long effectiveDelay = Math.max(nonNegativeDelay, backoff);
+            final long delayMillis = backoffMillis(errorCountTotal, settings.maxErrorBackoffMillis());
+            final long effectiveDelay = Math.max(nonNegativeDelay, delayMillis);
             schedule(effectiveDelay);
         }
     }

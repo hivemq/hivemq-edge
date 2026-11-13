@@ -68,9 +68,8 @@ public class PerContextSampler extends AbstractSubscriptionSampler {
             throw t;
         }
 
-        // TODO fixed timeout??
         final CompletableFuture<PollingOutputImpl.PollingResult> outputFuture =
-                pollingOutput.getOutputFuture().orTimeout(10_000, TimeUnit.MILLISECONDS);
+                pollingOutput.getOutputFuture().orTimeout(POLL_OUTPUT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
         return outputFuture
                 .thenCompose(pollingResult -> {
                     if (pollingResult == PollingOutputImpl.PollingResult.SUCCESS) {

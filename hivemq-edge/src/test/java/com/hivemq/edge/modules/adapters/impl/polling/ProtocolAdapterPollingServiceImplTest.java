@@ -16,7 +16,6 @@
 package com.hivemq.edge.modules.adapters.impl.polling;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -40,6 +39,9 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 class ProtocolAdapterPollingServiceImplTest {
@@ -64,25 +66,119 @@ class ProtocolAdapterPollingServiceImplTest {
     }
 
     @Test
-    void schedulePolling_whenWatchdogOptionsAreSet_thenTaskUsesThem() {
-        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, "1");
+    void pollingSettings_whenOptionsAreNotSet_thenDefaultsAreUsed() {
+        assertThat(pollingService().pollingSettings()).isEqualTo(PollingTask.Settings.DEFAULTS);
+    }
+
+    @Test
+    void pollingSettings_defaultsLieInsideTheirRanges() {
+        assertThat(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT)
+                .isBetween(
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MIN,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MAX);
+        assertThat(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT)
+                .isBetween(
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_MIN,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_MAX);
+        assertThat(InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT)
+                .isBetween(
+                        InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_MIN,
+                        InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_MAX);
+    }
+
+    @Test
+    void pollingSettings_watchdogTimeoutMinimumLiesAboveTheSamplerPollTimeout() {
+        assertThat(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MIN)
+                .isGreaterThan(AbstractSubscriptionSampler.POLL_OUTPUT_TIMEOUT_MILLIS);
+    }
+
+    @Test
+    void pollingSettings_whenOptionsAreAtTheirMinimum_thenTheyAreUsed() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, "11000");
         internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP, "0");
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS, "1000");
+
+        assertThat(pollingService().pollingSettings()).isEqualTo(new PollingTask.Settings(11_000, 0, 1000));
+    }
+
+    @Test
+    void pollingSettings_whenOptionsAreAtTheirMaximum_thenTheyAreUsed() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, "3600000");
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP, "10000");
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS, "104857600");
+
+        assertThat(pollingService().pollingSettings())
+                .isEqualTo(new PollingTask.Settings(3_600_000, 10_000, 104_857_600));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "adapter.polling.watchdog.timeout.millis, 10999",
+        "adapter.polling.watchdog.timeout.millis, 3600001",
+        "adapter.polling.watchdog.timeout.millis, 1",
+        "adapter.polling.watchdog.timeout.millis, -1",
+        "adapter.polling.watchdog.errors.before.stop, -1",
+        "adapter.polling.watchdog.errors.before.stop, 10001",
+        "adapter.polling.error.backoff.max.millis, 999",
+        "adapter.polling.error.backoff.max.millis, 104857601",
+        "adapter.polling.error.backoff.max.millis, 0",
+    })
+    void pollingSettings_whenAnOptionIsOutsideItsRange_thenItsDefaultIsUsed(
+            final @NotNull String key, final @NotNull String value) {
+        internalConfigurationService.set(key, value);
+
+        assertThat(pollingService().pollingSettings()).isEqualTo(PollingTask.Settings.DEFAULTS);
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS,
+                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP,
+                InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS
+            })
+    void pollingSettings_whenAnOptionIsNotANumber_thenItsDefaultIsUsed(final @NotNull String key) {
+        internalConfigurationService.set(key, "ten");
+
+        assertThat(pollingService().pollingSettings()).isEqualTo(PollingTask.Settings.DEFAULTS);
+    }
+
+    @Test
+    void pollingSettings_whenAnOptionHasSurroundingWhitespace_thenItIsUsed() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, " 20000 ");
+
+        assertThat(pollingService().pollingSettings().watchdogTimeoutMillis()).isEqualTo(20_000);
+    }
+
+    @Test
+    void schedulePolling_whenWatchdogLimitIsSet_thenTaskStopsAtIt() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP, "0");
+        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new InterruptedException()));
 
         scheduledTask().run();
 
-        // a 1 ms watchdog fires on the never-completing poll, and a limit of 0 stops at the first interruption
-        await().untilAsserted(() -> verify(sampler).error(any(), eq(false)));
+        // an interrupted poll is a watchdog hit, and a limit of 0 stops at the first one
+        verify(sampler).error(any(), eq(false));
     }
 
     @Test
     void schedulePolling_whenWatchdogLimitIsBelowMinimum_thenTaskUsesDefault() {
-        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, "1");
         internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP, "-1");
+        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new InterruptedException()));
 
         scheduledTask().run();
 
-        // with the default limit of 10 the first interruption continues polling; -1 would have stopped it
-        await().untilAsserted(() -> verify(sampler).error(any(), eq(true)));
+        // with the default limit of 10 the first watchdog hit continues polling; -1 would have stopped it
+        verify(sampler).error(any(), eq(true));
+    }
+
+    @Test
+    void schedulePolling_whenWatchdogTimeoutIsShorterThanTheSamplerPollTimeout_thenItIsNotApplied() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, "1000");
+
+        // a watchdog shorter than the samplers' poll timeout would fire first and count a hung poll as a watchdog hit
+        assertThat(scheduledTask().settings().watchdogTimeoutMillis())
+                .isEqualTo(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT);
     }
 
     @Test
@@ -94,16 +190,6 @@ class ProtocolAdapterPollingServiceImplTest {
     void schedulePolling_whenWatchdogOptionIsNotANumber_thenTaskStopsAfterDefaultLimit() {
         internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP, "ten");
         assertStopsAfterDefaultWatchdogLimit();
-    }
-
-    @Test
-    void schedulePolling_whenWatchdogOptionHasSurroundingWhitespace_thenTaskUsesIt() {
-        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP, " 0 ");
-        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new InterruptedException()));
-
-        scheduledTask().run();
-
-        verify(sampler).error(any(), eq(false));
     }
 
     @Test
@@ -155,14 +241,17 @@ class ProtocolAdapterPollingServiceImplTest {
         verify(sampler, times(1)).error(any(), eq(false));
     }
 
-    private @NotNull PollingTask scheduledTask() {
-        final ProtocolAdapterPollingServiceImpl pollingService = new ProtocolAdapterPollingServiceImpl(
+    private @NotNull ProtocolAdapterPollingServiceImpl pollingService() {
+        return new ProtocolAdapterPollingServiceImpl(
                 scheduledExecutorService,
                 mock(ShutdownHooks.class),
                 eventService,
                 nanoTimeProvider,
                 internalConfigurationService);
-        pollingService.schedulePolling(sampler);
+    }
+
+    private @NotNull PollingTask scheduledTask() {
+        pollingService().schedulePolling(sampler);
         final ArgumentCaptor<PollingTask> task = ArgumentCaptor.forClass(PollingTask.class);
         verify(scheduledExecutorService).schedule(task.capture(), anyLong(), eq(TimeUnit.MILLISECONDS));
         return task.getValue();

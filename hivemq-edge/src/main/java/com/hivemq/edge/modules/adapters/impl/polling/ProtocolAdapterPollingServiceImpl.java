@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,29 +66,40 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     @Override
     public void schedulePolling(final @NotNull ProtocolAdapterPollingSampler sampler) {
-        final PollingTask pollingTask = new PollingTask(
-                sampler,
-                scheduledExecutorService,
-                eventService,
-                nanoTimeProvider,
-                new PollingTask.Settings(
-                        internalOption(
-                                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS,
-                                1,
-                                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT),
-                        internalOption(
-                                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP,
-                                0,
-                                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT),
-                        internalOption(
-                                InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS,
-                                1000,
-                                InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT)));
+        final PollingTask pollingTask =
+                new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider, pollingSettings());
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
         samplerToTask.put(sampler, pollingTask);
     }
 
-    private int internalOption(final @NotNull String key, final int minimum, final int defaultValue) {
+    /**
+     * The polling settings from the {@code <internal>} options, read for every scheduled sampler so a changed option
+     * applies to the next adapter start. Each option has a range; a value that is not a number or lies outside its
+     * range falls back to the option's default with a WARN.
+     */
+    @VisibleForTesting
+    @NotNull
+    PollingTask.Settings pollingSettings() {
+        return new PollingTask.Settings(
+                internalOption(
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MIN,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MAX,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT),
+                internalOption(
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_MIN,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_MAX,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT),
+                internalOption(
+                        InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS,
+                        InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_MIN,
+                        InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_MAX,
+                        InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT));
+    }
+
+    private int internalOption(
+            final @NotNull String key, final int minimum, final int maximum, final int defaultValue) {
         final String configured = internalConfigurationService.get(key);
         if (configured == null) {
             return defaultValue;
@@ -96,15 +108,20 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         try {
             value = Integer.parseInt(configured.trim());
         } catch (final NumberFormatException e) {
-            log.warn("Internal option '{}' is '{}', not a number; using the default {}", key, configured, defaultValue);
+            log.warn(
+                    "Internal option is not a number, using the default [key={}, value='{}', default={}]",
+                    key,
+                    configured,
+                    defaultValue);
             return defaultValue;
         }
-        if (value < minimum) {
+        if (value < minimum || value > maximum) {
             log.warn(
-                    "Internal option '{}' is {}, below its minimum of {}; using the default {}",
+                    "Internal option is outside its range, using the default [key={}, value={}, min={}, max={}, default={}]",
                     key,
                     value,
                     minimum,
+                    maximum,
                     defaultValue);
             return defaultValue;
         }
