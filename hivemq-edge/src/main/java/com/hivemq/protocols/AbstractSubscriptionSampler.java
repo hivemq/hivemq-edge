@@ -33,6 +33,14 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("FutureReturnValueIgnored")
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
 
+    /**
+     * Time a poll's output may take before the sampler fails the poll with a {@code TimeoutException}, an ordinary
+     * polling error counted against the adapter's {@code maxPollingErrorsBeforeRemoval}. The polling watchdog's
+     * minimum timeout lies above it. The value is the one both samplers always used; it was never derived from a
+     * measurement, which would be the slowest adapter's poll time at the 99th percentile.
+     */
+    public static final int POLL_OUTPUT_TIMEOUT_MILLIS = 10_000;
+
     private final long initialDelay;
     private final long period;
     private final int maxErrorsBeforeRemoval;

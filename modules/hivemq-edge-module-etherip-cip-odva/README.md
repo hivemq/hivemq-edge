@@ -109,7 +109,8 @@ Uses [EtherIP](https://github.com/ornl-epics/etherip/) library and extends it
   - Workaround:
     - [x] Set limit at VERY HIGH value (so it's never reached, or -1)
     - [x] Set internal max backoff time to some reasonable value: default 10 minutes
-      - `<internal>` option `adapter.polling.error.backoff.max.millis` in `config.xml`
+      - `<internal>` option `adapter.polling.error.backoff.max.millis` in `config.xml`, range 1000 to 104857600 ms
+        (about 29 hours); a value outside it falls back to the default with a WARN
 
 - [x] BOOL Attribute protocol single (checks whole value) & batched (looks at given bit) (For get attribute single - True is represented by SINT 0xFF = -1)
 
