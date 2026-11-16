@@ -9,7 +9,7 @@ description = "Frontend for HiveMQ Edge"
 
 node {
   download.set(true)
-  version.set("24.16.0")
+  version.set("26.13.1")
   pnpmVersion.set("11")
 }
 
