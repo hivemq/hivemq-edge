@@ -35,7 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '24.16.0'
+          node-version: '26.13.1'
 
       # Snyk only needs pnpm-lock.yaml (overrides are already resolved into it). When a
       # pnpm-workspace.yaml sits next to the lockfile, the Snyk pnpm plugin treats the dir

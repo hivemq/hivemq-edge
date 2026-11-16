@@ -185,8 +185,8 @@ The `engines` field enforces minimum runtime versions:
 
 ```json
 "engines": {
-  "node": "24",
-  "pnpm": "10"
+  "node": "26",
+  "pnpm": "11"
 }
 ```
 
