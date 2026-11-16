@@ -16,6 +16,10 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/__test-utils__/setup.ts',
+    // Node 25+ ships its own global localStorage/sessionStorage, which hides jsdom's in the test
+    // workers and leaves them undefined. Turn it off so the tests use jsdom's storage again.
+    // Can be removed once Vitest and jsdom are on versions that handle this themselves.
+    execArgv: ['--no-experimental-webstorage'],
     coverage: {
       // Anchored, and limited to source files. Vitest 4 reads every path matched here so it can
       // report files no test touched, so a bare '**/src/' made it parse README.md and the

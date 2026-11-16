@@ -58,7 +58,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Package Manager
 
 **pnpm 11** - Required (enforced via `engines` field)
-**Node.js 24** - Required runtime version
+**Node.js 26** - Required runtime version
 
 **Rationale:** pnpm provides:
 - Fast, disk-efficient package management

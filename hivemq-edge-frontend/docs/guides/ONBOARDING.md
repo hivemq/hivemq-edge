@@ -22,7 +22,7 @@ Welcome to the HiveMQ Edge frontend team. This guide takes you from zero to a ru
   - [The Repository](#the-repository)
     - [Branching Convention](#branching-convention)
   - [Prerequisites](#prerequisites)
-    - [Node.js 24](#nodejs-24)
+    - [Node.js 26](#nodejs-26)
     - [pnpm 11](#pnpm-11)
     - [Java Backend (Optional)](#java-backend-optional)
   - [Getting the Code](#getting-the-code)
@@ -88,11 +88,11 @@ Branch names follow the pattern `feat/{LINEAR-ID}/{description}`. Example: `feat
 
 ## Prerequisites
 
-You need two things installed before anything else: **Node.js 24** and **pnpm 11**. Both version requirements are enforced — the wrong versions cause `pnpm install` to fail with a clear error.
+You need two things installed before anything else: **Node.js 26** and **pnpm 11**. Both version requirements are enforced — the wrong versions cause `pnpm install` to fail with a clear error.
 
-### Node.js 24
+### Node.js 26
 
-The project uses **Node.js 24** (LTS). The exact version is pinned in `.nvmrc`.
+The project uses **Node.js 26** (LTS). The exact version is pinned in `.nvmrc`.
 
 The recommended approach is [NVM (Node Version Manager)](https://github.com/nvm-sh/nvm), which lets you switch Node versions per project:
 
@@ -112,7 +112,7 @@ cd hivemq-edge/hivemq-edge-frontend
 nvm install
 
 # Confirm the right version is active
-node --version   # Should print v24.x.x
+node --version   # Should print v26.x.x
 ```
 
 > [!TIP]
@@ -165,7 +165,7 @@ cd hivemq-edge/hivemq-edge-frontend
 If you're using NVM, switch to the correct Node version now:
 
 ```bash
-nvm install   # Reads .nvmrc and installs v24.x.x if not already present
+nvm install   # Reads .nvmrc and installs v26.x.x if not already present
 nvm use       # Activates it for this shell
 ```
 
@@ -436,7 +436,7 @@ After getting the dev server running, read these in order:
 
 ## Day One Checklist
 
-- [ ] Node.js 24 installed (`node --version` prints `v24.x.x`)
+- [ ] Node.js 26 installed (`node --version` prints `v26.x.x`)
 - [ ] pnpm 11 installed (`pnpm --version` prints `11.x.x`)
 - [ ] Repository cloned and you're working inside `hivemq-edge-frontend/`
 - [ ] `pnpm install` completed without errors
