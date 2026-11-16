@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -177,5 +178,31 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     @Override
     public int hashCode() {
         return Objects.hash(uuid);
+    }
+
+    /**
+     * The future handed to the polling task: completed with the poll's own outcome before {@code reporter} runs, so a
+     * slow log appender cannot hold back a failure the poll reports later, and the watchdog's copy of this future sees
+     * that failure instead of timing out. When the poll is already complete at this call, {@code reporter} runs on
+     * the calling thread before this method returns; the polling task then finds the future complete and still counts
+     * a polling error, not a watchdog hit. A failure of {@code reporter} itself is not the poll's outcome and does not
+     * reach the polling task.
+     *
+     * @param poll     the poll's own future
+     * @param reporter logs the poll's outcome, after the returned future is complete
+     * @return a future completed exactly as {@code poll} completes
+     */
+    protected static @NotNull CompletableFuture<Void> completeBeforeReporting(
+            final @NotNull CompletableFuture<?> poll, final @NotNull BiConsumer<Object, Throwable> reporter) {
+        final CompletableFuture<Void> watched = new CompletableFuture<>();
+        poll.whenComplete((result, throwable) -> {
+            if (throwable == null) {
+                watched.complete(null);
+            } else {
+                watched.completeExceptionally(throwable);
+            }
+            reporter.accept(result, throwable);
+        });
+        return watched;
     }
 }

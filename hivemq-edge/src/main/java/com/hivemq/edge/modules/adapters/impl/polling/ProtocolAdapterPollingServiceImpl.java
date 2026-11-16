@@ -49,6 +49,9 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     private final @NotNull NanoTimeProvider nanoTimeProvider;
     private final @NotNull InternalConfigurationService internalConfigurationService;
     private final @NotNull Map<ProtocolAdapterPollingSampler, PollingTask> samplerToTask = new ConcurrentHashMap<>();
+    // -- One adapter start schedules a sampler per tag; its samplers share the settings read for its first one, so
+    // -- each option is read and warned about once per start, and a stop drops them so the next start reads again
+    private final @NotNull Map<String, PollingTask.Settings> settingsByAdapterId = new ConcurrentHashMap<>();
 
     @Inject
     public ProtocolAdapterPollingServiceImpl(
@@ -66,16 +69,24 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     @Override
     public void schedulePolling(final @NotNull ProtocolAdapterPollingSampler sampler) {
+        // -- Read outside the map: a WARN inside computeIfAbsent would hold the map's lock for other adapters while an
+        // -- appender blocks. One start schedules its samplers from one thread, so it reads once
+        PollingTask.Settings settings = settingsByAdapterId.get(sampler.getAdapterId());
+        if (settings == null) {
+            final PollingTask.Settings read = pollingSettings();
+            final PollingTask.Settings earlier = settingsByAdapterId.putIfAbsent(sampler.getAdapterId(), read);
+            settings = earlier != null ? earlier : read;
+        }
         final PollingTask pollingTask =
-                new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider, pollingSettings());
+                new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider, settings);
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
         samplerToTask.put(sampler, pollingTask);
     }
 
     /**
-     * The polling settings from the {@code <internal>} options, read for every scheduled sampler so a changed option
-     * applies to the next adapter start. Each option has a range; a value that is not a number or lies outside its
-     * range falls back to the option's default with a WARN.
+     * The polling settings from the {@code <internal>} options, read once per adapter start (the first sampler it
+     * schedules) so a changed option applies to the next adapter start. Each option has a range; a value that is not
+     * an integer in its range falls back to the option's default with one WARN naming the range.
      */
     @VisibleForTesting
     @NotNull
@@ -104,22 +115,19 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         if (configured == null) {
             return defaultValue;
         }
-        final int value;
+        // -- A value too large for an int fails to parse like a non-number; both are answered as "not an integer in
+        // -- the range", with the bounds, as is a parsed value outside them
+        Integer value;
         try {
-            value = Integer.parseInt(configured.trim());
+            value = Integer.valueOf(configured.trim());
         } catch (final NumberFormatException e) {
+            value = null;
+        }
+        if (value == null || value < minimum || value > maximum) {
             log.warn(
-                    "Internal option is not a number, using the default [key={}, value='{}', default={}]",
+                    "Internal option expects an integer in its range, using the default [key={}, value='{}', min={}, max={}, default={}]",
                     key,
                     configured,
-                    defaultValue);
-            return defaultValue;
-        }
-        if (value < minimum || value > maximum) {
-            log.warn(
-                    "Internal option is outside its range, using the default [key={}, value={}, min={}, max={}, default={}]",
-                    key,
-                    value,
                     minimum,
                     maximum,
                     defaultValue);
@@ -130,6 +138,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     @Override
     public void stopPollingForAdapterInstance(final @NotNull ProtocolAdapter adapter) {
+        settingsByAdapterId.remove(adapter.getId());
         samplerToTask.keySet().stream()
                 .filter(p -> p.getAdapterId().equals(adapter.getId()))
                 .forEach(this::stopPolling);
@@ -144,6 +153,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     public void stopAllPolling() {
         samplerToTask.keySet().forEach(this::stopPolling);
+        settingsByAdapterId.clear();
     }
 
     private class Shutdown implements HiveMQShutdownHook {

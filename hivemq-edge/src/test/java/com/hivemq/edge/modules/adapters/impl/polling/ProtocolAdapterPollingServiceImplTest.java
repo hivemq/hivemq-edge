@@ -25,6 +25,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
@@ -43,6 +48,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
 
 class ProtocolAdapterPollingServiceImplTest {
 
@@ -239,6 +245,100 @@ class ProtocolAdapterPollingServiceImplTest {
         verify(scheduledExecutorService, times(11)).schedule(same(task), anyLong(), eq(TimeUnit.MILLISECONDS));
         verify(sampler, times(10)).error(any(), eq(true));
         verify(sampler, times(1)).error(any(), eq(false));
+    }
+
+    /// One adapter start schedules a sampler per tag; a rejected option is read and warned about once for the start,
+    /// not once per tag, and every sampler of the start gets the same settings.
+    @Test
+    void schedulePolling_whenOneStartSchedulesManySamplers_thenARejectedOptionIsWarnedOnce() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, "5000");
+        final ProtocolAdapterPollingServiceImpl service = pollingService();
+
+        final List<ILoggingEvent> warnings = warningsDuring(() -> {
+            for (int i = 0; i < 100; i++) {
+                service.schedulePolling(samplerOf("test-adapter-1"));
+            }
+        });
+
+        assertThat(warnings).hasSize(1);
+        final ArgumentCaptor<PollingTask> tasks = ArgumentCaptor.forClass(PollingTask.class);
+        verify(scheduledExecutorService, times(100)).schedule(tasks.capture(), anyLong(), eq(TimeUnit.MILLISECONDS));
+        assertThat(tasks.getAllValues()).extracting(PollingTask::settings).containsOnly(PollingTask.Settings.DEFAULTS);
+    }
+
+    /// A stop drops the adapter's settings, so the next start reads the options again and applies a changed one.
+    @Test
+    void schedulePolling_whenTheAdapterRestartsAfterAnOptionChanged_thenTheNewValueApplies() {
+        final ProtocolAdapterPollingServiceImpl service = pollingService();
+        service.schedulePolling(samplerOf("test-adapter-1"));
+        final ProtocolAdapter adapter = mock();
+        when(adapter.getId()).thenReturn("test-adapter-1");
+        service.stopPollingForAdapterInstance(adapter);
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, "20000");
+
+        service.schedulePolling(samplerOf("test-adapter-1"));
+
+        final ArgumentCaptor<PollingTask> tasks = ArgumentCaptor.forClass(PollingTask.class);
+        verify(scheduledExecutorService, times(2)).schedule(tasks.capture(), anyLong(), eq(TimeUnit.MILLISECONDS));
+        assertThat(tasks.getAllValues().getLast().settings().watchdogTimeoutMillis())
+                .isEqualTo(20_000);
+    }
+
+    /// Two adapters each read the options for their own start; a warning for the first does not silence the second.
+    @Test
+    void schedulePolling_whenTwoAdaptersStart_thenEachStartWarnsOnce() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, "5000");
+        final ProtocolAdapterPollingServiceImpl service = pollingService();
+
+        final List<ILoggingEvent> warnings = warningsDuring(() -> {
+            service.schedulePolling(samplerOf("adapter-a"));
+            service.schedulePolling(samplerOf("adapter-a"));
+            service.schedulePolling(samplerOf("adapter-b"));
+        });
+
+        assertThat(warnings).hasSize(2);
+    }
+
+    /// A value that is not an integer, one too large for an `int`, and one outside the range all fall back with one
+    /// warning that names the key, the value, both bounds and the default.
+    @ParameterizedTest
+    @ValueSource(strings = {"ten", "2147483648", "-2147483649", "5000", "12.5", ""})
+    void pollingSettings_whenAWatchdogTimeoutIsRejected_thenTheWarningNamesTheRange(final @NotNull String value) {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS, value);
+
+        final List<ILoggingEvent> warnings = warningsDuring(
+                () -> assertThat(pollingService().pollingSettings()).isEqualTo(PollingTask.Settings.DEFAULTS));
+
+        assertThat(warnings).singleElement().satisfies(warning -> assertThat(warning.getArgumentArray())
+                .containsExactly(
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS,
+                        value,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MIN,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MAX,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT));
+    }
+
+    private static @NotNull List<ILoggingEvent> warningsDuring(final @NotNull Runnable action) {
+        final Logger logger = (Logger) LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            action.run();
+        } finally {
+            logger.detachAppender(appender);
+        }
+        return appender.list.stream()
+                .filter(event -> event.getLevel() == Level.WARN)
+                .toList();
+    }
+
+    private @NotNull AbstractSubscriptionSampler samplerOf(final @NotNull String adapterId) {
+        final AbstractSubscriptionSampler other = mock();
+        when(other.getInitialDelay()).thenReturn(0L);
+        when(other.getUnit()).thenReturn(TimeUnit.MILLISECONDS);
+        when(other.getAdapterId()).thenReturn(adapterId);
+        return other;
     }
 
     private @NotNull ProtocolAdapterPollingServiceImpl pollingService() {
