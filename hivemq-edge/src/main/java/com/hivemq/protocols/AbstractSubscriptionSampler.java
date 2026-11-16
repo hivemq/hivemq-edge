@@ -27,11 +27,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
+
+    /**
+     * Time a poll's output may take before the sampler fails the poll with a {@code TimeoutException}, an ordinary
+     * polling error counted against the adapter's {@code maxPollingErrorsBeforeRemoval}. The polling watchdog's
+     * minimum timeout lies above it. The value is the one both samplers always used; it was never derived from a
+     * measurement, which would be the slowest adapter's poll time at the 99th percentile.
+     */
+    public static final int POLL_OUTPUT_TIMEOUT_MILLIS = 10_000;
 
     private final long initialDelay;
     private final long period;
@@ -169,5 +178,31 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     @Override
     public int hashCode() {
         return Objects.hash(uuid);
+    }
+
+    /**
+     * The future handed to the polling task: completed with the poll's own outcome before {@code reporter} runs, so a
+     * slow log appender cannot hold back a failure the poll reports later, and the watchdog's copy of this future sees
+     * that failure instead of timing out. When the poll is already complete at this call, {@code reporter} runs on
+     * the calling thread before this method returns; the polling task then finds the future complete and still counts
+     * a polling error, not a watchdog hit. A failure of {@code reporter} itself is not the poll's outcome and does not
+     * reach the polling task.
+     *
+     * @param poll     the poll's own future
+     * @param reporter logs the poll's outcome, after the returned future is complete
+     * @return a future completed exactly as {@code poll} completes
+     */
+    protected static @NotNull CompletableFuture<Void> completeBeforeReporting(
+            final @NotNull CompletableFuture<?> poll, final @NotNull BiConsumer<Object, Throwable> reporter) {
+        final CompletableFuture<Void> watched = new CompletableFuture<>();
+        poll.whenComplete((result, throwable) -> {
+            if (throwable == null) {
+                watched.complete(null);
+            } else {
+                watched.completeExceptionally(throwable);
+            }
+            reporter.accept(result, throwable);
+        });
+        return watched;
     }
 }

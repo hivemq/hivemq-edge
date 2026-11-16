@@ -286,6 +286,29 @@ class PollingTaskTest {
     }
 
     @Test
+    void backoffMillis_doublesFromTheBaseWithJitterBelowCountTimesTheBase() {
+        assertThat(PollingTask.backoffMillis(1, Long.MAX_VALUE)).isBetween(200L, 299L);
+        assertThat(PollingTask.backoffMillis(3, Long.MAX_VALUE)).isBetween(800L, 1099L);
+    }
+
+    @Test
+    void backoffMillis_whenDoublingsReachTheCeiling_thenItIsTheCeiling() {
+        assertThat(PollingTask.backoffMillis(20, PollingTask.BACKOFF_CEILING_MILLIS))
+                .isEqualTo(PollingTask.BACKOFF_CEILING_MILLIS);
+        assertThat(PollingTask.backoffMillis(1000, PollingTask.BACKOFF_CEILING_MILLIS))
+                .isEqualTo(PollingTask.BACKOFF_CEILING_MILLIS);
+    }
+
+    @Test
+    void backoffMillis_whenTheJitterBoundWouldOverflowAnInt_thenTheMaxIsReturned() {
+        // an adapter that retries without limit, with the minimum 1 s backoff, reaches 21 474 837 failures in a row
+        // after about 250 days; an int jitter bound of count * 100 overflowed there, threw, and stopped polling
+        for (final int errorCount : new int[] {Integer.MAX_VALUE / 100 + 1, Integer.MAX_VALUE, Integer.MIN_VALUE}) {
+            assertThat(PollingTask.backoffMillis(errorCount, 1000)).isEqualTo(1000L);
+        }
+    }
+
+    @Test
     void run_whenFutureCompletes_thenTaskGetsExactlyScheduled() {
         ScheduledExecutorService mockedExecutor = mock();
         // period is exactly 2s

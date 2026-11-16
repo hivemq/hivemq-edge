@@ -16,6 +16,8 @@
 package com.hivemq.configuration.service;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hivemq.edge.modules.adapters.impl.polling.PollingTask;
+import com.hivemq.protocols.AbstractSubscriptionSampler;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -344,31 +346,51 @@ public class InternalConfigurations {
 
     /**
      * Upper bound of the delay before the next poll after a failed one; the delay doubles with every failure since the
-     * last successful poll until it reaches this bound or the internal ceiling of about 29 hours, whichever is lower.
-     * Minimum 1000 ms, which bounds how often a poll that never answers is replaced by a new one. Set with
-     * {@code <internal><option><key>adapter.polling.error.backoff.max.millis</key>…}.
+     * last successful poll until it reaches this bound. Range 1000 ms (which bounds how often a poll that never answers
+     * is replaced by a new one) to the backoff's own ceiling of about 29 hours; a value outside it falls back to the
+     * default with a WARN. Set with {@code <internal><option><key>adapter.polling.error.backoff.max.millis</key>...}.
      */
     public static final String ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS = "adapter.polling.error.backoff.max.millis";
 
     public static final int ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT = 60 * 10 * 1000; // -- 10 minutes
 
+    public static final int ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_MIN = 1000;
+
+    public static final int ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_MAX = PollingTask.BACKOFF_CEILING_MILLIS;
+
     /**
-     * Time a single poll may take before the polling watchdog stops waiting for it and counts a watchdog hit. Set with
-     * {@code <internal><option><key>adapter.polling.watchdog.timeout.millis</key>…}.
+     * Time a single poll may take before the polling watchdog stops waiting for it and counts a watchdog hit. The
+     * minimum lies above the samplers' own poll timeout ({@link AbstractSubscriptionSampler#POLL_OUTPUT_TIMEOUT_MILLIS}):
+     * a shorter watchdog would fire first and count a slow or hung poll against the watchdog limit instead of the
+     * adapter's {@code maxPollingErrorsBeforeRemoval}. Range 11000 ms to 1 hour; a value outside it falls back to the
+     * default with a WARN. Set with {@code <internal><option><key>adapter.polling.watchdog.timeout.millis</key>...}.
      */
     public static final String ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS = "adapter.polling.watchdog.timeout.millis";
 
     public static final int ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT = 60 * 1000; // -- 60 Seconds
 
+    /** The sampler's poll timeout plus 1 s, so the sampler's own timeout completes first despite scheduling delay. */
+    public static final int ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MIN =
+            AbstractSubscriptionSampler.POLL_OUTPUT_TIMEOUT_MILLIS + 1000;
+
+    /** A sanity bound, not measured: a poll left running for over an hour is no longer guarded by the watchdog. */
+    public static final int ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_MAX = 60 * 60 * 1000;
+
     /**
      * Watchdog hits since the last successful poll after which polling stops, unless the adapter's
-     * {@code maxPollingErrorsBeforeRemoval} is negative (unlimited). Set with
-     * {@code <internal><option><key>adapter.polling.watchdog.errors.before.stop</key>…}.
+     * {@code maxPollingErrorsBeforeRemoval} is negative (unlimited). Range 0 to 10000; a value outside it falls back
+     * to the default with a WARN. Set with
+     * {@code <internal><option><key>adapter.polling.watchdog.errors.before.stop</key>...}.
      */
     public static final String ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP =
             "adapter.polling.watchdog.errors.before.stop";
 
     public static final int ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT = 10;
+
+    public static final int ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_MIN = 0;
+
+    /** A sanity bound, not measured: 10000 watchdog hits of at least 11 s each are more than 30 hours of hung polls. */
+    public static final int ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_MAX = 10_000;
 
     public static final @NotNull AtomicInteger EDGE_RUNTIME_MAX_EVENTS_IN_INMEMORY_LIST = new AtomicInteger(250);
 }
