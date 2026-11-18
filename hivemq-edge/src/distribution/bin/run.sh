@@ -57,6 +57,10 @@ if hash java 2>/dev/null; then
     # Disable Localization
     JAVA_OPTS="$JAVA_OPTS -Duser.language=en -Duser.region=US"
 
+    # Java4Shell (EDG-1263): the x86-64 Base64 decode intrinsic writes out of bounds on AVX-512 VBMI CPUs.
+    # Remove once the base image carries a patched JDK.
+    JAVA_OPTS="$JAVA_OPTS -XX:-UseBASE64Intrinsics"
+
     # Uncomment for enabling Diagnostic Mode
     #JAVA_OPTS="$JAVA_OPTS -DdiagnosticMode=true"
 

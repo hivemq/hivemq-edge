@@ -69,6 +69,10 @@ echo.
   rem Disable Localization
   set "JAVA_OPTS=-Duser.language=en -Duser.region=US %JAVA_OPTS%"
 
+  rem Java4Shell (EDG-1263): the x86-64 Base64 decode intrinsic writes out of bounds on AVX-512 VBMI CPUs.
+  rem Remove once the base image carries a patched JDK.
+  set "JAVA_OPTS=%JAVA_OPTS% -XX:-UseBASE64Intrinsics"
+
   rem Uncomment for enabling diagnostic mode
   rem set "JAVA_OPTS=-DdiagnosticMode=true %JAVA_OPTS%"
 
