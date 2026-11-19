@@ -63,8 +63,8 @@ echo.
   set "JAVA_OPTS=%JAVA_OPTS% --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/sun.security.provider=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-exports java.base/jdk.internal.misc=ALL-UNNAMED"
 
 
-  rem JMX Monitoring
-  set "JAVA_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false %JAVA_OPTS%"
+  rem Remote JMX stays off: an unauthenticated JMX port lets anyone who reaches it run code in Edge (EDG-1324).
+  rem To turn it on, pass the com.sun.management.jmxremote.* properties in JAVA_OPTS, with authentication and TLS.
 
   rem Disable Localization
   set "JAVA_OPTS=-Duser.language=en -Duser.region=US %JAVA_OPTS%"
