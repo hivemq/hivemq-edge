@@ -45,8 +45,12 @@ import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import com.hivemq.mtconnect.protocol.schemas.MtConnectSchema;
+import com.sun.net.httpserver.HttpServer;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
@@ -55,6 +59,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -290,5 +295,81 @@ public class MtConnectProtocolAdapterTest {
                         new MtConnectAdapterTagDefinition("", true, true, 10, List.of())))
                 .isInstanceOf(MtConnectXmlParseException.class)
                 .hasMessage("Schema urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd is not support");
+    }
+
+    // An agent response may declare external entities; with schema validation on, nothing in it may make Edge fetch
+    // a URL or read a file. The local HTTP server stands in for the attacker's host and counts what reaches it.
+
+    @Test
+    public void whenSchemaValidationIsEnabled_thenExternalParameterEntityIsNotFetched() throws Exception {
+        final CountingServer attacker = startCountingServer();
+        try {
+            final String body = devicesWithDoctype(
+                    "<!DOCTYPE MTConnectDevices [<!ENTITY % ext SYSTEM \"" + urlOf(attacker) + "/ext.dtd\"> %ext;]>");
+            final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
+            try {
+                adapter.processXml(body, new MtConnectAdapterTagDefinition("", true, true, 10, List.of()));
+            } catch (final MtConnectXmlParseException ignored) {
+                // Rejecting the document is fine; fetching the entity is not.
+            }
+            assertThat(requestCount(attacker)).isZero();
+        } finally {
+            attacker.stop(0);
+        }
+    }
+
+    @Test
+    public void whenSchemaValidationIsEnabled_thenExternalGeneralEntityIsNotResolved() throws Exception {
+        final CountingServer attacker = startCountingServer();
+        try {
+            final String body = devicesWithDoctype(
+                            "<!DOCTYPE MTConnectDevices [<!ENTITY xxe SYSTEM \"" + urlOf(attacker) + "/xxe\">]>")
+                    .replace("Agie Mikron HPM600U - GF Agie Charmilles HPM600U", "&xxe;");
+            final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
+            assertThatThrownBy(() ->
+                            adapter.processXml(body, new MtConnectAdapterTagDefinition("", true, true, 10, List.of())))
+                    .isInstanceOf(MtConnectXmlParseException.class);
+            assertThat(requestCount(attacker)).isZero();
+        } finally {
+            attacker.stop(0);
+        }
+    }
+
+    private static @NotNull String devicesWithDoctype(final @NotNull String doctype) throws IOException {
+        final String devices = IOUtils.resourceToString("/devices/devices-1-3-smstestbed.xml", StandardCharsets.UTF_8);
+        return devices.replaceFirst("<MTConnectDevices ", doctype + "\n<MTConnectDevices ");
+    }
+
+    /** A local HTTP server that answers every request with a harmless entity declaration and counts the requests. */
+    private record CountingServer(
+            @NotNull HttpServer server, @NotNull AtomicInteger requests) {
+
+        void stop(final int delay) {
+            server.stop(delay);
+        }
+    }
+
+    private static @NotNull CountingServer startCountingServer() throws IOException {
+        final HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        final AtomicInteger requests = new AtomicInteger();
+        server.createContext("/", exchange -> {
+            requests.incrementAndGet();
+            final byte[] response = "<!ENTITY leaked \"leaked\">".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(response);
+            }
+        });
+        server.start();
+        return new CountingServer(server, requests);
+    }
+
+    private static @NotNull String urlOf(final @NotNull CountingServer attacker) {
+        final InetSocketAddress address = attacker.server().getAddress();
+        return "http://" + address.getHostString() + ":" + address.getPort();
+    }
+
+    private static int requestCount(final @NotNull CountingServer attacker) {
+        return attacker.requests().get();
     }
 }
