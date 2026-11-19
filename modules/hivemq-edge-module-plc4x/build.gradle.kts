@@ -48,6 +48,11 @@ dependencies {
 
     constraints {
         implementation(libs.org.json)
+        // PLC4X's plc4j-spi brings Jackson 2.19.x into this module's fat jar. At runtime the parent-first
+        // module classloader serves Edge's own Jackson anyway, but scanners read the jar, so the bundled
+        // copy has to match the version Edge ships (EDG-1304). Pinning databind is enough: its Jackson BOM
+        // aligns jackson-core and jackson-annotations to the same version.
+        implementation(libs.jackson.databind)
     }
 }
 
