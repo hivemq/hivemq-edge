@@ -139,9 +139,6 @@ importers:
       '@sentry/react':
         specifier: 10.68.0
         version: 10.68.0(react@19.2.8)
-      '@sentry/vite-plugin':
-        specifier: 5.4.1
-        version: 5.4.1(rollup@4.60.2)(supports-color@8.1.1)(webpack@5.104.1(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.25)(uglify-js@3.19.3))
       '@tanstack/react-query':
         specifier: 5.101.4
         version: 5.101.4(react@19.2.8)
@@ -329,6 +326,9 @@ importers:
       '@percy/cypress':
         specifier: 3.1.9
         version: 3.1.9(cypress@15.19.0)(supports-color@8.1.1)
+      '@sentry/vite-plugin':
+        specifier: 5.4.1
+        version: 5.4.1(rollup@4.60.2)(supports-color@8.1.1)(webpack@5.104.1(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.25)(uglify-js@3.19.3))
       '@tanstack/eslint-plugin-query':
         specifier: 5.101.4
         version: 5.101.4(eslint@10.8.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.3)
