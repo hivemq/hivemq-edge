@@ -30,6 +30,9 @@ import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -42,12 +45,23 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private static final @NotNull org.slf4j.Logger log = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
 
+    /// The port and connect timeout `etherip` always uses; it offers no way to change either.
+    private static final int ETHERIP_PORT = 44818;
+
+    private static final int ETHERIP_CONNECT_TIMEOUT_MILLIS = 2000;
+
     private final @NotNull EipSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
-    private volatile @Nullable EtherNetIP etherNetIP;
     private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
+
+    /// Guards `etherNetIP` and `started`, so that a session opened by a poll while `stop()` runs is closed
+    /// instead of left open. The lock is never held while talking to the device.
+    private final @NotNull Object sessionLock = new Object();
+
+    private @Nullable EtherNetIP etherNetIP;
+    private boolean started;
 
     private final @NotNull Map<String, EipTag> tags;
 
@@ -71,25 +85,34 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
-        // any setup which should be done before the adapter starts polling comes here.
-        try {
-            final EtherNetIP etherNetIP = new EtherNetIP(adapterConfig.getHost(), adapterConfig.getSlot());
-            etherNetIP.connectTcp();
-            this.etherNetIP = etherNetIP;
-            output.startedSuccessfully();
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
-        } catch (final Exception e) {
-            output.failStart(e, null);
+        // -- The adapter starts even when the device is unreachable; every poll retries the connection.
+        synchronized (sessionLock) {
+            started = true;
         }
+        try {
+            openSession();
+        } catch (final Exception e) {
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            log.warn(
+                    "Adapter '{}' could not connect to {}, retrying with every poll: {}",
+                    adapterId,
+                    adapterConfig.getHost(),
+                    e.toString());
+        }
+        output.startedSuccessfully();
     }
 
     @Override
     public void stop(
             final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput,
             final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
-        try {
-            final EtherNetIP etherNetIPTemp = etherNetIP;
+        final EtherNetIP etherNetIPTemp;
+        synchronized (sessionLock) {
+            started = false;
+            etherNetIPTemp = etherNetIP;
             etherNetIP = null;
+        }
+        try {
             if (etherNetIPTemp != null) {
                 etherNetIPTemp.close();
                 protocolAdapterStopOutput.stoppedSuccessfully();
@@ -101,6 +124,76 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         } catch (final Exception e) {
             protocolAdapterStopOutput.failStop(e, "Unable to stop Ethernet IP connection");
             log.error("Unable to stop", e);
+        } finally {
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        }
+    }
+
+    /// Returns the open session, opening one first if there is none.
+    /// Returns `null` if the adapter is not started; a session opened while `stop()` ran is closed again.
+    private @Nullable EtherNetIP openSession() throws Exception {
+        synchronized (sessionLock) {
+            if (!started) {
+                return null;
+            }
+            if (etherNetIP != null) {
+                return etherNetIP;
+            }
+        }
+        checkDeviceAccepts();
+        final EtherNetIP opened = new EtherNetIP(adapterConfig.getHost(), adapterConfig.getSlot());
+        try {
+            opened.connectTcp();
+        } catch (final Exception e) {
+            closeQuietly(opened);
+            throw e;
+        }
+        final EtherNetIP current;
+        synchronized (sessionLock) {
+            if (started && etherNetIP == null) {
+                etherNetIP = opened;
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+                log.info("Adapter '{}' connected to {}", adapterId, adapterConfig.getHost());
+                return opened;
+            }
+            current = etherNetIP;
+        }
+        // -- stop() ran, or a concurrent poll opened a session first.
+        closeQuietly(opened);
+        return current;
+    }
+
+    /// Throws if the device does not accept a TCP connection within the time `etherip` waits for one.
+    ///
+    /// `etherip` leaves its socket open when its connect times out, and the socket stays open for good if the
+    /// device answers later. A `java.net.Socket` closes on a timed-out connect, so this check fails first for a
+    /// device that does not answer, and `etherip` connects only to a device that answered a moment ago.
+    @SuppressWarnings("AddressSelection") // -- etherip connects to the same single address
+    private void checkDeviceAccepts() throws IOException {
+        try (Socket check = new Socket()) {
+            check.connect(new InetSocketAddress(adapterConfig.getHost(), ETHERIP_PORT), ETHERIP_CONNECT_TIMEOUT_MILLIS);
+        }
+    }
+
+    /// Drops the session after a failure that may have broken it, so that the next poll opens a new one.
+    private void dropSession(final @NotNull EtherNetIP broken) {
+        synchronized (sessionLock) {
+            if (etherNetIP != broken) {
+                return;
+            }
+            etherNetIP = null;
+            if (started) {
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            }
+        }
+        closeQuietly(broken);
+    }
+
+    private void closeQuietly(final @NotNull EtherNetIP session) {
+        try {
+            session.close();
+        } catch (final Exception e) {
+            log.debug("Adapter '{}' could not close a session cleanly", adapterId, e);
         }
     }
 
@@ -111,7 +204,14 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
-        final var client = etherNetIP;
+        final EtherNetIP client;
+        try {
+            client = openSession();
+        } catch (final Exception e) {
+            log.warn("Adapter '{}' could not connect to {}: {}", adapterId, adapterConfig.getHost(), e.toString());
+            pollingOutput.fail(e, "Unable to connect to EtherNet/IP device at " + adapterConfig.getHost() + ".");
+            return;
+        }
         if (client == null) {
             pollingOutput.fail("Polling failed because adapter wasn't started.");
             return;
@@ -154,6 +254,8 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
                 pollingOutput.fail(e, "Problem accessing tag on device.");
             }
         } catch (final Exception e) {
+            // -- The device answered a CipException; anything else may have broken the session.
+            dropSession(client);
             log.warn("An exception occurred while reading tags '{}'.", Arrays.toString(tagAddresses), e);
             pollingOutput.fail(e, "An exception occurred while reading tags '" + Arrays.toString(tagAddresses) + "'.");
         }
