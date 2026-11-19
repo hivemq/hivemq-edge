@@ -59,6 +59,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -76,9 +80,59 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final @NotNull ObjectMapper OBJECT_MAPPER_INCLUDE_NULL = new ObjectMapper();
     private static final @NotNull ObjectMapper OBJECT_MAPPER_EXCLUDE_NULL = new ObjectMapper();
     private static final @NotNull XmlMapper XML_MAPPER = new XmlMapper();
+    private static final @NotNull String XML_SCHEMA_INSTANCE_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
+    private static final @NotNull String ROOT_ELEMENT_PREFIX = "MTConnect";
+
+    /// Parses every agent response that schema validation reads. The response comes from the network, so a DTD in
+    /// it is skipped and no entity it declares is resolved: an entity would let the agent make Edge fetch a URL or
+    /// read a local file. StAX factories are thread-safe once configured.
+    private static final @NotNull XMLInputFactory XML_INPUT_FACTORY = createXmlInputFactory();
 
     static {
         OBJECT_MAPPER_EXCLUDE_NULL.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
+    private static @NotNull XMLInputFactory createXmlInputFactory() {
+        final XMLInputFactory factory = XMLInputFactory.newFactory();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        return factory;
+    }
+
+    /// The `xsi:schemaLocation` of the response's root `MTConnect…` element, or `null` when there is none or the
+    /// response is not well-formed. Same result as `MtConnectSchema.extractSchemaLocation`, which parses with an
+    /// unhardened factory and so cannot be used on agent responses.
+    static @Nullable String extractSchemaLocation(final @NotNull String body) {
+        XMLStreamReader reader = null;
+        try {
+            reader = XML_INPUT_FACTORY.createXMLStreamReader(new StringReader(body));
+            while (reader.hasNext()) {
+                if (reader.next() == XMLStreamConstants.START_ELEMENT
+                        && reader.getLocalName().startsWith(ROOT_ELEMENT_PREFIX)) {
+                    for (int i = 0; i < reader.getAttributeCount(); i++) {
+                        if (NODE_SCHEMA_LOCATION.equals(reader.getAttributeLocalName(i))
+                                && XML_SCHEMA_INSTANCE_NAMESPACE.equals(reader.getAttributeNamespace(i))) {
+                            return reader.getAttributeValue(i);
+                        }
+                    }
+                }
+            }
+            return null;
+        } catch (final XMLStreamException e) {
+            return null;
+        } finally {
+            closeQuietly(reader);
+        }
+    }
+
+    private static void closeQuietly(final @Nullable XMLStreamReader reader) {
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (final XMLStreamException ignored) {
+                // Closing a reader over a String releases nothing that could fail.
+            }
+        }
     }
 
     protected final @NotNull List<MtConnectAdapterTag> tags;
@@ -261,7 +315,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         // There are some custom schemas not supported by this module.
         // Enable the schema validation will cause those messages fail the validation.
         if (definition.isEnableSchemaValidation()) {
-            final @Nullable String schemaLocation = MtConnectSchema.extractSchemaLocation(body);
+            final @Nullable String schemaLocation = extractSchemaLocation(body);
             final @Nullable MtConnectSchema schema = MtConnectSchema.of(schemaLocation);
             if (schema == null) {
                 throw new MtConnectXmlParseException("Schema " + schemaLocation + " is not support");
@@ -271,11 +325,17 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
             if (unmarshaller == null) {
                 throw new MtConnectXmlParseException("Schema " + schemaLocation + " is to be supported");
             } else {
-                try (StringReader stringReader = new StringReader(body)) {
-                    final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
+                XMLStreamReader reader = null;
+                try {
+                    // JAXB is handed the hardened reader, not the text: JAXB's own parser setup does not reliably
+                    // keep external entities out (CVE-2026-92877).
+                    reader = XML_INPUT_FACTORY.createXMLStreamReader(new StringReader(body));
+                    final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(reader);
                     return objectMapper.convertValue(element.getValue(), JsonNode.class);
                 } catch (final Exception e) {
                     throw new MtConnectXmlParseException("Incoming XML message failed to conform " + schemaLocation, e);
+                } finally {
+                    closeQuietly(reader);
                 }
             }
         }
