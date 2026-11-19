@@ -378,7 +378,6 @@ not as a passing grade — and do not assume a warning-free tree.
 
 - **@vitejs/plugin-react 6.0.4** - Vite plugin for React Fast Refresh (v6 requires Vite 8)
 - **sass 1.101.6** - CSS preprocessor
-- **copyfiles 2.4.1** - Cross-platform file copying
 - **fs-extra 11.3.6** - Enhanced file system operations
 - **commander 15.0.0** - CLI framework for custom scripts
 - **globals 17.8.0** - Global variable definitions
