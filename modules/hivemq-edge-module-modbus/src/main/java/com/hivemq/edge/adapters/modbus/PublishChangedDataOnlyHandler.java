@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.modbus;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -26,17 +27,22 @@ public class PublishChangedDataOnlyHandler {
     private final @NotNull Map<String, Object> lastSamples = new ConcurrentHashMap<>();
 
     public boolean replaceIfValueIsNew(final @NotNull String tagName, final @NotNull Object newValue) {
-        final var computedValue = lastSamples.compute(tagName, (key, value) -> {
+        // Record whether the sample was replaced. Comparing the result of compute() with newValue by reference cannot
+        // tell: Boolean and small integers are cached boxes, so the old and the new sample are the same object
+        // (EDG-1209).
+        final var replaced = new AtomicBoolean(false);
+        lastSamples.compute(tagName, (key, value) -> {
             if (value == null) {
+                replaced.set(true);
                 return newValue;
             } else if (value.equals(newValue)) {
                 return value;
             } else {
+                replaced.set(true);
                 return newValue;
             }
         });
-
-        return newValue != computedValue;
+        return replaced.get();
     }
 
     public void clear() {
