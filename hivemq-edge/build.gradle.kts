@@ -173,8 +173,12 @@ dependencies {
     // json-path pulls in asm 9.7.1 through json-smart and accessors-smart; take the release that fixes its CVEs (EDG-1173).
     // `api`, so the constraint also reaches the compile classpath of projects that build against Edge (hivemq-edge-test
     // compiles against oauth2-oidc-sdk too), and the composite's version check sees one asm version.
+    // The same holds for json-smart itself (EDG-1288): the `force` further down only acts inside this project, so without
+    // the constraint every project that builds against Edge would still resolve the 2.6.0 that json-path and
+    // oauth2-oidc-sdk ask for. json-smart brings the matching accessors-smart along.
     constraints {
         api(libs.asm)
+        api(libs.json.smart)
     }
 
     // config
