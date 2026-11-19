@@ -15,6 +15,11 @@ const datahubLog = debug('DataHub:Mermaid')
 const DEFAULT_CONFIG: MermaidConfig = {
   startOnLoad: false,
   theme: 'base',
+  // Mermaid 12 lays diagrams out with ELK and the newer look by default. Pin the previous
+  // engine and look so the FSM diagram, and the `path.transition` selection styling below,
+  // keep working as before.
+  layout: 'dagre',
+  look: 'classic',
   logLevel: 'fatal',
   securityLevel: 'loose',
   arrowMarkerAbsolute: false,
