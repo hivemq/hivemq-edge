@@ -51,8 +51,8 @@ if hash java 2>/dev/null; then
         JAVA_OPTS="$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom"
     fi
 
-    # JMX Monitoring
-    JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
+    # Remote JMX stays off: an unauthenticated JMX port lets anyone who reaches it run code in Edge (EDG-1324).
+    # To turn it on, pass the com.sun.management.jmxremote.* properties in JAVA_OPTS, with authentication and TLS.
 
     # Disable Localization
     JAVA_OPTS="$JAVA_OPTS -Duser.language=en -Duser.region=US"
