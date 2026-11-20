@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * Named presets for certificate validation — the "common cases" door, mutually exclusive with the
  * {@link TlsChecksFull} axes.
  *
- * <p>Each preset is an exact combination of the six axes; see {@link TlsChecksProjection} for the
+ * <p>Each preset is an exact combination of the six axes; see {@link TLSConfigOpcUA} for the
  * mapping, which is the single source of truth. Presets are stored verbatim and expanded at read
  * time, never rewritten into the configuration.
  */

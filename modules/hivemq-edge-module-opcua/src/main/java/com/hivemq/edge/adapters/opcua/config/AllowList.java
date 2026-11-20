@@ -46,17 +46,17 @@ public record AllowList(
                 title = "Allow-list path",
                 description = "Path on the local file system to the server-certificate allow-list: one SHA-256 "
                         + "certificate fingerprint per line, hexadecimal, optional ':' separators, '#' for "
-                        + "comments. Required when the effective trust mode is ALLOW_LIST.",
-                required = true)
+                        + "comments. Required when the effective trust mode is ALLOW_LIST. Superseded by "
+                        + "tls-allowlist, which also takes several files, directories and glob patterns.")
         @Nullable
         String path,
 
         /**
-         * The entries this element carried besides {@code path}, or an empty map when every entry was
-         * recognized. Same contract and same rationale as {@link Tls#unknownSettings()}: a misspelled
-         * entry — {@code <pth>} for {@code <path>} — refuses the adapter in
-         * {@link TlsChecksProjection#project(Tls)} instead of silently leaving the path unset, and the
-         * entries are serialized back out verbatim so a writeback cannot delete them.
+         * The entries this element carried besides {@code path}, or an empty map when every entry
+         * was recognized. Same contract and same rationale as
+         * {@link Tls#unknownSettings()}: a misspelled entry — {@code <pth>} for {@code <path>} —
+         * refuses the adapter in {@link TLSConfigOpcUA} instead of silently leaving the path unset, and
+         * the entries are serialized back out verbatim so a writeback cannot delete them.
          */
         @JsonIgnore @NotNull Map<String, Object> unknownSettings) {
 
@@ -67,7 +67,7 @@ public record AllowList(
         // Jackson binds that to a null component. Neither rejecting nor defaulting it here would be
         // right: throwing surfaces as a raw Jackson conversion error on this adapter, and substituting
         // a value would rewrite what the operator wrote. A missing path is instead caught by
-        // TlsChecksProjection, which reports it as the same actionable start-up error as an absent
+        // TLSConfigOpcUA, which reports it as the same actionable start-up error as an absent
         // allowList element. The trap map is canonicalized so equal configurations compare equal.
         unknownSettings = unknownSettings == null || unknownSettings.isEmpty()
                 ? Map.of()
@@ -107,7 +107,7 @@ public record AllowList(
      * Jackson refuses the coercion and this adapter's conversion fails with a raw coercion error
      * instead of the actionable missing-path error below.
      *
-     * <p>The result is an allow-list with no path, which {@link TlsChecksProjection} turns into the
+     * <p>The result is an allow-list with no path, which {@link TLSConfigOpcUA} turns into the
      * same actionable start-up error as an absent {@code allowList}. Text is deliberately not read as
      * the path: an operator who wrote {@code <allowList>/some/file</allowList>} instead of nesting it
      * in {@code <path>} should be told, not silently guessed at.

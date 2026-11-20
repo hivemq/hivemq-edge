@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Revocation is only enforceable while a certification path is being built, so any value other
  * than {@link #NONE} requires {@link TrustMode#CHAIN}. The combination is rejected at start-up rather
- * than silently ignored — see {@link TlsChecksProjection}.
+ * than silently ignored — see {@link TLSConfigOpcUA}.
  */
 public enum RevocationCheck {
 

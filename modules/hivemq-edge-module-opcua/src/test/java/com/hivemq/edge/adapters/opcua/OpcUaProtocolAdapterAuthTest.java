@@ -32,7 +32,6 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.config.AllowList;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
@@ -40,14 +39,15 @@ import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
+import com.hivemq.edge.adapters.opcua.config.TLSConfigOpcUA;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
-import com.hivemq.edge.adapters.opcua.security.AllowListCertificateValidator;
-import com.hivemq.edge.adapters.opcua.security.CertificateFingerprints;
+import com.hivemq.edge.adapters.opcua.security.TLSValidatorOpcUA;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.security.tls.TLSPolicy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -284,8 +284,7 @@ class OpcUaProtocolAdapterAuthTest {
         Files.writeString(
                 allowListFile,
                 "# the factory machine, fingerprint provided by the vendor\n"
-                        + CertificateFingerprints.toDisplayForm(
-                                CertificateFingerprints.fingerprintOf(opcUaServerExtension.getServerCertificate()))
+                        + TLSPolicy.toDisplayForm(TLSPolicy.fingerprintOf(opcUaServerExtension.getServerCertificate()))
                         + "\n");
 
         // SELF_SIGNED asserts hostname and ApplicationUri too, and the embedded server's certificate
@@ -338,10 +337,10 @@ class OpcUaProtocolAdapterAuthTest {
         final Path allowListFile = tempDir.resolve("allow-list-wrong.txt");
         Files.writeString(allowListFile, "0".repeat(64) + "\n");
 
-        final String expectedFingerprint = CertificateFingerprints.toDisplayForm(
-                CertificateFingerprints.fingerprintOf(opcUaServerExtension.getServerCertificate()));
+        final String expectedFingerprint =
+                TLSPolicy.toDisplayForm(TLSPolicy.fingerprintOf(opcUaServerExtension.getServerCertificate()));
 
-        final ListAppender<ILoggingEvent> rejectLog = attachAppender(AllowListCertificateValidator.class);
+        final ListAppender<ILoggingEvent> rejectLog = attachAppender(TLSValidatorOpcUA.class);
         try {
             final Tls tls = new Tls(
                     true,
@@ -381,7 +380,7 @@ class OpcUaProtocolAdapterAuthTest {
                         assertThat(event.getFormattedMessage()).contains(expectedFingerprint);
                     });
         } finally {
-            detachAppender(AllowListCertificateValidator.class, rejectLog);
+            detachAppender(TLSValidatorOpcUA.class, rejectLog);
         }
     }
 
@@ -400,7 +399,9 @@ class OpcUaProtocolAdapterAuthTest {
         // is purely the client refusing the server's self-signed cert.
         opcUaServerExtension.addTrustedClientCertificate(clientKeyChain.getRootCertificate());
 
-        final ListAppender<ILoggingEvent> hintLog = attachAppender(ParsedConfig.class);
+        // The hint comes from the effective-configuration stage, which is where an absent truststore
+        // is replaced by the runtime's own authorities and so the only place that knows it happened.
+        final ListAppender<ILoggingEvent> hintLog = attachAppender(TLSConfigOpcUA.class);
         try {
             // Neither knob set: the adapter behaves exactly as it did before EDG-585.
             final Tls tls = new Tls(
@@ -439,14 +440,16 @@ class OpcUaProtocolAdapterAuthTest {
             // An operator hitting the Miele failure mode must find the way out in the log, without
             // reading source.
             assertThat(hintLog.list)
-                    .as("operator-facing INFO must name the fingerprint route out of this failure")
+                    .as("the log must name the ways out of this failure: an authority to trust, the runtime's "
+                            + "own authorities, or trusting the server by fingerprint")
                     .anySatisfy(event -> {
                         final String message = event.getFormattedMessage();
                         assertThat(message).contains("SELF_SIGNED");
-                        assertThat(message).contains("cacerts");
+                        assertThat(message).contains("JVM-cacerts");
+                        assertThat(message).contains("truststore");
                     });
         } finally {
-            detachAppender(ParsedConfig.class, hintLog);
+            detachAppender(TLSConfigOpcUA.class, hintLog);
         }
     }
 

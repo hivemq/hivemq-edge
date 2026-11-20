@@ -56,10 +56,14 @@ import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5RetainHandling;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5Subscription;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.configuration.HivemqId;
+import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.security.ssl.SslUtil;
+import com.hivemq.security.tls.TLSConfig;
+import com.hivemq.security.tls.TLSPolicy;
+import com.hivemq.security.tls.TLSValidatorBridge;
 import com.hivemq.util.Checkpoints;
 import com.hivemq.util.StoreTypeUtil;
 import java.util.ArrayList;
@@ -73,10 +77,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -540,6 +546,11 @@ public class BridgeMqttClient {
                 return;
             }
             log.info("Bridge '{}' connected to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
+            final BridgeTls connectedTls = bridge.getBridgeTls();
+            if (connectedTls != null && connectedTls.getEffectiveTls() != null) {
+                TLSValidatorBridge.connectionWarning(connectedTls.getEffectiveTls(), bridge.getId(), endpoint())
+                        .ifPresent(log::warn);
+            }
             connected.set(true);
             // Visited before anything is forwarded, on every connect rather than only the first, so
             // that a test can attach its oracle to the remote broker while the bridge is held here.
@@ -593,6 +604,10 @@ public class BridgeMqttClient {
                 if (reasonString.isPresent()) {
                     message += " Reason: " + reasonString.get();
                 }
+            }
+            final Optional<String> refusal = TLSValidatorBridge.describeRefusal(cause);
+            if (refusal.isPresent()) {
+                message += " " + refusal.get();
             }
             log.warn(
                     "Bridge '{}' disconnected from {}:{}: {}",
@@ -659,35 +674,19 @@ public class BridgeMqttClient {
 
         final BridgeTls bridgeTls = bridge.getBridgeTls();
         if (bridgeTls != null) {
-            final MqttClientSslConfigBuilder sslConfigBuilder = MqttClientSslConfig.builder();
+            MqttClientSslConfigBuilder sslConfigBuilder = MqttClientSslConfig.builder();
             if (!bridgeTls.getCipherSuites().isEmpty()) {
-                sslConfigBuilder.cipherSuites(bridgeTls.getCipherSuites());
+                sslConfigBuilder = sslConfigBuilder.cipherSuites(bridgeTls.getCipherSuites());
             }
             if (!bridgeTls.getProtocols().isEmpty()) {
-                sslConfigBuilder.protocols(bridgeTls.getProtocols());
+                sslConfigBuilder = sslConfigBuilder.protocols(bridgeTls.getProtocols());
             }
-            if (bridgeTls.getKeystorePath() != null) {
-                final KeyManagerFactory keyManagerFactory = SslUtil.createKeyManagerFactory(
-                        requireNonNullElse(
-                                bridgeTls.getKeystoreType(), StoreTypeUtil.deductType(bridgeTls.getKeystorePath())),
-                        bridgeTls.getKeystorePath(),
-                        bridgeTls.getKeystorePassword(),
-                        bridgeTls.getPrivateKeyPassword());
-                sslConfigBuilder.keyManagerFactory(keyManagerFactory);
-            }
-            if (bridgeTls.getTruststorePath() != null) {
-                final TrustManagerFactory trustManagerFactory = SslUtil.createTrustManagerFactory(
-                        requireNonNullElse(
-                                bridgeTls.getTruststoreType(), StoreTypeUtil.deductType(bridgeTls.getTruststorePath())),
-                        bridgeTls.getTruststorePath(),
-                        bridgeTls.getTruststorePassword());
-                sslConfigBuilder.trustManagerFactory(trustManagerFactory);
-            }
-            if (!bridgeTls.isVerifyHostname()) {
-                sslConfigBuilder.hostnameVerifier((hostname, session) -> true);
-            }
-            sslConfigBuilder.handshakeTimeout(bridgeTls.getHandshakeTimeout(), TimeUnit.SECONDS);
-            builder.sslConfig(sslConfigBuilder.build());
+            sslConfigBuilder = bridgeTls.getEffectiveTls() != null
+                    ? applyPolicy(sslConfigBuilder, bridgeTls.getEffectiveTls(), bridgeTls.getConfiguredTls())
+                    : applySettingsDirectly(sslConfigBuilder, bridgeTls);
+            builder.sslConfig(sslConfigBuilder
+                    .handshakeTimeout(bridgeTls.getHandshakeTimeout(), TimeUnit.SECONDS)
+                    .build());
         }
 
         if (bridge.getUsername() != null && bridge.getPassword() != null) {
@@ -702,6 +701,76 @@ public class BridgeMqttClient {
     /**
      * Represents the current operation state of the bridge to handle concurrent start/stop operations.
      */
+    /// Hands the MQTT client library what the bridge's certificate-validation policy amounts to.
+    ///
+    /// Reads the files and builds the validator here, when the client is created (bridge start,
+    /// and every restart a reload or an update causes), rather than when the configuration was read:
+    /// a broken file then refuses this one bridge rather than the whole configuration. Reconnects
+    /// reuse the client and do not read the files again.
+    private @NotNull MqttClientSslConfigBuilder applyPolicy(
+            @NotNull MqttClientSslConfigBuilder sslConfigBuilder,
+            final @NotNull TLSConfig effectiveTls,
+            final @Nullable BridgeTlsEntity configuredTls) {
+        final TLSPolicy policy;
+        try {
+            policy = new TLSPolicy(effectiveTls);
+        } catch (final TLSPolicy.TLSMaterialException e) {
+            // Refused rather than connected with less checking: material the configuration names
+            // and Edge cannot read is an error, never a reason to trust more widely.
+            throw new IllegalStateException("Bridge '%s': %s".formatted(bridge.getId(), e.reason()), e);
+        }
+
+        if (policy.identity().isPresent()) {
+            sslConfigBuilder =
+                    sslConfigBuilder.keyManagerFactory(policy.identity().get().keyManagerFactory());
+        }
+        try {
+            sslConfigBuilder = sslConfigBuilder.trustManagerFactory(
+                    BridgeTls.isCompatibilityPreset(configuredTls)
+                            ? TLSValidatorBridge.compatibilityTrustManagerFactoryFor(policy)
+                            : TLSValidatorBridge.trustManagerFactoryFor(policy));
+        } catch (final TLSPolicy.TLSMaterialException e) {
+            throw new IllegalStateException("Bridge '%s': %s".formatted(bridge.getId(), e.reason()), e);
+        }
+        for (final String warning : TLSValidatorBridge.startupWarnings(policy, bridge.getId(), endpoint())) {
+            log.warn(warning);
+        }
+        // Null means no verifier: the library then asks the TLS engine for HTTPS endpoint
+        // identification, which the trust manager above performs against the connected host.
+        final HostnameVerifier verifier = TLSValidatorBridge.hostnameVerifierFor(policy);
+        return verifier == null ? sslConfigBuilder : sslConfigBuilder.hostnameVerifier(verifier);
+    }
+
+    private @NotNull String endpoint() {
+        return bridge.getHost() + ":" + bridge.getPort();
+    }
+
+    /// The path for a bridge assembled in code rather than read from a configuration file, which
+    /// carries no policy. Unchanged from what it always did.
+    private static @NotNull MqttClientSslConfigBuilder applySettingsDirectly(
+            @NotNull MqttClientSslConfigBuilder sslConfigBuilder, final @NotNull BridgeTls bridgeTls) {
+        if (bridgeTls.getKeystorePath() != null) {
+            final KeyManagerFactory keyManagerFactory = SslUtil.createKeyManagerFactory(
+                    requireNonNullElse(
+                            bridgeTls.getKeystoreType(), StoreTypeUtil.deductType(bridgeTls.getKeystorePath())),
+                    bridgeTls.getKeystorePath(),
+                    bridgeTls.getKeystorePassword(),
+                    bridgeTls.getPrivateKeyPassword());
+            sslConfigBuilder = sslConfigBuilder.keyManagerFactory(keyManagerFactory);
+        }
+        if (bridgeTls.getTruststorePath() != null) {
+            final TrustManagerFactory trustManagerFactory = SslUtil.createTrustManagerFactory(
+                    requireNonNullElse(
+                            bridgeTls.getTruststoreType(), StoreTypeUtil.deductType(bridgeTls.getTruststorePath())),
+                    bridgeTls.getTruststorePath(),
+                    bridgeTls.getTruststorePassword());
+            sslConfigBuilder = sslConfigBuilder.trustManagerFactory(trustManagerFactory);
+        }
+        return bridgeTls.isVerifyHostname()
+                ? sslConfigBuilder
+                : sslConfigBuilder.hostnameVerifier(TLSValidatorBridge.acceptAnyHostname());
+    }
+
     private enum OperationState {
         IDLE,
         STARTING,

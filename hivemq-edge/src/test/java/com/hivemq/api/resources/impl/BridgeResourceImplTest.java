@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.resources.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -25,11 +26,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.bridge.BridgeService;
+import com.hivemq.bridge.config.BridgeTls;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.api.model.Bridge;
+import com.hivemq.edge.api.model.TlsConfiguration;
+import com.hivemq.security.tls.FileSet;
+import com.hivemq.security.tls.MaterialRef;
+import com.hivemq.security.tls.TLSConfig;
+import com.hivemq.security.tls.TLSConstants;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -145,5 +152,75 @@ class BridgeResourceImplTest {
         verify(bridgeExtractor).replaceBridge(eq(BRIDGE_ID), any(MqttBridge.class));
         verify(bridgeExtractor, never()).removeBridge(anyString());
         verify(bridgeExtractor, never()).addBridge(any(MqttBridge.class));
+    }
+
+    @Test
+    void aBridgeCreatedThroughTheApiCarriesItsCertificateValidationPolicy() {
+        // The bridge this produces is handed to the code that starts bridges before the
+        // configuration is written back, so without a policy here it would connect without going
+        // through the certificate-validation chain at all - and nothing would say so.
+        final BridgeTls tls = BridgeResourceImpl.convertTls(
+                BRIDGE_ID,
+                new TlsConfiguration()
+                        .enabled(true)
+                        .truststorePath("/etc/edge/trust.jks")
+                        .truststorePassword("pw")
+                        .protocols(List.of())
+                        .cipherSuites(List.of())
+                        .verifyHostname(true));
+
+        assertThat(tls).isNotNull();
+        final TLSConfig effective = tls.getEffectiveTls();
+        assertThat(effective).isNotNull();
+        // The checks a bridge has always performed, which is what this spelling can express.
+        assertThat(effective.trustMode()).isEqualTo(TLSConstants.TrustMode.CHAIN);
+        assertThat(effective.hostname()).isEqualTo(TLSConstants.HostnameCheck.HOSTNAME);
+        assertThat(effective.validity()).isEqualTo(TLSConstants.ValidityCheck.NOT_BEFORE_OR_AFTER);
+        assertThat(effective.revocation()).isEqualTo(TLSConstants.RevocationCheck.NONE);
+        // The container format is guessed from the file name, as it always was.
+        assertThat(((MaterialRef.Inline) effective.truststore().orElseThrow()).format())
+                .isEqualTo("jks");
+    }
+
+    @Test
+    void whenTheApiTurnsHostnameVerificationOff_thenOnlyThatCheckChanges() {
+        final BridgeTls tls = BridgeResourceImpl.convertTls(
+                BRIDGE_ID,
+                new TlsConfiguration()
+                        .enabled(true)
+                        .truststorePath("/etc/edge/trust.p12")
+                        .truststorePassword("pw")
+                        .protocols(List.of())
+                        .cipherSuites(List.of())
+                        .verifyHostname(false));
+
+        assertThat(tls).isNotNull();
+        final TLSConfig effective = tls.getEffectiveTls();
+        assertThat(effective).isNotNull();
+        assertThat(effective.hostname()).isEqualTo(TLSConstants.HostnameCheck.NONE);
+        assertThat(effective.validity()).isEqualTo(TLSConstants.ValidityCheck.NOT_BEFORE_OR_AFTER);
+        assertThat(((MaterialRef.Inline) effective.truststore().orElseThrow()).format())
+                .isEqualTo("p12");
+    }
+
+    @Test
+    void whenTheApiNamesNoTruststore_thenTheRuntimesOwnAuthoritiesAreUsed() {
+        // What a bridge to a cloud broker relies on, and what the API could always express by
+        // leaving the truststore out.
+        final BridgeTls tls = BridgeResourceImpl.convertTls(
+                BRIDGE_ID,
+                new TlsConfiguration()
+                        .enabled(true)
+                        .protocols(List.of())
+                        .cipherSuites(List.of())
+                        .verifyHostname(true));
+
+        assertThat(tls).isNotNull();
+        final TLSConfig effective = tls.getEffectiveTls();
+        assertThat(effective).isNotNull();
+        assertThat(((MaterialRef.Inline) effective.truststore().orElseThrow())
+                        .files()
+                        .builtins())
+                .containsExactly(FileSet.JVM_CACERTS);
     }
 }

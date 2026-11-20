@@ -49,18 +49,19 @@ public record RevocationList(
         @ModuleConfigField(
                 title = "Revocation list path",
                 description = "Path on the local file system to a certificate revocation list, or to a directory "
-                        + "of them. PEM or DER. Required for revocation=CHECK or revocation=REQUIRE_CRLS whenever "
+                        + "of them. PEM or DER. Needed for revocation=CHECK or revocation=REQUIRE_CRLS whenever "
                         + "the certification path runs through a CA; a path that is trusted directly has no "
-                        + "issuer to check and needs none.",
-                required = true)
+                        + "issuer to check and needs none. Superseded by tls-revocationlist, which also "
+                        + "takes several files, directories and glob patterns.")
         @Nullable
         String path,
 
         /**
-         * The entries this element carried besides {@code path}, or an empty map when every entry was
-         * recognized. Same contract and rationale as {@link AllowList#unknownSettings()}: a misspelled
-         * entry refuses the adapter rather than silently leaving the path unset, and the entries are
-         * serialized back out verbatim so a writeback cannot delete them.
+         * The entries this element carried besides {@code path}, or an empty map when every entry
+         * was recognized. Same contract and rationale as
+         * {@link AllowList#unknownSettings()}: a misspelled entry refuses the adapter rather than
+         * silently leaving the path unset, and the entries are serialized back out verbatim so a
+         * writeback cannot delete them.
          */
         @JsonIgnore @NotNull Map<String, Object> unknownSettings) {
 

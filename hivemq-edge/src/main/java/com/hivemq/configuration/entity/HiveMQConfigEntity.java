@@ -21,8 +21,10 @@ import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.configuration.entity.tls.TlsMaterialEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
+import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -104,6 +107,18 @@ public class HiveMQConfigEntity {
     @XmlElementWrapper(name = "asset-mappers")
     @XmlElement(name = "asset-mapper")
     private @NotNull List<DataCombinerEntity> assetMapperEntities = new ArrayList<>();
+
+    /// TLS material declared once for several surfaces to share.
+    ///
+    /// Repeats so that several parties can each manage their own material, which is why a reference
+    /// names the material as well as the entry inside it.
+    ///
+    /// Null rather than empty when nothing is declared, because JAXB writes an empty wrapper for an
+    /// empty list: a file that declares no material must be written back without the element, or a
+    /// release whose schema predates it refuses to start on that file.
+    @XmlElementWrapper(name = "tls-materials")
+    @XmlElement(name = "tls-material")
+    private @Nullable List<TlsMaterialEntity> tlsMaterials = null;
 
     @XmlElementRef(name = "pulse", required = false)
     private @NotNull PulseEntity pulseEntity = new PulseEntity();
@@ -225,6 +240,19 @@ public class HiveMQConfigEntity {
 
     public @NotNull PulseEntity getPulseEntity() {
         return pulseEntity;
+    }
+
+    public @NotNull List<TlsMaterialEntity> getTlsMaterials() {
+        return tlsMaterials != null ? tlsMaterials : List.of();
+    }
+
+    /// JAXB lifecycle callback. An empty `<tls-materials/>` declares nothing, so it is dropped
+    /// rather than written back.
+    @SuppressWarnings("unused")
+    void afterUnmarshal(final @NotNull Unmarshaller unmarshaller, final @Nullable Object parent) {
+        if (tlsMaterials != null && tlsMaterials.isEmpty()) {
+            tlsMaterials = null;
+        }
     }
 
     public int getVersion() {

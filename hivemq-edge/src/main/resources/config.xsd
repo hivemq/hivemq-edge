@@ -77,6 +77,14 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="tls-materials" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="tls-material" type="tlsMaterialEntity" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="pulse" type="pulseEntity" minOccurs="0"/>
             <xs:element name="modules" minOccurs="0">
                 <xs:complexType>
@@ -855,6 +863,49 @@
                                                         </xs:simpleType>
                                                     </xs:element>
 
+                                                    <!-- The superseding spelling. The four material elements reuse
+                                                         the types the shared tls-material block declares, so one
+                                                         definition serves both places an operator may write them.
+                                                         Mutually exclusive with keystore and truststore, which the
+                                                         schema cannot express and the effective-configuration stage
+                                                         refuses. -->
+                                                    <xs:element name="tls-checks" type="bridgeTlsPreset"
+                                                                minOccurs="0"/>
+                                                    <xs:element name="tls-checks-full" type="bridgeTlsChecksEntity"
+                                                                minOccurs="0"/>
+                                                    <xs:element name="tls-identity" type="tlsIdentityEntity"
+                                                                minOccurs="0"/>
+                                                    <xs:element name="tls-truststore" type="tlsTruststoreEntity" minOccurs="0">
+                                                        <xs:unique name="bridgeTlsTruststoreSingleValues">
+                                                            <xs:selector xpath="."/>
+                                                            <xs:field xpath="name"/>
+                                                            <xs:field xpath="uuid"/>
+                                                            <xs:field xpath="reference-name"/>
+                                                            <xs:field xpath="reference-uuid"/>
+                                                            <xs:field xpath="format"/>
+                                                            <xs:field xpath="password"/>
+                                                            <xs:field xpath="password-file"/>
+                                                            <xs:field xpath="skip-integrity-check"/>
+                                                        </xs:unique>
+                                                    </xs:element>
+                                                    <xs:element name="tls-allowlist" type="tlsAllowlistEntity" minOccurs="0">
+                                                        <xs:unique name="bridgeTlsAllowlistSingleValues">
+                                                            <xs:selector xpath="."/>
+                                                            <xs:field xpath="name"/>
+                                                            <xs:field xpath="uuid"/>
+                                                            <xs:field xpath="reference-name"/>
+                                                            <xs:field xpath="reference-uuid"/>
+                                                        </xs:unique>
+                                                    </xs:element>
+                                                    <xs:element name="tls-revocationlist" type="tlsRevocationlistEntity" minOccurs="0">
+                                                        <xs:unique name="bridgeTlsRevocationlistSingleValues">
+                                                            <xs:selector xpath="."/>
+                                                            <xs:field xpath="name"/>
+                                                            <xs:field xpath="uuid"/>
+                                                            <xs:field xpath="reference-name"/>
+                                                            <xs:field xpath="reference-uuid"/>
+                                                        </xs:unique>
+                                                    </xs:element>
                                                 </xs:all>
                                             </xs:complexType>
                                         </xs:element>
@@ -1379,6 +1430,239 @@
             <xs:element name="allow-mutable-configuration" type="xs:boolean" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
+
+    <!-- Bridge certificate validation Start -->
+
+    <!-- A bridge's five independent validation checks. Five rather than six: MQTT sends no
+         application identifier when it connects, so the check comparing one has no input here.
+         Every element is optional and defaults to its strictest value, so an empty element means
+         maximum validation. -->
+    <xs:complexType name="bridgeTlsChecksEntity">
+        <xs:all>
+            <xs:element name="trust-mode" type="bridgeTlsTrustMode" minOccurs="0"/>
+            <xs:element name="hostname" type="bridgeTlsHostnameCheck" minOccurs="0"/>
+            <xs:element name="validity" type="bridgeTlsValidityCheck" minOccurs="0"/>
+            <xs:element name="revocation" type="bridgeTlsRevocationCheck" minOccurs="0"/>
+            <xs:element name="key-usage" type="bridgeTlsKeyUsageCheck" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- The check values are matched by the effective-configuration stage, which accepts them in
+         any case and with the separators written or left out (a preset accepts a hyphen for an
+         underscore), as the reference promises, and refuses any other word with a message listing
+         the values. An enumeration here would refuse those variants before that stage reads them, so
+         the schema checks only the shape and the documentation lists the values.
+
+         Four presets plus the compatibility one. APPLICATION_URI is omitted, which without the
+         application-identifier check would say nothing that chain trust alone does not.
+         TLS_BRIDGE_DEFAULT is what a bridge writing no checks validates, named for why it exists
+         because no name of reasonable length carries five values. -->
+    <xs:simpleType name="bridgeTlsPreset">
+        <xs:annotation>
+            <xs:documentation>STANDARD, ALL, SELF_SIGNED, NO_VERIFICATION, TLS_BRIDGE_DEFAULT</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z]+([_\-][A-Za-z]+)*"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="bridgeTlsTrustMode">
+        <xs:annotation>
+            <xs:documentation>CHAIN, ALLOW_LIST, ANY_CERT</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="bridgeTlsHostnameCheck">
+        <xs:annotation>
+            <xs:documentation>NONE, HOSTNAME</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="bridgeTlsValidityCheck">
+        <xs:annotation>
+            <xs:documentation>NONE, NOT_BEFORE_OR_AFTER</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="bridgeTlsRevocationCheck">
+        <xs:annotation>
+            <xs:documentation>NONE, CHECK, REQUIRE_CRLS</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="bridgeTlsKeyUsageCheck">
+        <xs:annotation>
+            <xs:documentation>NONE, KEY_USAGE, SERVER_AUTH</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[A-Za-z_\-]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Bridge certificate validation End -->
+
+    <!-- TLS material Start -->
+
+    <!-- TLS material declared once for several surfaces to share. Repeats, so several parties can
+         each manage their own material; a reference therefore names the material as well as the
+         entry, written material-name::entry-name. A choice rather than a sequence, so an operator
+         may group the four types however the deployment reads best. -->
+    <xs:complexType name="tlsMaterialEntity">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="0"/>
+            <xs:element name="uuid" type="xs:string" minOccurs="0"/>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="tls-identity" type="tlsIdentityEntity"/>
+                <xs:element name="tls-truststore" type="tlsTruststoreEntity">
+                    <xs:unique name="materialTlsTruststoreSingleValues">
+                        <xs:selector xpath="."/>
+                        <xs:field xpath="name"/>
+                        <xs:field xpath="uuid"/>
+                        <xs:field xpath="reference-name"/>
+                        <xs:field xpath="reference-uuid"/>
+                        <xs:field xpath="format"/>
+                        <xs:field xpath="password"/>
+                        <xs:field xpath="password-file"/>
+                        <xs:field xpath="skip-integrity-check"/>
+                    </xs:unique>
+                </xs:element>
+                <xs:element name="tls-allowlist" type="tlsAllowlistEntity">
+                    <xs:unique name="materialTlsAllowlistSingleValues">
+                        <xs:selector xpath="."/>
+                        <xs:field xpath="name"/>
+                        <xs:field xpath="uuid"/>
+                        <xs:field xpath="reference-name"/>
+                        <xs:field xpath="reference-uuid"/>
+                    </xs:unique>
+                </xs:element>
+                <xs:element name="tls-revocationlist" type="tlsRevocationlistEntity">
+                    <xs:unique name="materialTlsRevocationlistSingleValues">
+                        <xs:selector xpath="."/>
+                        <xs:field xpath="name"/>
+                        <xs:field xpath="uuid"/>
+                        <xs:field xpath="reference-name"/>
+                        <xs:field xpath="reference-uuid"/>
+                    </xs:unique>
+                </xs:element>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- A directory or glob pattern, with whether it may legitimately name no file. Two elements
+         rather than an attribute, so the shape survives translation to JSON, YAML or Protobuf. -->
+    <xs:complexType name="tlsFileLocationEntity">
+        <xs:all>
+            <xs:element name="location" type="xs:string"/>
+            <xs:element name="may-be-empty" type="xs:boolean" minOccurs="0" default="false"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- Every element is optional, and deliberately so: one type describes this element both inside
+         a tls-material, where it is a declaration, and inside a surface's tls element, where it may
+         instead be a reference. What is required differs between the two, which a schema cannot
+         express, so the resolving stage enforces it and names the element in its refusal. -->
+    <xs:complexType name="tlsIdentityEntity">
+        <xs:all>
+            <xs:element name="name" type="xs:string" minOccurs="0"/>
+            <xs:element name="uuid" type="xs:string" minOccurs="0"/>
+            <xs:element name="reference-name" type="xs:string" minOccurs="0"/>
+            <xs:element name="reference-uuid" type="xs:string" minOccurs="0"/>
+            <xs:element name="format" type="tlsMaterialFormat" minOccurs="0"/>
+            <xs:element name="file" type="xs:string" minOccurs="0"/>
+            <xs:element name="key-file" type="xs:string" minOccurs="0"/>
+            <xs:element name="certificate-file" type="xs:string" minOccurs="0"/>
+            <xs:element name="chain-file" type="xs:string" minOccurs="0"/>
+            <xs:element name="password" type="xs:string" minOccurs="0"/>
+            <xs:element name="password-file" type="xs:string" minOccurs="0"/>
+            <xs:element name="key-entry" type="xs:string" minOccurs="0"/>
+            <xs:element name="keyentry-password" type="xs:string" minOccurs="0"/>
+            <xs:element name="keyentry-password-file" type="xs:string" minOccurs="0"/>
+            <xs:element name="key-password" type="xs:string" minOccurs="0"/>
+            <xs:element name="key-password-file" type="xs:string" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- One unordered choice rather than a sequence, since the repeated file, directory, pattern and
+         builtin elements merge into one set and an operator should not have to learn an order among
+         them or against the password. A choice cannot say that the single-valued elements (name,
+         reference, format, password, the integrity switch) appear at most once, and binding keeps only
+         the last of two, so each element declaring this type, and the two list types below, carries
+         an identity constraint whose fields are those elements: a field matching twice is a
+         validation error. -->
+    <xs:complexType name="tlsTruststoreEntity">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="uuid" type="xs:string"/>
+            <xs:element name="reference-name" type="xs:string"/>
+            <xs:element name="reference-uuid" type="xs:string"/>
+            <xs:element name="format" type="tlsMaterialFormat"/>
+            <xs:element name="file" type="xs:string"/>
+            <xs:element name="directory" type="tlsFileLocationEntity"/>
+            <xs:element name="pattern" type="tlsFileLocationEntity"/>
+            <xs:element name="builtin" type="tlsBuiltinTruststore"/>
+            <xs:element name="password" type="xs:string"/>
+            <xs:element name="password-file" type="xs:string"/>
+            <xs:element name="skip-integrity-check" type="xs:boolean"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <!-- No format element: the file is one hexadecimal fingerprint per line, with # comments. -->
+    <xs:complexType name="tlsAllowlistEntity">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="uuid" type="xs:string"/>
+            <xs:element name="reference-name" type="xs:string"/>
+            <xs:element name="reference-uuid" type="xs:string"/>
+            <xs:element name="file" type="xs:string"/>
+            <xs:element name="directory" type="tlsFileLocationEntity"/>
+            <xs:element name="pattern" type="tlsFileLocationEntity"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <!-- No format element: one call reads both the PEM and the DER encoding. -->
+    <xs:complexType name="tlsRevocationlistEntity">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="uuid" type="xs:string"/>
+            <xs:element name="reference-name" type="xs:string"/>
+            <xs:element name="reference-uuid" type="xs:string"/>
+            <xs:element name="file" type="xs:string"/>
+            <xs:element name="directory" type="tlsFileLocationEntity"/>
+            <xs:element name="pattern" type="tlsFileLocationEntity"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <!-- Declared rather than guessed from an extension: a .crt file holds PEM or DER, a .pem file
+         holds a key or a certificate or both, and a file Kubernetes mounts is named after the key in
+         the secret. -->
+    <xs:simpleType name="tlsMaterialFormat">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="p12"/>
+            <xs:enumeration value="jks"/>
+            <xs:enumeration value="pem"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- A truststore the runtime carries rather than the operator supplies. -->
+    <xs:simpleType name="tlsBuiltinTruststore">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="JVM-cacerts"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- TLS material End -->
 
     <!-- Pulse Start -->
     <xs:complexType name="pulseEntity">

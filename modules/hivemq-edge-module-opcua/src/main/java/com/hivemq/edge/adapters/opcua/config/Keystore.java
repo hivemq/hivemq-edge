@@ -15,26 +15,37 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public record Keystore(
+        /**
+         * Nullable, although a keystore naming no path is refused: a {@code <keystore>} whose
+         * {@code <path>} child is missing binds null regardless. Refusing here would surface as a raw
+         * Jackson error on this adapter rather than as the configuration error
+         * {@link TLSConfigOpcUA} reports.
+         */
         @JsonProperty(value = "path")
+        @JsonInclude(NON_NULL)
         @ModuleConfigField(title = "Keystore path", description = "Path on the local file system to the keystore.")
-        @NotNull
+        @Nullable
         String path,
 
         @JsonProperty(value = "password")
+        @JsonInclude(NON_NULL)
         @ModuleConfigField(title = "Keystore password", description = "Password to open the keystore.")
-        @NotNull
+        @Nullable
         String password,
 
         @JsonProperty(value = "privateKeyPassword")
+        @JsonInclude(NON_NULL)
         @ModuleConfigField(title = "Private key password", description = "Password to access the private key.")
-        @NotNull
+        @Nullable
         String privateKeyPassword) {
 
     @JsonCreator
@@ -64,20 +75,5 @@ public record Keystore(
                 + "configuration has been rejected. The text is not repeated here because it can be the keystore "
                 + "password or the private-key password. Give every element a value or remove it entirely. An empty "
                 + "<keystore/> is valid and means no client certificate is configured.");
-    }
-
-    @Override
-    public @NotNull String path() {
-        return path;
-    }
-
-    @Override
-    public @NotNull String password() {
-        return password;
-    }
-
-    @Override
-    public @NotNull String privateKeyPassword() {
-        return privateKeyPassword;
     }
 }
