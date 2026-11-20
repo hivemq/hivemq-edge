@@ -1,11 +1,20 @@
 import { useCallback, useState } from 'react'
+import type { QueryClient } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { useLocation } from 'react-router'
 
-import type { HiveMqClient } from '@/api/__generated__'
+import type {
+  Adapter,
+  Bridge,
+  CombinerList,
+  HiveMqClient,
+  ListenerList,
+  ProtocolAdaptersList,
+} from '@/api/__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
 import { STORE_WORKSPACE_KEY } from '@/modules/Workspace/types.ts'
+import type { FlowElementsSources } from '@/modules/Workspace/hooks/useGetFlowElements.ts'
 
 /**
  * The six lists the workspace graph is built from, fetched together and all-or-nothing: if one
@@ -52,6 +61,16 @@ const POLLED_STATUS_QUERY_KEYS = [
   [QUERY_KEYS.BRIDGES, QUERY_KEYS.CONNECTION_STATUS],
   [QUERY_KEYS.PULSE_STATUS],
 ] as const
+
+/** The lists a reload has just written into the cache, in the shape the graph builder takes. */
+const fetchedSources = (queryClient: QueryClient): FlowElementsSources => ({
+  adapters: queryClient.getQueryData<Adapter[]>([QUERY_KEYS.ADAPTERS]),
+  adapterTypes: queryClient.getQueryData<ProtocolAdaptersList>([QUERY_KEYS.PROTOCOLS])?.items,
+  bridges: queryClient.getQueryData<Bridge[]>([QUERY_KEYS.BRIDGES]),
+  listeners: queryClient.getQueryData<ListenerList>([QUERY_KEYS.LISTENERS])?.items,
+  combiners: queryClient.getQueryData<CombinerList>([QUERY_KEYS.COMBINER])?.items,
+  assetMappers: queryClient.getQueryData<CombinerList>([QUERY_KEYS.ASSET_MAPPER])?.items,
+})
 
 const MAX_ATTEMPTS = 5
 const RETRY_DELAY_MS = 400
@@ -129,11 +148,11 @@ export const useReloadWorkspace = () => {
   /**
    * The safe reload: refresh from the server and repair the graph, keeping the user's arrangement.
    *
-   * `reconcile` is supplied by the caller, which holds the freshly built graph — this hook owns the
-   * fetching and the polling suspension, not the graph shape.
+   * `reconcile` is supplied by the caller and receives the lists just fetched, to build the graph from —
+   * this hook owns the fetching and the polling suspension, not the graph shape.
    */
   const reload = useCallback(
-    async (reconcile: () => void) => {
+    async (reconcile: (fetched: FlowElementsSources) => void) => {
       // Stop the status pollers, and cancel anything already in flight so a response that departed
       // before now cannot land mid-reconcile.
       POLLED_STATUS_QUERY_KEYS.forEach((queryKey) => {
@@ -145,7 +164,7 @@ export const useReloadWorkspace = () => {
         await refetchAll()
 
         setPhase(ReloadPhase.RECONCILING)
-        reconcile()
+        reconcile(fetchedSources(queryClient))
       } finally {
         // Always, so a failed reload does not leave status frozen.
         setPhase(ReloadPhase.IDLE)
