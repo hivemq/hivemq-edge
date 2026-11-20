@@ -43,6 +43,7 @@ import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
@@ -119,21 +120,26 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         if (!stopRequested.get() && startRequested.compareAndSet(false, true)) {
+            // The client connects persistently: when this first attempt fails, it keeps reconnecting with backoff
+            // until stop() disconnects it, so an unreachable device does not fail the start.
             client.connect().whenComplete((unused, throwable) -> {
                 if (throwable == null) {
                     protocolAdapterState.setConnectionStatus(CONNECTED);
-                    output.startedSuccessfully();
                     log.info("Successfully started Modbus protocol adapter {}", adapterId);
                 } else {
-                    try {
-                        protocolAdapterState.setConnectionStatus(ERROR);
-                        output.failStart(throwable, "Exception during setup of Modbus client.");
-                    } finally {
-                        startRequested.set(false);
-                        log.error("Unable to connect to the Modbus device", throwable);
-                        protocolAdapterState.setConnectionStatus(ERROR);
-                    }
+                    // The connect stage is a dependent one, so the failure arrives wrapped; the cause (refused, timed
+                    // out, unknown host) becomes the adapter's last error message.
+                    final Throwable cause =
+                            throwable instanceof final CompletionException wrapped && wrapped.getCause() != null
+                                    ? wrapped.getCause()
+                                    : throwable;
+                    protocolAdapterState.setErrorConnectionStatus(cause, null);
+                    log.warn(
+                            "Started Modbus protocol adapter {} without a connection, device not reachable yet: {}",
+                            adapterId,
+                            cause.getMessage());
                 }
+                output.startedSuccessfully();
             });
         }
     }
@@ -234,6 +240,11 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     pollingOutput.fail(e, "Unable to read tags from modbus");
                 }
             });
+        } else {
+            // Fail at once so the polling backoff applies; an unanswered poll would hold its thread until the
+            // sampler's timeout.
+            pollingOutput.fail("The Modbus device is not connected [host=" + adapterConfig.getHost() + ", port="
+                    + adapterConfig.getPort() + "]");
         }
     }
 
