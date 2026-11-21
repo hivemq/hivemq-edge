@@ -1,0 +1,39 @@
+# Snyk policy for the Edge-1 backend (Snyk project hivemq-edge:build.gradle.kts).
+#
+# snyk monitor and snyk test read this file from the directory they scan
+# (-d hivemq-edge/hivemq-edge in snyk-push.yml and snyk-release.yml), so every
+# build project and every release project gets these ignores with its snapshot.
+# An ignore set only in the Snyk web UI stays on the one project it was set on.
+#
+# Each entry ignores a finding that no upgrade fixes and that Edge cannot reach.
+# The analysis lives in the Linear issue named above the entry; the reason
+# below is the one recorded in Snyk. No entry expires.
+#
+# Migrated from the Snyk web UI ignores on hivemq-edge:build.gradle.kts [master]
+# on 2026-11-21 (EDG-1367).
+version: v1.25.0
+ignore:
+  # EDG-1286 / EDG-1114: jaxb-core XXE (CVE-2026-92877), no upstream fix.
+  SNYK-JAVA-ORGGLASSFISHJAXB-20883142:
+    - '*':
+        reason: >-
+          Not reachable in HiveMQ Edge (Edge-1, hivemq-edge) on master from
+          352e01605. JAXB unmarshals only operator-controlled local files
+          (config.xml, topic-filters.xml, hivemq-extension.xml) and, in the
+          MTConnect adapter, agent responses, which are parsed only through an
+          XMLInputFactory with DTD support and external entities disabled (both
+          for the schemaLocation read and for the JAXB unmarshal), so no
+          external entity is resolved. No REST endpoint accepts XML. Milo's
+          legacy XML type-dictionary reader (LegacyDataTypeManagerInitializer)
+          is not enabled. Checked 352e01605, 2026-11-19, Martin Schönert.
+        created: 2026-11-19T14:44:00.212Z
+  # EDG-1282: jakarta.validation-api 3.1.0, no CVE.
+  SNYK-JAVA-JAKARTAVALIDATION-20936881:
+    - '*':
+        reason: >-
+          Not vulnerable: the flaw needs a Java Security Manager, which JDK 24+
+          no longer supports (JEP 486). Edge-1 targets Java 25 and runs only on
+          JDK 25+. Jakarta Validation is a transitive dependency of
+          jersey-server, and Edge doesn't call it.
+        created: 2026-11-19T18:25:23.281Z
+patch: {}
