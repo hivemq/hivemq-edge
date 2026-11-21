@@ -47,6 +47,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +123,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         if (!stopRequested.get() && startRequested.compareAndSet(false, true)) {
             // The client connects persistently: when this first attempt fails, it keeps reconnecting with backoff
             // until stop() disconnects it, so an unreachable device does not fail the start.
-            client.connect().whenComplete((unused, throwable) -> {
+            client.connect().whenComplete((_, throwable) -> {
                 if (throwable == null) {
                     protocolAdapterState.setConnectionStatus(CONNECTED);
                     log.info("Successfully started Modbus protocol adapter {}", adapterId);
@@ -151,7 +152,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             publishChangedDataOnlyHandler.clear();
             try {
                 client.disconnect()
-                        .whenComplete((unused, throwable) -> {
+                        .whenComplete((_, throwable) -> {
                             try {
                                 if (throwable == null) {
                                     protocolAdapterState.setConnectionStatus(DISCONNECTED);
@@ -186,66 +187,107 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
-        if (startRequested.get() && !stopRequested.get() && client.isConnected()) {
-
-            final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
-
-            final int limit = tags.size();
-            final CompletableFuture<ResulTuple>[] readRegisterFutures = new CompletableFuture[limit];
-            for (int i = 0; i < limit; i++) {
-                final ModbusTag tag = tags.get(i);
-                readRegisterFutures[i] = client.readRegisters(tag)
-                        .thenApply(result -> new ResulTuple(tag, result))
-                        .toCompletableFuture();
+        if (startRequested.get() && !stopRequested.get()) {
+            if (client.isConnected()) {
+                readTags(pollingOutput);
+                return;
             }
-
-            final boolean publishAllChanges = isPublishAllChanges();
-
-            @SuppressWarnings("unused")
-            final var unused = CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
-                try {
+            final CompletableFuture<Void> reconnect = client.reconnectAfterDrop();
+            if (reconnect != null) {
+                // An established connection dropped and the client reconnects within seconds: the poll waits for that
+                // attempt, so a brief drop costs no polling error beyond the poll it broke. The sampler's timeout
+                // bounds the wait.
+                @SuppressWarnings("unused")
+                final var unused = reconnect.whenComplete((_, throwable) -> {
                     if (throwable != null) {
-                        protocolAdapterState.setConnectionStatus(ERROR);
-                        pollingOutput.fail(throwable, "Unable to read tags from modbus");
+                        pollingOutput.fail(notConnectedMessage(throwable));
                         return;
                     }
+                    try {
+                        readTags(pollingOutput);
+                    } catch (final RuntimeException e) {
+                        // The poll's caller catches what a direct read throws; here no caller would.
+                        pollingOutput.fail(e, "Unable to read tags from modbus");
+                    }
+                });
+                return;
+            }
+            // The reconnect may have succeeded between the two reads above: the client's state machine sets the state
+            // and takes the future under one lock, so a second read sees the connection.
+            if (client.isConnected()) {
+                readTags(pollingOutput);
+                return;
+            }
+        }
+        // Fail at once so the polling backoff applies; an unanswered poll would fail only at the sampler's timeout.
+        // The message carries the last connect failure, which tells a refusal from a timeout or an unknown host.
+        pollingOutput.fail(notConnectedMessage(client.lastConnectFailure()));
+    }
 
-                    protocolAdapterState.setConnectionStatus(CONNECTED);
+    private void readTags(final @NotNull BatchPollingOutput pollingOutput) {
+        final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
 
-                    for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
-                        final ResulTuple entry = readRegisterFuture.join();
-                        final var tag = entry.tag();
-                        final var value = entry.value();
-                        if (publishAllChanges
-                                || publishChangedDataOnlyHandler.replaceIfValueIsNew(tag.getName(), value)) {
-                            final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
-                            switch (value) {
-                                case final Long val -> dataPointBuilder.value(val);
-                                case final Integer val -> dataPointBuilder.value(val);
-                                case final Float val -> dataPointBuilder.value(val);
-                                case final Double val -> dataPointBuilder.value(val);
-                                case final Short val -> dataPointBuilder.value(val);
-                                case final Boolean val -> dataPointBuilder.value(val);
-                                case final String val -> dataPointBuilder.value(val);
-                                default ->
-                                    log.error(
-                                            "Unsupported data type {} for tag {}, skipping",
-                                            value.getClass(),
-                                            tag.getName());
-                            }
+        final int limit = tags.size();
+        final CompletableFuture<ResulTuple>[] readRegisterFutures = new CompletableFuture[limit];
+        for (int i = 0; i < limit; i++) {
+            final ModbusTag tag = tags.get(i);
+            readRegisterFutures[i] = client.readRegisters(tag)
+                    .thenApply(result -> new ResulTuple(tag, result))
+                    .toCompletableFuture();
+        }
+
+        final boolean publishAllChanges = isPublishAllChanges();
+
+        @SuppressWarnings("unused")
+        final var unused = CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
+            try {
+                if (throwable != null) {
+                    protocolAdapterState.setConnectionStatus(ERROR);
+                    pollingOutput.fail(throwable, "Unable to read tags from modbus");
+                    return;
+                }
+
+                protocolAdapterState.setConnectionStatus(CONNECTED);
+
+                for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
+                    final ResulTuple entry = readRegisterFuture.join();
+                    final var tag = entry.tag();
+                    final var value = entry.value();
+                    if (publishAllChanges || publishChangedDataOnlyHandler.replaceIfValueIsNew(tag.getName(), value)) {
+                        final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
+                        switch (value) {
+                            case final Long val -> dataPointBuilder.value(val);
+                            case final Integer val -> dataPointBuilder.value(val);
+                            case final Float val -> dataPointBuilder.value(val);
+                            case final Double val -> dataPointBuilder.value(val);
+                            case final Short val -> dataPointBuilder.value(val);
+                            case final Boolean val -> dataPointBuilder.value(val);
+                            case final String val -> dataPointBuilder.value(val);
+                            default ->
+                                log.error(
+                                        "Unsupported data type {} for tag {}, skipping",
+                                        value.getClass(),
+                                        tag.getName());
                         }
                     }
-                    dataPointsPublisher.publish();
-                } catch (final Exception e) {
-                    pollingOutput.fail(e, "Unable to read tags from modbus");
                 }
-            });
-        } else {
-            // Fail at once so the polling backoff applies; an unanswered poll would hold its thread until the
-            // sampler's timeout.
-            pollingOutput.fail("The Modbus device is not connected [host=" + adapterConfig.getHost() + ", port="
-                    + adapterConfig.getPort() + "]");
+                dataPointsPublisher.publish();
+            } catch (final Exception e) {
+                pollingOutput.fail(e, "Unable to read tags from modbus");
+            }
+        });
+    }
+
+    private @NotNull String notConnectedMessage(final @Nullable Throwable connectFailure) {
+        final String device = "The Modbus device is not connected [host=" + adapterConfig.getHost() + ", port="
+                + adapterConfig.getPort();
+        if (connectFailure == null) {
+            return device + "]";
         }
+        final String cause = connectFailure.getMessage() != null
+                ? connectFailure.getMessage()
+                : connectFailure.getClass().getSimpleName();
+        return device + ", cause=" + cause + "]";
     }
 
     @Override

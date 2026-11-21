@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -59,6 +60,7 @@ import com.hivemq.edge.modules.adapters.impl.polling.PollingTask;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.northbound.PerAdapterSampler;
 import com.hivemq.util.NanoTimeProvider;
+import io.netty.channel.Channel;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -68,6 +70,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +83,8 @@ import org.mockito.ArgumentCaptor;
 
 /// A Modbus device that is off when the adapter starts must not leave the adapter in ERROR for good: the start
 /// succeeds, polls fail at once while the device is away and count as polling errors like an outage does, data flows
-/// once the device is reachable with no restart, and a stop ends the client's reconnect attempts.
+/// once the device is reachable with no restart, and a stop ends the client's reconnect attempts. A connection that
+/// drops after it was established gets the client's first reconnect attempt before a poll fails for it.
 class ModbusProtocolAdapterOfflineStartTest {
 
     private static final @NotNull String ADAPTER_ID = "modbus-offline-start";
@@ -103,6 +107,9 @@ class ModbusProtocolAdapterOfflineStartTest {
     private static final @NotNull Duration QUIET_WINDOW = Duration.ofSeconds(5);
     // A single poll against a local device answers in milliseconds; 10 s only bounds a hung read.
     private static final long POLL_WAIT_SECONDS = 10;
+    // The client's first reconnect after a drop comes 1 s after it; 3 s covers it and the poll that follows, and is
+    // long enough for an adapter that fails its polls at once to pass a limit of 1 at a 100 ms interval.
+    private static final @NotNull Duration FIRST_RECONNECT_WINDOW = Duration.ofSeconds(3);
 
     private final @NotNull ProtocolAdapterState state = mock(ProtocolAdapterState.class);
     private int port;
@@ -195,9 +202,55 @@ class ModbusProtocolAdapterOfflineStartTest {
         verify(wrapper, after(POLLING_INTERVAL_MILLIS).never()).stopAsync(anyBoolean());
     }
 
+    /// Through the sampler, the error of a poll while the device is off carries the connect failure next to the
+    /// device's address, so the status tells a refusal from a timeout or an unknown host.
+    @Test
+    void aPollWhileTheDeviceIsOffReportsTheConnectFailure() {
+        final ProtocolAdapterWrapper wrapper = startPolling(startWithTheDeviceOff(UNLIMITED_POLLING_ERRORS));
+        final ArgumentCaptor<Throwable> connectFailure = ArgumentCaptor.forClass(Throwable.class);
+        verify(state).setErrorConnectionStatus(connectFailure.capture(), isNull());
+
+        final ArgumentCaptor<Throwable> pollError = ArgumentCaptor.forClass(Throwable.class);
+        verify(wrapper, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .setErrorConnectionStatus(pollError.capture(), isNull());
+        assertThat(pollError.getValue().getMessage())
+                .contains(
+                        "host=127.0.0.1",
+                        "port=" + port,
+                        "cause=" + connectFailure.getValue().getMessage());
+    }
+
+    /// Through the sampler, an adapter with an error limit of 1 survives a connection the device closes while it keeps
+    /// listening: the poll after the drop waits for the client's first reconnect instead of failing at once, and
+    /// data flows again on the new connection.
+    @Test
+    void aDroppedConnectionIsReconnectedBeforeAnErrorLimitOfOneStopsTheAdapter() throws Exception {
+        final List<Channel> connections = new CopyOnWriteArrayList<>();
+        device = startDevice(port, connections);
+        final TagManager tagManager = mock(TagManager.class);
+        final ProtocolAdapterWrapper wrapper = startPolling(startAdapter(1), tagManager);
+        verify(tagManager, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .feed(anyList());
+        assertThat(connections).hasSize(1);
+
+        assertThat(connections.getFirst().close().await(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
+                .isTrue();
+
+        verify(wrapper, after(FIRST_RECONNECT_WINDOW.toMillis()).never()).stopAsync(anyBoolean());
+        assertThat(connections).hasSize(2);
+        clearInvocations(tagManager);
+        verify(tagManager, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .feed(anyList());
+    }
+
     /// Builds the adapter with the given polling-error limit, starts it with nothing listening on its port, and
     /// checks that the start succeeds.
     private @NotNull ModbusProtocolAdapter startWithTheDeviceOff(final int maxPollingErrorsBeforeRemoval) {
+        return startAdapter(maxPollingErrorsBeforeRemoval);
+    }
+
+    /// Builds the adapter with the given polling-error limit, starts it, and checks that the start succeeds.
+    private @NotNull ModbusProtocolAdapter startAdapter(final int maxPollingErrorsBeforeRemoval) {
         final ModbusTag tag = new ModbusTag(
                 "coil", null, new ModbusTagDefinition(COIL_ADDRESS, ModbusAdu.COILS, UNIT_ID, false, null));
         final ModbusSpecificAdapterConfig config = new ModbusSpecificAdapterConfig(
@@ -279,12 +332,20 @@ class ModbusProtocolAdapterOfflineStartTest {
     }
 
     private static @NotNull ModbusTcpServer startDevice(final int port) throws Exception {
+        return startDevice(port, new CopyOnWriteArrayList<>());
+    }
+
+    /// Starts the device on the port; every connection it accepts is added to `connections`, so a test can close one
+    /// while the device keeps listening.
+    private static @NotNull ModbusTcpServer startDevice(final int port, final @NotNull List<Channel> connections)
+            throws Exception {
         final ProcessImage image = new ProcessImage();
         image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, true)));
         final ModbusTcpServer server = ModbusTcpServer.create(
                 NettyTcpServerTransport.create(cfg -> {
                     cfg.bindAddress = "127.0.0.1";
                     cfg.port = port;
+                    cfg.pipelineCustomizer = pipeline -> connections.add(pipeline.channel());
                 }),
                 new ReadWriteModbusServices() {
                     @Override
