@@ -1,0 +1,359 @@
+/*
+ * Copyright 2023-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.edge.adapters.modbus;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.digitalpetri.modbus.server.ModbusTcpServer;
+import com.digitalpetri.modbus.server.ProcessImage;
+import com.digitalpetri.modbus.server.ReadWriteModbusServices;
+import com.digitalpetri.modbus.tcp.server.NettyTcpServerTransport;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
+import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
+import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
+import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
+import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.modules.adapters.impl.polling.PollingTask;
+import com.hivemq.protocols.ProtocolAdapterWrapper;
+import com.hivemq.protocols.northbound.PerAdapterSampler;
+import com.hivemq.util.NanoTimeProvider;
+import io.netty.channel.Channel;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+/// A Modbus device that is off when the adapter starts must not leave the adapter in ERROR for good: the start
+/// succeeds, polls fail at once while the device is away and count as polling errors like an outage does, data flows
+/// once the device is reachable with no restart, and a stop ends the client's reconnect attempts. A connection that
+/// drops after it was established gets the client's first reconnect attempt before a poll fails for it.
+class ModbusProtocolAdapterOfflineStartTest {
+
+    private static final @NotNull String ADAPTER_ID = "modbus-offline-start";
+    private static final int UNIT_ID = 1;
+    private static final int COIL_ADDRESS = 0;
+    private static final int UNLIMITED_POLLING_ERRORS = -1;
+    // The module's minimum; a refused loopback connect fails at once, well inside POLL_WAIT_SECONDS.
+    private static final int CONNECT_TIMEOUT_MILLIS = 1_000;
+    // Polls every 100 ms, so a test runs through many polls in a few seconds.
+    private static final int POLLING_INTERVAL_MILLIS = 100;
+    // Production's watchdog settings with the polling backoff capped at 200 ms instead of 10 minutes, so failed
+    // polls follow each other quickly.
+    private static final @NotNull PollingTask.Settings FAST_BACKOFF = new PollingTask.Settings(
+            PollingTask.Settings.DEFAULTS.watchdogTimeoutMillis(),
+            PollingTask.Settings.DEFAULTS.watchdogErrorsBeforeStop(),
+            200);
+    // The client's reconnect delay doubles from 1 s; 60 s covers several attempts after the device comes up.
+    private static final @NotNull Duration RECONNECT_WAIT = Duration.ofSeconds(60);
+    // A client still reconnecting tries again within 1 s and then 2 s; 5 s of silence shows that it stopped.
+    private static final @NotNull Duration QUIET_WINDOW = Duration.ofSeconds(5);
+    // A single poll against a local device answers in milliseconds; 10 s only bounds a hung read.
+    private static final long POLL_WAIT_SECONDS = 10;
+    // The client's first reconnect after a drop comes 1 s after it; 3 s covers it and the poll that follows, and is
+    // long enough for an adapter that fails its polls at once to pass a limit of 1 at a 100 ms interval.
+    private static final @NotNull Duration FIRST_RECONNECT_WINDOW = Duration.ofSeconds(3);
+
+    private final @NotNull ProtocolAdapterState state = mock(ProtocolAdapterState.class);
+    private int port;
+    private @Nullable ModbusProtocolAdapter adapter;
+    private @Nullable ModbusTcpServer device;
+    private @Nullable ScheduledExecutorService pollingExecutor;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        // A port that was free a moment ago; nothing listens on it until the test switches the device on.
+        try (final ServerSocket socket = new ServerSocket(0)) {
+            port = socket.getLocalPort();
+        }
+        adapter = null;
+        device = null;
+        pollingExecutor = null;
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (pollingExecutor != null) {
+            pollingExecutor.shutdownNow();
+        }
+        if (adapter != null) {
+            adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        }
+        if (device != null) {
+            device.stop();
+        }
+    }
+
+    /// Start with the device off, then switch it on: the adapter publishes the coil's value without a restart.
+    @Test
+    void startsWithTheDeviceOffAndPublishesOnceItIsOn() throws Exception {
+        final ModbusProtocolAdapter offline = startWithTheDeviceOff(UNLIMITED_POLLING_ERRORS);
+
+        // While the device is off, a poll fails at once instead of waiting for the sampler's timeout.
+        final BatchPollingOutput offlineOutput = mock(BatchPollingOutput.class);
+        offline.poll(mock(BatchPollingInput.class), offlineOutput);
+        verify(offlineOutput).fail(anyString());
+        final ArgumentCaptor<Throwable> cause = ArgumentCaptor.forClass(Throwable.class);
+        verify(state).setErrorConnectionStatus(cause.capture(), isNull());
+        assertThat(cause.getValue()).isInstanceOf(ConnectException.class);
+
+        device = startDevice(port);
+
+        await().atMost(RECONNECT_WAIT).pollInterval(Duration.ofMillis(500)).until(() -> pollPublishesTrue(offline));
+    }
+
+    /// A stop after a start without a connection disconnects the client: no reconnect reaches the device afterwards.
+    @Test
+    void stopAfterAStartWithTheDeviceOffEndsTheReconnectAttempts() throws Exception {
+        final ModbusProtocolAdapter offline = startWithTheDeviceOff(UNLIMITED_POLLING_ERRORS);
+        final ProtocolAdapterStopOutput stopOutput = mock(ProtocolAdapterStopOutput.class);
+
+        offline.stop(mock(ProtocolAdapterStopInput.class), stopOutput);
+        verify(stopOutput).stoppedSuccessfully();
+
+        try (final ServerSocket listener = new ServerSocket(port, 1, InetAddress.getByName("127.0.0.1"))) {
+            listener.setSoTimeout((int) QUIET_WINDOW.toMillis());
+            assertThatThrownBy(listener::accept).isInstanceOf(SocketTimeoutException.class);
+        }
+    }
+
+    /// Through the sampler, polls while the device is off count as polling errors: an adapter with a limit is stopped
+    /// once the limit is passed, as it is for an outage while running.
+    @Test
+    void anAdapterWithAnErrorLimitIsStoppedOnceTheDeviceStaysOffPastIt() {
+        final int limit = 3;
+        final ProtocolAdapterWrapper wrapper = startPolling(startWithTheDeviceOff(limit));
+
+        verify(wrapper, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS))).stopAsync(false);
+        verify(wrapper, atLeast(limit + 1)).setErrorConnectionStatus(any(), isNull());
+    }
+
+    /// Through the sampler, an adapter without an error limit keeps polling past the default limit of 10 errors
+    /// while the device is off, and publishes once the device is on, with no restart.
+    @Test
+    void anAdapterWithoutAnErrorLimitKeepsPollingAndPublishesOnceTheDeviceIsOn() throws Exception {
+        final TagManager tagManager = mock(TagManager.class);
+        final ProtocolAdapterWrapper wrapper =
+                startPolling(startWithTheDeviceOff(UNLIMITED_POLLING_ERRORS), tagManager);
+
+        verify(wrapper, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)).atLeast(12))
+                .setErrorConnectionStatus(any(), isNull());
+
+        device = startDevice(port);
+
+        verify(tagManager, timeout(RECONNECT_WAIT.toMillis())).feed(anyList());
+        verify(wrapper, after(POLLING_INTERVAL_MILLIS).never()).stopAsync(anyBoolean());
+    }
+
+    /// Through the sampler, the error of a poll while the device is off carries the connect failure next to the
+    /// device's address, so the status tells a refusal from a timeout or an unknown host.
+    @Test
+    void aPollWhileTheDeviceIsOffReportsTheConnectFailure() {
+        final ProtocolAdapterWrapper wrapper = startPolling(startWithTheDeviceOff(UNLIMITED_POLLING_ERRORS));
+        final ArgumentCaptor<Throwable> connectFailure = ArgumentCaptor.forClass(Throwable.class);
+        verify(state).setErrorConnectionStatus(connectFailure.capture(), isNull());
+
+        final ArgumentCaptor<Throwable> pollError = ArgumentCaptor.forClass(Throwable.class);
+        verify(wrapper, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .setErrorConnectionStatus(pollError.capture(), isNull());
+        assertThat(pollError.getValue().getMessage())
+                .contains(
+                        "host=127.0.0.1",
+                        "port=" + port,
+                        "cause=" + connectFailure.getValue().getMessage());
+    }
+
+    /// Through the sampler, an adapter with an error limit of 1 survives a connection the device closes while it keeps
+    /// listening: the poll after the drop waits for the client's first reconnect instead of failing at once, and
+    /// data flows again on the new connection.
+    @Test
+    void aDroppedConnectionIsReconnectedBeforeAnErrorLimitOfOneStopsTheAdapter() throws Exception {
+        final List<Channel> connections = new CopyOnWriteArrayList<>();
+        device = startDevice(port, connections);
+        final TagManager tagManager = mock(TagManager.class);
+        final ProtocolAdapterWrapper wrapper = startPolling(startAdapter(1), tagManager);
+        verify(tagManager, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .feed(anyList());
+        assertThat(connections).hasSize(1);
+
+        assertThat(connections.getFirst().close().await(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
+                .isTrue();
+
+        verify(wrapper, after(FIRST_RECONNECT_WINDOW.toMillis()).never()).stopAsync(anyBoolean());
+        assertThat(connections).hasSize(2);
+        clearInvocations(tagManager);
+        verify(tagManager, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .feed(anyList());
+    }
+
+    /// Builds the adapter with the given polling-error limit, starts it with nothing listening on its port, and
+    /// checks that the start succeeds.
+    private @NotNull ModbusProtocolAdapter startWithTheDeviceOff(final int maxPollingErrorsBeforeRemoval) {
+        return startAdapter(maxPollingErrorsBeforeRemoval);
+    }
+
+    /// Builds the adapter with the given polling-error limit, starts it, and checks that the start succeeds.
+    private @NotNull ModbusProtocolAdapter startAdapter(final int maxPollingErrorsBeforeRemoval) {
+        final ModbusTag tag = new ModbusTag(
+                "coil", null, new ModbusTagDefinition(COIL_ADDRESS, ModbusAdu.COILS, UNIT_ID, false, null));
+        final ModbusSpecificAdapterConfig config = new ModbusSpecificAdapterConfig(
+                port,
+                "127.0.0.1",
+                CONNECT_TIMEOUT_MILLIS,
+                new ModbusToMqttConfig(POLLING_INTERVAL_MILLIS, maxPollingErrorsBeforeRemoval, false));
+        @SuppressWarnings("unchecked")
+        final ProtocolAdapterInput<ModbusSpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
+        when(input.getAdapterId()).thenReturn(ADAPTER_ID);
+        when(input.getConfig()).thenReturn(config);
+        when(input.getProtocolAdapterState()).thenReturn(state);
+        when(input.getTags()).thenReturn(List.of(tag));
+        final ModbusProtocolAdapter started = new ModbusProtocolAdapter(mock(ProtocolAdapterInformation.class), input);
+        adapter = started;
+
+        final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
+        started.start(mock(ProtocolAdapterStartInput.class), startOutput);
+        verify(startOutput, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .startedSuccessfully();
+        verify(startOutput, never()).failStart(any(), any());
+        return started;
+    }
+
+    private @NotNull ProtocolAdapterWrapper startPolling(final @NotNull ModbusProtocolAdapter started) {
+        return startPolling(started, mock(TagManager.class));
+    }
+
+    /// Polls the adapter the way Edge does, through its sampler and a polling task, and returns the mocked wrapper the
+    /// sampler reports to.
+    private @NotNull ProtocolAdapterWrapper startPolling(
+            final @NotNull ModbusProtocolAdapter started, final @NotNull TagManager tagManager) {
+        final ProtocolAdapterInformation information = mock(ProtocolAdapterInformation.class);
+        when(information.getProtocolId()).thenReturn("modbus");
+        final ProtocolAdapterWrapper wrapper = mock(ProtocolAdapterWrapper.class);
+        when(wrapper.getId()).thenReturn(ADAPTER_ID);
+        when(wrapper.getAdapter()).thenReturn(started);
+        when(wrapper.getProtocolAdapterInformation()).thenReturn(information);
+        final EventService eventService = mock(EventService.class, RETURNS_DEEP_STUBS);
+        final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
+                runnable -> new Thread(runnable, "modbus-offline-start-test-polling"));
+        pollingExecutor = executor;
+        // The provider's constructor is package-private (it is injected); the mock answers the real clock.
+        final NanoTimeProvider clock = mock(NanoTimeProvider.class);
+        when(clock.nanoTime()).thenAnswer(_ -> System.nanoTime());
+        final PollingTask task = new PollingTask(
+                new PerAdapterSampler(wrapper, eventService, tagManager), executor, eventService, clock, FAST_BACKOFF);
+        executor.execute(task);
+        return wrapper;
+    }
+
+    /// Polls once and answers whether that poll published `true` for the coil; a failed poll answers `false`.
+    private static boolean pollPublishesTrue(final @NotNull ModbusProtocolAdapter started) throws Exception {
+        final CompletableFuture<Boolean> published = new CompletableFuture<>();
+        final CompletableFuture<Boolean> value = new CompletableFuture<>();
+        @SuppressWarnings("unchecked")
+        final DataPointBuilder<DataPointListBuilder> point = mock(DataPointBuilder.class);
+        doAnswer(invocation -> {
+                    value.complete(invocation.getArgument(0));
+                    return point;
+                })
+                .when(point)
+                .value(anyBoolean());
+        final DataPointListBuilder list = mock(DataPointListBuilder.class);
+        when(list.addDataPoint(any())).thenReturn(point);
+        doAnswer(_ -> published.complete(true)).when(list).publish();
+        final BatchPollingOutput output = mock(BatchPollingOutput.class);
+        when(output.dataPointListPublisher()).thenReturn(list);
+        doAnswer(_ -> published.complete(false)).when(output).fail(anyString());
+        doAnswer(_ -> published.complete(false)).when(output).fail(any(), any());
+
+        started.poll(mock(BatchPollingInput.class), output);
+
+        if (!published.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS)) {
+            return false;
+        }
+        assertThat(value.getNow(false)).isTrue();
+        return true;
+    }
+
+    private static @NotNull ModbusTcpServer startDevice(final int port) throws Exception {
+        return startDevice(port, new CopyOnWriteArrayList<>());
+    }
+
+    /// Starts the device on the port; every connection it accepts is added to `connections`, so a test can close one
+    /// while the device keeps listening.
+    private static @NotNull ModbusTcpServer startDevice(final int port, final @NotNull List<Channel> connections)
+            throws Exception {
+        final ProcessImage image = new ProcessImage();
+        image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, true)));
+        final ModbusTcpServer server = ModbusTcpServer.create(
+                NettyTcpServerTransport.create(cfg -> {
+                    cfg.bindAddress = "127.0.0.1";
+                    cfg.port = port;
+                    cfg.pipelineCustomizer = pipeline -> connections.add(pipeline.channel());
+                }),
+                new ReadWriteModbusServices() {
+                    @Override
+                    protected Optional<ProcessImage> getProcessImage(final int unitId) {
+                        return Optional.of(image);
+                    }
+                });
+        server.start();
+        return server;
+    }
+}

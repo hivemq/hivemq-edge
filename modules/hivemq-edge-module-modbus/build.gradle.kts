@@ -42,6 +42,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.assertj)
+    testImplementation(libs.awaitility)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.guava)
     testImplementation("com.hivemq:hivemq-edge")

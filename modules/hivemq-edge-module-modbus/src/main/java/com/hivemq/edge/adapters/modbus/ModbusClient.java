@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
+import com.digitalpetri.modbus.Modbus;
 import com.digitalpetri.modbus.client.ModbusTcpClient;
 import com.digitalpetri.modbus.pdu.ReadCoilsRequest;
 import com.digitalpetri.modbus.pdu.ReadDiscreteInputsRequest;
@@ -23,6 +24,8 @@ import com.digitalpetri.modbus.pdu.ReadInputRegistersRequest;
 import com.digitalpetri.modbus.tcp.Netty;
 import com.digitalpetri.modbus.tcp.client.NettyTcpClientTransport;
 import com.digitalpetri.modbus.tcp.client.NettyTimeoutScheduler;
+import com.digitalpetri.netty.fsm.Event;
+import com.digitalpetri.netty.fsm.State;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
@@ -30,7 +33,9 @@ import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 class ModbusClient {
 
@@ -38,15 +43,22 @@ class ModbusClient {
     private static final int DEFAULT_MAX_DISCRETE_INPUTS = 2000;
 
     private final @NotNull ModbusTcpClient client;
+    // Written by the client's state machine on each failed connect attempt and cleared when a connect succeeds; read
+    // by the polling thread.
+    private final @NotNull AtomicReference<Throwable> lastConnectFailure = new AtomicReference<>();
+    // Set by the client's state machine when an established connection drops, taken by it when the first reconnect
+    // attempt after the drop ends or the client disconnects; read by the polling thread.
+    private final @NotNull AtomicReference<CompletableFuture<Void>> reconnectAfterDrop = new AtomicReference<>();
 
     ModbusClient(final @NotNull ModbusSpecificAdapterConfig adapterConfig) {
+        final NettyTcpClientTransport transport = NettyTcpClientTransport.create(cfg -> {
+            cfg.hostname = adapterConfig.getHost();
+            cfg.port = adapterConfig.getPort();
+            cfg.connectTimeout = Duration.ofMillis(adapterConfig.getTimeoutMillis());
+        });
+        transport.getChannelFsm().addTransitionListener(this::onStateTransition);
         client = ModbusTcpClient.create(
-                NettyTcpClientTransport.create(cfg -> {
-                    cfg.hostname = adapterConfig.getHost();
-                    cfg.port = adapterConfig.getPort();
-                    cfg.connectTimeout = Duration.ofMillis(adapterConfig.getTimeoutMillis());
-                }),
-                cfg -> cfg.timeoutScheduler = new NettyTimeoutScheduler(Netty.sharedWheelTimer()));
+                transport, cfg -> cfg.timeoutScheduler = new NettyTimeoutScheduler(Netty.sharedWheelTimer()));
     }
 
     @NotNull
@@ -63,6 +75,25 @@ class ModbusClient {
 
     boolean isConnected() {
         return client.isConnected();
+    }
+
+    /**
+     * The cause of the last failed connect attempt, or {@code null} once a connect succeeded or before the first
+     * attempt ended.
+     */
+    @Nullable
+    Throwable lastConnectFailure() {
+        return lastConnectFailure.get();
+    }
+
+    /**
+     * Completes when the first reconnect attempt after a dropped connection succeeds, and exceptionally with its cause
+     * when it fails or the client disconnects; {@code null} when no established connection dropped since that
+     * attempt, as for a device that was never reached.
+     */
+    @Nullable
+    CompletableFuture<Void> reconnectAfterDrop() {
+        return reconnectAfterDrop.get();
     }
 
     @NotNull
@@ -136,5 +167,32 @@ class ModbusClient {
                         new ReadInputRegistersRequest(
                                 startIdx, Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)))
                 .thenApply(response -> dataType.convert(response.registers(), flipRegisters));
+    }
+
+    /**
+     * Runs on the state machine's thread while it holds its lock, so a waiting poll resumes on the client's shared
+     * executor instead of inside the transition.
+     */
+    private void onStateTransition(final @NotNull State from, final @NotNull State to, final @NotNull Event via) {
+        if (via instanceof final Event.ConnectFailure failure) {
+            lastConnectFailure.set(failure.failure);
+        }
+        if (to == State.Connected) {
+            lastConnectFailure.set(null);
+            final CompletableFuture<Void> reconnect = reconnectAfterDrop.getAndSet(null);
+            if (reconnect != null) {
+                Modbus.sharedExecutor().execute(() -> reconnect.complete(null));
+            }
+        } else if (from == State.Connected && to == State.ReconnectWait) {
+            reconnectAfterDrop.set(new CompletableFuture<>());
+        } else if ((from == State.Reconnecting && to == State.ReconnectWait) || to == State.NotConnected) {
+            final CompletableFuture<Void> reconnect = reconnectAfterDrop.getAndSet(null);
+            if (reconnect != null) {
+                final Throwable cause = via instanceof final Event.ConnectFailure failure
+                        ? failure.failure
+                        : new IllegalStateException("Modbus client disconnected");
+                Modbus.sharedExecutor().execute(() -> reconnect.completeExceptionally(cause));
+            }
+        }
     }
 }
