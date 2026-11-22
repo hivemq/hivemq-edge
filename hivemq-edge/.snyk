@@ -10,6 +10,15 @@
 # The analysis lives in the Linear issue named above the entry; the reason
 # below is the one recorded in Snyk. No entry expires.
 #
+# Fields of each entry:
+# - reasonType: the Snyk ignore type (not-vulnerable, wont-fix or
+#   temporary-ignore).
+# - disregardIfFixable: true, so the finding shows again as soon as Snyk sees
+#   an upgrade that fixes it, and the dependency gets updated.
+# - ignoredBy: whoever most recently vouched for the entry. Whoever checks an
+#   entry again updates it; git history keeps the earlier names.
+# - created: when the ignore first came into being; it does not change.
+#
 # Migrated from the Snyk web UI ignores on hivemq-edge:build.gradle.kts [master]
 # on 2026-11-21 (EDG-1367).
 version: v1.25.0
@@ -27,6 +36,11 @@ ignore:
           external entity is resolved. No REST endpoint accepts XML. Milo's
           legacy XML type-dictionary reader (LegacyDataTypeManagerInitializer)
           is not enabled. Checked 352e01605, 2026-11-19, Martin Schönert.
+        reasonType: not-vulnerable
+        disregardIfFixable: true
+        ignoredBy:
+          name: Martin Schönert
+          email: martin.schoenert@hivemq.com
         created: 2026-11-19T14:44:00.212Z
   # EDG-1282: jakarta.validation-api 3.1.0, no CVE.
   SNYK-JAVA-JAKARTAVALIDATION-20936881:
@@ -36,5 +50,10 @@ ignore:
           no longer supports (JEP 486). Edge-1 targets Java 25 and runs only on
           JDK 25+. Jakarta Validation is a transitive dependency of
           jersey-server, and Edge doesn't call it.
+        reasonType: not-vulnerable
+        disregardIfFixable: true
+        ignoredBy:
+          name: Martin Schönert
+          email: martin.schoenert@hivemq.com
         created: 2026-11-19T18:25:23.281Z
 patch: {}

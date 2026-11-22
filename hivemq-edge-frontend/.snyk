@@ -11,6 +11,15 @@
 # is fixed. The analysis lives in the Linear issue named above the entry; the
 # reason below is the one recorded in Snyk. No entry expires.
 #
+# Fields of each entry:
+# - reasonType: the Snyk ignore type (not-vulnerable, wont-fix or
+#   temporary-ignore).
+# - disregardIfFixable: true, so the finding shows again as soon as Snyk sees
+#   an upgrade that fixes it, and the dependency gets updated.
+# - ignoredBy: whoever most recently vouched for the entry. Whoever checks an
+#   entry again updates it; git history keeps the earlier names.
+# - created: when the ignore first came into being; it does not change.
+#
 # Migrated from the Snyk web UI ignores on hivemq-edge-frontend [master] on
 # 2026-11-21 (EDG-1367).
 version: v1.25.0
@@ -26,6 +35,11 @@ ignore:
           authoritative source for SheetJS modules. See this issue
           (https://github.com/SheetJS/sheetjs/issues/2667) for full details."
           See https://hivemq.kanbanize.com/ctrl_board/57/cards/37873/details/
+        reasonType: not-vulnerable
+        disregardIfFixable: true
+        ignoredBy:
+          name: Martin Schönert
+          email: martin.schoenert@hivemq.com
         created: 2025-11-13T09:26:26.441Z
   # EDG-1290: xlsx prototype pollution (CVE-2023-30533). Fixed in SheetJS
   # 0.19.3; same situation as above.
@@ -37,5 +51,10 @@ ignore:
           source for SheetJS modules. See this issue
           (https://github.com/SheetJS/sheetjs/issues/2667) for full details."
           See https://hivemq.kanbanize.com/ctrl_board/57/cards/37873/details/
+        reasonType: not-vulnerable
+        disregardIfFixable: true
+        ignoredBy:
+          name: Martin Schönert
+          email: martin.schoenert@hivemq.com
         created: 2025-11-13T09:27:13.578Z
 patch: {}
