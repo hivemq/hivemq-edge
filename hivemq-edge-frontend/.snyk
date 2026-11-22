@@ -1,8 +1,9 @@
 # Snyk policy for the Edge-1 frontend (Snyk project hivemq-edge-frontend).
 #
-# snyk monitor and snyk test read this file from the directory they scan
-# (-d hivemq-edge/hivemq-edge-frontend in snyk-push.yml and snyk-release.yml),
-# so every build project and every release project gets these ignores with its
+# snyk monitor and snyk test read this file from the directory of the lockfile
+# they scan (the path argument hivemq-edge/hivemq-edge-frontend in
+# snyk-push.yml and snyk-release.yml; the -d before it is the debug flag), so
+# every build project and every release project gets these ignores with its
 # snapshot. An ignore set only in the Snyk web UI stays on the one project it
 # was set on.
 #

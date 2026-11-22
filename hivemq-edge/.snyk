@@ -1,8 +1,9 @@
 # Snyk policy for the Edge-1 backend (Snyk project hivemq-edge:build.gradle.kts).
 #
-# snyk monitor and snyk test read this file from the directory they scan
-# (-d hivemq-edge/hivemq-edge in snyk-push.yml and snyk-release.yml), so every
-# build project and every release project gets these ignores with its snapshot.
+# snyk monitor and snyk test read this file from the directory of the build
+# file they scan (the path argument hivemq-edge/hivemq-edge in snyk-push.yml
+# and snyk-release.yml; the -d before it is the debug flag), so every build
+# project and every release project gets these ignores with its snapshot.
 # An ignore set only in the Snyk web UI stays on the one project it was set on.
 #
 # Each entry ignores a finding that no upgrade fixes and that Edge cannot reach.
