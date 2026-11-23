@@ -1,0 +1,60 @@
+# Snyk policy for the Edge-1 frontend (Snyk project hivemq-edge-frontend).
+#
+# snyk monitor and snyk test read this file from the directory of the lockfile
+# they scan (the path argument hivemq-edge/hivemq-edge-frontend in
+# snyk-push.yml and snyk-release.yml; the -d before it is the debug flag), so
+# every build project and every release project gets these ignores with its
+# snapshot. An ignore set only in the Snyk web UI stays on the one project it
+# was set on.
+#
+# Each entry ignores a finding that Snyk reports although the installed version
+# is fixed. The analysis lives in the Linear issue named above the entry; the
+# reason below is the one recorded in Snyk. No entry expires.
+#
+# Fields of each entry:
+# - reasonType: the Snyk ignore type (not-vulnerable, wont-fix or
+#   temporary-ignore).
+# - disregardIfFixable: true, so the finding shows again as soon as Snyk sees
+#   an upgrade that fixes it, and the dependency gets updated.
+# - ignoredBy: whoever most recently vouched for the entry. Whoever checks an
+#   entry again updates it; git history keeps the earlier names.
+# - created: when the ignore first came into being; it does not change.
+#
+# Migrated from the Snyk web UI ignores on hivemq-edge-frontend [master] on
+# 2026-11-21 (EDG-1367).
+version: v1.25.0
+ignore:
+  # EDG-1290: xlsx ReDoS (CVE-2024-22363). Fixed in SheetJS 0.20.2; Edge
+  # installs xlsx 0.20.3 from cdn.sheetjs.com, but npm's xlsx stops at 0.18.5,
+  # so Snyk still flags it.
+  SNYK-JS-XLSX-6252523:
+    - '*':
+        reason: >-
+          From the Snyk description itself: "This vulnerability was fixed in
+          version 0.20.2 of SheetJS that is distributed only via the
+          authoritative source for SheetJS modules. See this issue
+          (https://github.com/SheetJS/sheetjs/issues/2667) for full details."
+          See https://hivemq.kanbanize.com/ctrl_board/57/cards/37873/details/
+        reasonType: not-vulnerable
+        disregardIfFixable: true
+        ignoredBy:
+          name: Martin Schönert
+          email: martin.schoenert@hivemq.com
+        created: 2025-11-13T09:26:26.441Z
+  # EDG-1290: xlsx prototype pollution (CVE-2023-30533). Fixed in SheetJS
+  # 0.19.3; same situation as above.
+  SNYK-JS-XLSX-5457926:
+    - '*':
+        reason: >-
+          From the Snyk description itself: "The issue is resolved in version
+          0.19.3 of SheetJS that is distributed only via the authoritative
+          source for SheetJS modules. See this issue
+          (https://github.com/SheetJS/sheetjs/issues/2667) for full details."
+          See https://hivemq.kanbanize.com/ctrl_board/57/cards/37873/details/
+        reasonType: not-vulnerable
+        disregardIfFixable: true
+        ignoredBy:
+          name: Martin Schönert
+          email: martin.schoenert@hivemq.com
+        created: 2025-11-13T09:27:13.578Z
+patch: {}
