@@ -53,8 +53,9 @@ class ModbusClientReconnectTest {
     // The client's first reconnect comes 1 s after a drop and a loopback connect answers at once; 10 s only bounds a
     // hung attempt.
     private static final long WAIT_SECONDS = 10;
-    // The wait is published when the client sees the drop, a few milliseconds after the device closes the connection.
-    private static final @NotNull Duration DROP_SEEN_WITHIN = Duration.ofSeconds(5);
+    // The device records an accepted connection, and the client publishes the wait when it sees the drop, a few
+    // milliseconds after the event; 5 s only bounds a hang.
+    private static final @NotNull Duration SEEN_WITHIN = Duration.ofSeconds(5);
 
     private final @NotNull List<Channel> connections = new CopyOnWriteArrayList<>();
     private int port;
@@ -133,15 +134,31 @@ class ModbusClientReconnectTest {
         assertThat(connected.reconnectAfterDrop()).isNull();
     }
 
-    /// Closes the device's side of the one connection the client holds; the device keeps listening.
+    /// A read after the client disconnected fails instead of answering `null`, so a poll that reads several tags fails
+    /// as a whole and records none of their values as published.
+    @Test
+    void aReadWhileNotConnectedFails() throws Exception {
+        final ModbusClient connected = Objects.requireNonNull(client);
+        connected.disconnect().toCompletableFuture().get(WAIT_SECONDS, TimeUnit.SECONDS);
+        client = null;
+
+        assertThatThrownBy(() -> connected.readCoils(0, 1).toCompletableFuture().get(WAIT_SECONDS, TimeUnit.SECONDS))
+                .isInstanceOf(ExecutionException.class)
+                .hasCauseInstanceOf(IllegalStateException.class);
+    }
+
+    /// Closes the device's side of the one connection the client holds; the device keeps listening. The client's
+    /// connect can complete before the device's pipeline callback records the accepted channel, so the channel is
+    /// awaited first.
     private void dropTheConnection() throws InterruptedException {
+        await().atMost(SEEN_WITHIN).until(() -> connections.size() == 1);
         assertThat(connections).hasSize(1);
         assertThat(connections.getFirst().close().await(WAIT_SECONDS, TimeUnit.SECONDS))
                 .isTrue();
     }
 
     private static @NotNull CompletableFuture<Void> awaitTheWait(final @NotNull ModbusClient connected) {
-        return await().atMost(DROP_SEEN_WITHIN).until(connected::reconnectAfterDrop, Objects::nonNull);
+        return await().atMost(SEEN_WITHIN).until(connected::reconnectAfterDrop, Objects::nonNull);
     }
 
     /// Starts a device on the port that answers every unit; every connection it accepts is added to `connections`.

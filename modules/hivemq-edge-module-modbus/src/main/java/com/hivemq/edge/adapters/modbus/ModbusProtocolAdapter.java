@@ -203,12 +203,11 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                         pollingOutput.fail(notConnectedMessage(throwable));
                         return;
                     }
-                    try {
-                        readTags(pollingOutput);
-                    } catch (final RuntimeException e) {
-                        // The poll's caller catches what a direct read throws; here no caller would.
-                        pollingOutput.fail(e, "Unable to read tags from modbus");
-                    }
+                    // The poll ends without data and the next poll reads on the new connection. The reconnect can end
+                    // after the sampler has timed this poll out, and the adapter cannot tell: a read here would then
+                    // record its values as published in the change cache while no consumer received them, and with
+                    // publishChangedDataOnly the next poll would suppress them as unchanged.
+                    pollingOutput.dataPointListPublisher().publish();
                 });
                 return;
             }

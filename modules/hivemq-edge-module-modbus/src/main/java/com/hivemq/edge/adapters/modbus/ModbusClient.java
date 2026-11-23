@@ -114,7 +114,7 @@ class ModbusClient {
     @NotNull
     CompletionStage<Object> readCoils(final int startIdx, final int unitId) {
         if (!client.isConnected()) {
-            return CompletableFuture.completedFuture(null);
+            return notConnected();
         }
 
         return client.readCoilsAsync(unitId, new ReadCoilsRequest(startIdx, Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)))
@@ -127,7 +127,7 @@ class ModbusClient {
     @NotNull
     CompletionStage<Object> readDiscreteInput(final int startIdx, final int unitId) {
         if (!client.isConnected()) {
-            return CompletableFuture.completedFuture(null);
+            return notConnected();
         }
 
         return client.readDiscreteInputsAsync(
@@ -142,7 +142,7 @@ class ModbusClient {
     CompletionStage<Object> readHoldingRegisters(
             final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
         if (!client.isConnected()) {
-            return CompletableFuture.completedFuture(null);
+            return notConnected();
         }
 
         return client.readHoldingRegistersAsync(
@@ -159,7 +159,7 @@ class ModbusClient {
     CompletionStage<Object> readInputRegisters(
             final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
         if (!client.isConnected()) {
-            return CompletableFuture.completedFuture(null);
+            return notConnected();
         }
 
         return client.readInputRegistersAsync(
@@ -167,6 +167,14 @@ class ModbusClient {
                         new ReadInputRegistersRequest(
                                 startIdx, Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)))
                 .thenApply(response -> dataType.convert(response.registers(), flipRegisters));
+    }
+
+    /**
+     * A read on a connection that is gone fails, so the poll fails as a whole before any of its values reaches the
+     * change cache; an answer of {@code null} would let the other tags of the same poll record values never published.
+     */
+    private static @NotNull CompletionStage<Object> notConnected() {
+        return CompletableFuture.failedFuture(new IllegalStateException("The Modbus client is not connected"));
     }
 
     /**
