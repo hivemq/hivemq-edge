@@ -80,6 +80,9 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull AtomicBoolean stopRequested;
     private final @NotNull AtomicBoolean startRequested;
     private final long samplerTimeoutNanos;
+    // A poll that waited on the reconnect reads only this soon after poll(): its read is answered or fails before the
+    // sampler times the poll out, so a value the device clears on read is not read into a poll nobody takes.
+    private final long lateReadDeadlineNanos;
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -96,6 +99,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             final @NotNull ProtocolAdapterInput<ModbusSpecificAdapterConfig> input,
             final long samplerTimeoutMillis) {
         this.samplerTimeoutNanos = TimeUnit.MILLISECONDS.toNanos(samplerTimeoutMillis);
+        this.lateReadDeadlineNanos = samplerTimeoutNanos - ModbusClient.REQUEST_TIMEOUT.toNanos();
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
@@ -234,6 +238,12 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                         pollingOutput.fail(notConnectedMessage(throwable));
                         return;
                     }
+                    if (System.nanoTime() - pollStartNanos >= lateReadDeadlineNanos) {
+                        // A read now could still be under way when the sampler takes the poll's output no longer;
+                        // the next poll reads instead. No read succeeded, so this poll counts as failed.
+                        pollingOutput.fail(reconnectedTooLateMessage());
+                        return;
+                    }
                     // The read decides the poll, so polling errors keep counting until a read succeeds.
                     try {
                         readTags(pollingOutput, pollStartNanos, runChangeCache);
@@ -355,6 +365,11 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
      */
     private static void retire(final @NotNull DataPointListBuilder emptyPublisher) {
         emptyPublisher.publish();
+    }
+
+    private @NotNull String reconnectedTooLateMessage() {
+        return "The Modbus device reconnected too late to be read within this poll [host=" + adapterConfig.getHost()
+                + ", port=" + adapterConfig.getPort() + "]";
     }
 
     private @NotNull String notConnectedMessage(final @Nullable Throwable connectFailure) {

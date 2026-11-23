@@ -143,6 +143,10 @@ class ModbusProtocolAdapterOfflineStartTest {
     // The sampler timeout the adapter is told in that test: no longer than WAITING_POLL_TIMEOUT_MILLIS, as production's
     // equals the sampler's 10 s, and far above a loopback read.
     private static final long SHORT_SAMPLER_TIMEOUT_MILLIS = 500;
+    // A sampler timeout above the client's 5 s request timeout by 500 ms: a poll may read after a reconnect only within
+    // 500 ms of poll(), so the client's first reconnect, 1 s after a drop, comes too late for it, though well within
+    // the sampler's timeout.
+    private static final long LATE_READ_SAMPLER_TIMEOUT_MILLIS = 5_500;
     // A consumer that holds the publish longer than SHORT_SAMPLER_TIMEOUT_MILLIS, so the adapter cannot tell whether
     // the sampler took it.
     private static final long SLOW_CONSUMER_MILLIS = 700;
@@ -158,6 +162,8 @@ class ModbusProtocolAdapterOfflineStartTest {
     // When set, the device rejects every read with ILLEGAL_DATA_ADDRESS and then closes the connection.
     private final @NotNull AtomicBoolean rejectAndClose = new AtomicBoolean();
     private final @NotNull AtomicInteger rejections = new AtomicInteger();
+    // When set, every coil read clears the coil after answering it, as a device alarm that a read acknowledges.
+    private final @NotNull AtomicBoolean clearsOnRead = new AtomicBoolean();
     private int port;
     private @Nullable ModbusProtocolAdapter adapter;
     private @Nullable ModbusTcpServer device;
@@ -292,13 +298,15 @@ class ModbusProtocolAdapterOfflineStartTest {
 
     /// With `publishChangedDataOnly`, a coil that changes while a connection is down reaches the
     /// consumer on the first healthy poll after the poll that waited on the reconnect timed out: the
-    /// timed-out poll does not record the new value as published. The waiting poll is timed out the
-    /// sampler's way, by `orTimeout` on its output, before the client's first reconnect; the adapter
-    /// is told a sampler timeout no longer than that, as in production.
+    /// timed-out poll neither reads the coil nor records it as published. The coil clears on read,
+    /// as a device alarm does, so a read by the timed-out poll would lose it. The waiting poll is
+    /// timed out the sampler's way, by `orTimeout` on its output, before the client's first
+    /// reconnect; the adapter is told a sampler timeout no longer than that, as in production.
     @Test
     void aChangeWhileTheConnectionIsDownIsPublishedOnceTheWaitingPollTimedOut() throws Exception {
         final List<Channel> connections = new CopyOnWriteArrayList<>();
         final ProcessImage image = coilImage(false);
+        clearsOnRead.set(true);
         device = startDeviceOnAnyPort(connections, image);
         final ModbusProtocolAdapter started =
                 startAdapter(UNLIMITED_POLLING_ERRORS, true, SHORT_SAMPLER_TIMEOUT_MILLIS);
@@ -318,6 +326,29 @@ class ModbusProtocolAdapterOfflineStartTest {
         waiting.ended.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
 
         assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+    }
+
+    /// A poll whose reconnect succeeds later than the sampler's timeout less the client's request timeout fails
+    /// without reading, though the sampler would still take its output: a read then could be answered after the
+    /// sampler timed the poll out.
+    @Test
+    void aPollWhoseReconnectComesTooLateForAReadFailsWithoutReading() throws Exception {
+        final List<Channel> connections = new CopyOnWriteArrayList<>();
+        device = startDeviceOnAnyPort(connections, coilImage(true));
+        final ModbusProtocolAdapter started =
+                startAdapter(UNLIMITED_POLLING_ERRORS, false, LATE_READ_SAMPLER_TIMEOUT_MILLIS);
+        assertThat(pollPublishesTrue(started)).isTrue();
+        assertThat(connections.getFirst().close().await(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
+                .isTrue();
+        final RecordingOutput waiting =
+                await().atMost(DROP_SEEN_WITHIN).until(() -> waitingPoll(started), Objects::nonNull);
+
+        waiting.ended.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
+
+        assertThat(waiting.readStarted).isFalse();
+        assertThatThrownBy(() -> waiting.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
+                .hasMessageContaining("reconnected too late");
+        assertThat(pollPublishesTrue(started)).isTrue();
     }
 
     /// Through the sampler, polling errors keep counting across reconnects until a read succeeds: a
@@ -424,7 +455,7 @@ class ModbusProtocolAdapterOfflineStartTest {
     @Test
     void aReadInFlightAtAStopReportsNoError() throws Exception {
         final List<Socket> accepted = new CopyOnWriteArrayList<>();
-        try (final ServerSocket silent = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
+        try (final ServerSocket silent = new ServerSocket(0, 0, InetAddress.getByName("127.0.0.1"))) {
             port = silent.getLocalPort();
             Thread.ofVirtual().start(() -> acceptAndStaySilent(silent, accepted));
             final ModbusProtocolAdapter started = startAdapter(0);
@@ -663,7 +694,7 @@ class ModbusProtocolAdapterOfflineStartTest {
 
     /// Starts the device on `port`, serving `image` to every unit, and completes `bound` with the port it listens on.
     /// While `rejectAndClose` is set, it rejects every coil read with ILLEGAL_DATA_ADDRESS and then closes the
-    /// connection.
+    /// connection; while `clearsOnRead` is set, it clears the coil after each read it answers.
     private @NotNull ModbusTcpServer startDevice(
             final int port,
             final @NotNull List<Channel> connections,
@@ -695,7 +726,11 @@ class ModbusProtocolAdapterOfflineStartTest {
                             final ModbusRequestContext context, final int unitId, final ReadCoilsRequest request)
                             throws ModbusResponseException, UnknownUnitIdException {
                         if (!rejectAndClose.get()) {
-                            return super.readCoils(context, unitId, request);
+                            final ReadCoilsResponse response = super.readCoils(context, unitId, request);
+                            if (clearsOnRead.get()) {
+                                image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, false)));
+                            }
+                            return response;
                         }
                         rejections.incrementAndGet();
                         final Channel connection = connections.getLast();

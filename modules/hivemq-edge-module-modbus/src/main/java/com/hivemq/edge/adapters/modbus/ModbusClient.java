@@ -39,6 +39,9 @@ import org.jetbrains.annotations.Nullable;
 
 class ModbusClient {
 
+    // How long a read waits for the device's answer before it fails: digitalpetri's default, set here because the
+    // adapter starts a late read only while this much time is left before the sampler times the poll out.
+    static final @NotNull Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final int DEFAULT_MAX_INPUT_REGISTERS = 125;
     private static final int DEFAULT_MAX_DISCRETE_INPUTS = 2000;
 
@@ -57,8 +60,10 @@ class ModbusClient {
             cfg.connectTimeout = Duration.ofMillis(adapterConfig.getTimeoutMillis());
         });
         transport.getChannelFsm().addTransitionListener(this::onStateTransition);
-        client = ModbusTcpClient.create(
-                transport, cfg -> cfg.timeoutScheduler = new NettyTimeoutScheduler(Netty.sharedWheelTimer()));
+        client = ModbusTcpClient.create(transport, cfg -> {
+            cfg.requestTimeout = REQUEST_TIMEOUT;
+            cfg.timeoutScheduler = new NettyTimeoutScheduler(Netty.sharedWheelTimer());
+        });
     }
 
     @NotNull
