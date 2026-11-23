@@ -22,6 +22,7 @@ import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_
 import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_POLL_INTERVAL_MILLIS;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
@@ -68,9 +69,11 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull ModbusSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModbusClient client;
-    // One change cache per run: written by start(), on the lifecycle thread, before the run's first poll; read by
-    // poll() on the polling thread and by stop() on the lifecycle thread. A poll keeps the cache of the run it started
-    // in, so a poll still completing after a stop and a start cannot write into the new run's cache.
+    // One change cache per run, which also tells a poll whether its run is still on: replaced by stop() before it
+    // disconnects and by start(), both on the lifecycle thread; read by poll() on the polling thread and by the poll's
+    // reconnect and read callbacks on the client's threads. A poll keeps the cache of the run it started in, so a poll
+    // still completing after a stop cannot write into the next run's cache, and sees its run ended once the field
+    // holds another cache.
     private volatile @NotNull PublishChangedDataOnlyHandler changeCache = new PublishChangedDataOnlyHandler();
     private final @NotNull List<ModbusTag> tags;
     private final @NotNull String adapterId;
@@ -169,7 +172,9 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         if (startRequested.get() && stopRequested.compareAndSet(false, true)) {
             log.info("Stopping Modbus protocol adapter {}", adapterId);
-            changeCache.clear();
+            // Replaced before the disconnect, whose failures of a waiting reconnect or a read in flight reach polls of
+            // this run: those polls see their run ended and report nothing.
+            changeCache = new PublishChangedDataOnlyHandler();
             try {
                 client.disconnect()
                         .whenComplete((_, throwable) -> {
@@ -221,6 +226,10 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                 // bounds the wait.
                 @SuppressWarnings("unused")
                 final var unused = reconnect.whenComplete((_, throwable) -> {
+                    if (hasEnded(runChangeCache)) {
+                        retire(pollingOutput.dataPointListPublisher());
+                        return;
+                    }
                     if (throwable != null) {
                         pollingOutput.fail(notConnectedMessage(throwable));
                         return;
@@ -267,6 +276,10 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         @SuppressWarnings("unused")
         final var unused = CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
             try {
+                if (hasEnded(runChangeCache)) {
+                    retire(dataPointsPublisher);
+                    return;
+                }
                 if (throwable != null) {
                     protocolAdapterState.setConnectionStatus(ERROR);
                     pollingOutput.fail(throwable, "Unable to read tags from modbus");
@@ -322,6 +335,26 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                 pollingOutput.fail(e, "Unable to read tags from modbus");
             }
         });
+    }
+
+    /**
+     * Whether the run a poll started in has ended: {@code stop()} or {@code start()} has replaced the run's change
+     * cache since. The check is not atomic with the report that follows it: a failure found while the run was on
+     * still reaches its sampler if the stop and the next start both complete in between. Holding a lock across the
+     * report would make {@code stop()} wait on the sampler's reaction; disowning a completion after its polling
+     * task was stopped belongs to Edge's polling task.
+     */
+    private boolean hasEnded(final @NotNull PublishChangedDataOnlyHandler runChangeCache) {
+        return changeCache != runChangeCache;
+    }
+
+    /**
+     * Ends a poll of an ended run without data and without an error. A failure would reach the sampler of the ended
+     * run, which reports to the adapter the next run shares: it sets the adapter's error status and, past the
+     * polling-error limit, stops it. Nothing was read for the run, so nothing is published or recorded.
+     */
+    private static void retire(final @NotNull DataPointListBuilder emptyPublisher) {
+        emptyPublisher.publish();
     }
 
     private @NotNull String notConnectedMessage(final @Nullable Throwable connectFailure) {

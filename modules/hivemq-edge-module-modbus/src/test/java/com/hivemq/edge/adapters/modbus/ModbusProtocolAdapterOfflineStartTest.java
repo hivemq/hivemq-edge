@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
@@ -80,6 +81,7 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -389,14 +391,56 @@ class ModbusProtocolAdapterOfflineStartTest {
         started.poll(mock(BatchPollingInput.class), late);
         late.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
 
-        started.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
-        final ProtocolAdapterStartOutput restarted = mock(ProtocolAdapterStartOutput.class);
-        started.start(mock(ProtocolAdapterStartInput.class), restarted);
-        verify(restarted, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS))).startedSuccessfully();
+        restart(started);
         consumed.countDown();
         awaitTheCallbackReturned(late);
 
         assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+    }
+
+    /// A poll waiting on the reconnect when the adapter restarts retires without data: its run ended, so it
+    /// reports no polling error. The old run's sampler would otherwise count the stop's cancelled reconnect
+    /// and, past its limit of 0, stop the adapter it shares with the new run.
+    @Test
+    void aPollWaitingOnTheReconnectWhenTheAdapterRestartsReportsNoError() throws Exception {
+        final List<Channel> connections = new CopyOnWriteArrayList<>();
+        device = startDeviceOnAnyPort(connections, coilImage(true));
+        final ModbusProtocolAdapter started = startAdapter(0);
+        assertThat(pollPublishesTrue(started)).isTrue();
+        assertThat(connections.getFirst().close().await(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
+                .isTrue();
+        final RecordingOutput waiting =
+                await().atMost(DROP_SEEN_WITHIN).until(() -> waitingPoll(started), Objects::nonNull);
+
+        restart(started);
+
+        assertThat(waiting.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
+                .isEqualTo(PollingOutputImpl.PollingResult.NO_DATA);
+        assertThat(pollPublishesTrue(started)).isTrue();
+    }
+
+    /// A read still in flight at a stop retires without data and leaves the connection status alone: the device stays
+    /// silent, so the read fails after the stop, at the client's request timeout.
+    @Test
+    void aReadInFlightAtAStopReportsNoError() throws Exception {
+        final List<Socket> accepted = new CopyOnWriteArrayList<>();
+        try (final ServerSocket silent = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
+            port = silent.getLocalPort();
+            Thread.ofVirtual().start(() -> acceptAndStaySilent(silent, accepted));
+            final ModbusProtocolAdapter started = startAdapter(0);
+            final RecordingOutput reading =
+                    await().atMost(DROP_SEEN_WITHIN).until(() -> readingPoll(started), Objects::nonNull);
+
+            started.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+
+            assertThat(reading.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
+                    .isEqualTo(PollingOutputImpl.PollingResult.NO_DATA);
+            verify(state, never()).setConnectionStatus(ERROR);
+        } finally {
+            for (final Socket socket : accepted) {
+                socket.close();
+            }
+        }
     }
 
     /// The sampler timeout the adapter assumes is no longer than the sampler's own, so a publish the
@@ -405,6 +449,25 @@ class ModbusProtocolAdapterOfflineStartTest {
     void theAdaptersSamplerTimeoutIsNoLongerThanTheSamplers() {
         assertThat(ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS)
                 .isLessThanOrEqualTo(AbstractSubscriptionSampler.POLL_OUTPUT_TIMEOUT_MILLIS);
+    }
+
+    /// Stops `started` and starts it again, as an operator's restart does, and checks that the start succeeds.
+    private static void restart(final @NotNull ModbusProtocolAdapter started) {
+        started.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        final ProtocolAdapterStartOutput restarted = mock(ProtocolAdapterStartOutput.class);
+        started.start(mock(ProtocolAdapterStartInput.class), restarted);
+        verify(restarted, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS))).startedSuccessfully();
+    }
+
+    /// Accepts every connection on `silent` into `accepted` and never answers, until `silent` closes.
+    private static void acceptAndStaySilent(final @NotNull ServerSocket silent, final @NotNull List<Socket> accepted) {
+        try {
+            while (!silent.isClosed()) {
+                accepted.add(silent.accept());
+            }
+        } catch (final IOException _) {
+            // The test closed the socket.
+        }
     }
 
     /// Builds the adapter with the given polling-error limit, starts it with nothing listening on its port, and
@@ -561,6 +624,23 @@ class ModbusProtocolAdapterOfflineStartTest {
             output.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
         } catch (final ExecutionException _) {
             // A read on the dropped connection or a poll before the drop was seen fails; the caller polls again.
+        }
+        return null;
+    }
+
+    /// Polls once and answers the poll's output when its read is still in flight by the time `poll` returns. Answers
+    /// `null` once the poll completes otherwise (no connection yet), to poll again.
+    private static @Nullable RecordingOutput readingPoll(final @NotNull ModbusProtocolAdapter started)
+            throws Exception {
+        final RecordingOutput output = new RecordingOutput();
+        started.poll(mock(BatchPollingInput.class), output);
+        if (output.readStarted.get() && !output.getOutputFuture().isDone()) {
+            return output;
+        }
+        try {
+            output.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
+        } catch (final ExecutionException _) {
+            // A poll before the client connected fails; the caller polls again.
         }
         return null;
     }
