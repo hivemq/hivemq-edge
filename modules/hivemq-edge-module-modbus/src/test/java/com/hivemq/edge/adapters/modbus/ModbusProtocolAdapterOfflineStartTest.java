@@ -82,11 +82,13 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -94,6 +96,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -138,6 +141,9 @@ class ModbusProtocolAdapterOfflineStartTest {
     // The sampler timeout the adapter is told in that test: no longer than WAITING_POLL_TIMEOUT_MILLIS, as production's
     // equals the sampler's 10 s, and far above a loopback read.
     private static final long SHORT_SAMPLER_TIMEOUT_MILLIS = 500;
+    // A consumer that holds the publish longer than SHORT_SAMPLER_TIMEOUT_MILLIS, so the adapter cannot tell whether
+    // the sampler took it.
+    private static final long SLOW_CONSUMER_MILLIS = 700;
     // A device that rejects every read and closes the connection costs the adapter one reconnect, 1 s, per rejected
     // read; 20 s covers four of them with room for a slow machine.
     private static final @NotNull Duration REJECTIONS_WINDOW = Duration.ofSeconds(20);
@@ -331,6 +337,68 @@ class ModbusProtocolAdapterOfflineStartTest {
         assertThat(rejections).hasPositiveValue();
     }
 
+    /// With `publishChangedDataOnly`, a coil that goes `false`, `true`, `false` reaches the consumer as all three
+    /// values though the consumer holds the publish of `true` past the sampler's timeout: the adapter cannot tell
+    /// whether that publish was taken, so it forgets the value instead of keeping the one before it.
+    @Test
+    void aSlowConsumerStillGetsACoilThatChangesBack() throws Exception {
+        assertACoilThatChangesBackReachesTheConsumer(
+                () -> Thread.sleep(SLOW_CONSUMER_MILLIS), SHORT_SAMPLER_TIMEOUT_MILLIS);
+    }
+
+    /// With `publishChangedDataOnly`, a coil that goes `false`, `true`, `false` reaches the consumer as all three
+    /// values though the consumer fails after it received `true`: the publish throws, the adapter cannot tell what
+    /// the consumer kept, so it forgets the value instead of keeping the one before it.
+    @Test
+    void aConsumerThatFailsStillGetsACoilThatChangesBack() throws Exception {
+        assertACoilThatChangesBackReachesTheConsumer(
+                () -> {
+                    throw new IllegalStateException("The consumer failed");
+                },
+                ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS);
+    }
+
+    /// Publishes `false`, then `true` to `consumerOfTrue`, then checks that the next poll publishes `false` again.
+    private void assertACoilThatChangesBackReachesTheConsumer(
+            final @NotNull Consumer consumerOfTrue, final long samplerTimeoutMillis) throws Exception {
+        final ProcessImage image = coilImage(false);
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), image);
+        final ModbusProtocolAdapter started = startAdapter(UNLIMITED_POLLING_ERRORS, true, samplerTimeoutMillis);
+        assertThat(publishedValues(started)).containsExactly(BooleanNode.FALSE);
+
+        image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, true)));
+        final RecordingOutput ofTrue = new RecordingOutput(consumerOfTrue);
+        started.poll(mock(BatchPollingInput.class), ofTrue);
+        ofTrue.ended.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
+        awaitTheCallbackReturned(ofTrue);
+        assertThat(valuesOf(ofTrue)).containsExactly(BooleanNode.TRUE);
+
+        image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, false)));
+        assertThat(publishedValues(started)).containsExactly(BooleanNode.FALSE);
+    }
+
+    /// With `publishChangedDataOnly`, the first poll after a stop and a start publishes the coil even
+    /// when a poll of the previous run completes after the start: each run has its own change cache,
+    /// so the late poll cannot record its value in the new run's.
+    @Test
+    void aPollCompletingAfterARestartDoesNotSuppressTheFirstSample() throws Exception {
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final ModbusProtocolAdapter started = startAdapter(UNLIMITED_POLLING_ERRORS, true);
+        final CountDownLatch consumed = new CountDownLatch(1);
+        final RecordingOutput late = new RecordingOutput(() -> consumed.await(POLL_WAIT_SECONDS, TimeUnit.SECONDS));
+        started.poll(mock(BatchPollingInput.class), late);
+        late.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
+
+        started.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        final ProtocolAdapterStartOutput restarted = mock(ProtocolAdapterStartOutput.class);
+        started.start(mock(ProtocolAdapterStartInput.class), restarted);
+        verify(restarted, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS))).startedSuccessfully();
+        consumed.countDown();
+        awaitTheCallbackReturned(late);
+
+        assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+    }
+
     /// The sampler timeout the adapter assumes is no longer than the sampler's own, so a publish the
     /// adapter records in its change cache was taken by the sampler.
     @Test
@@ -446,6 +514,28 @@ class ModbusProtocolAdapterOfflineStartTest {
         return true;
     }
 
+    /// The values a poll published into `output`, none when it published nothing.
+    private static @NotNull List<Object> valuesOf(final @NotNull PollingOutputImpl output) {
+        return output.getDataSample().getDataPointList().stream()
+                .map(DataPoint::getTagValue)
+                .toList();
+    }
+
+    /// Waits until the thread that published into `output` has left the adapter, so whatever the adapter does after
+    /// the publish, as recording values in its change cache, is done.
+    private static void awaitTheCallbackReturned(final @NotNull RecordingOutput output) {
+        final Thread callback = output.publisher.get();
+        assertThat(callback).isNotNull();
+        await().atMost(DROP_SEEN_WITHIN).until(() -> Arrays.stream(callback.getStackTrace())
+                .noneMatch(frame -> isAdapterFrame(frame.getClassName())));
+    }
+
+    /// Whether a stack frame runs the adapter's code: the class itself, its lambdas or its nested classes.
+    private static boolean isAdapterFrame(final @NotNull String className) {
+        final String adapter = ModbusProtocolAdapter.class.getName();
+        return className.equals(adapter) || className.startsWith(adapter + "$");
+    }
+
     /// Polls once through the sampler's own output and answers the coil values published, none when
     /// it published nothing; a failed poll fails the call. Unlike the mock in `pollPublishesTrue`,
     /// this output can be timed out with `orTimeout`, as the sampler does.
@@ -455,9 +545,7 @@ class ModbusProtocolAdapterOfflineStartTest {
                 new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(ADAPTER_ID), ADAPTER_ID);
         started.poll(mock(BatchPollingInput.class), output);
         output.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
-        return output.getDataSample().getDataPointList().stream()
-                .map(DataPoint::getTagValue)
-                .toList();
+        return valuesOf(output);
     }
 
     /// Polls once and answers the poll's output when the poll waits on the client's reconnect: it neither failed nor
@@ -557,9 +645,17 @@ class ModbusProtocolAdapterOfflineStartTest {
     private static final class RecordingOutput extends PollingOutputImpl {
         private final @NotNull AtomicBoolean readStarted = new AtomicBoolean();
         private final @NotNull CompletableFuture<Void> ended = new CompletableFuture<>();
+        private final @NotNull AtomicReference<Thread> publisher = new AtomicReference<>();
+        private final @NotNull Consumer consumer;
 
         private RecordingOutput() {
+            this(() -> {});
+        }
+
+        /// `consumer` runs inside the publish, after the output is complete, as a consumer fed in line does.
+        private RecordingOutput(final @NotNull Consumer consumer) {
             super(new ProtocolAdapterDataSampleImpl(ADAPTER_ID), ADAPTER_ID);
+            this.consumer = consumer;
         }
 
         @Override
@@ -571,7 +667,14 @@ class ModbusProtocolAdapterOfflineStartTest {
         @Override
         public void finish() {
             super.finish();
-            ended.complete(null);
+            publisher.set(Thread.currentThread());
+            try {
+                consumer.consume();
+            } catch (final InterruptedException _) {
+                Thread.currentThread().interrupt();
+            } finally {
+                ended.complete(null);
+            }
         }
 
         @Override
@@ -585,5 +688,11 @@ class ModbusProtocolAdapterOfflineStartTest {
             super.fail(errorMessage);
             ended.complete(null);
         }
+    }
+
+    /// The consumer's work on a publish.
+    @FunctionalInterface
+    private interface Consumer {
+        void consume() throws InterruptedException;
     }
 }

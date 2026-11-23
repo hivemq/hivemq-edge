@@ -52,6 +52,13 @@ public class PublishChangedDataOnlyHandler {
         return !newValue.equals(lastSamples.get(tagName));
     }
 
+    /**
+     * Drops the tag's last sample when it differs from {@code value}, so the next sample is new; keeps an equal one.
+     */
+    public void forgetIfChanged(final @NotNull String tagName, final @NotNull Object value) {
+        lastSamples.computeIfPresent(tagName, (_, last) -> last.equals(value) ? last : null);
+    }
+
     public void clear() {
         lastSamples.clear();
     }
