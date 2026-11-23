@@ -274,12 +274,17 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             final long readBudgetNanos = samplerTimeoutNanos - READ_MARGIN_NANOS - (System.nanoTime() - pollStartNanos);
             if (readBudgetNanos <= 0) {
                 // A read now would be answered after the sampler takes the poll's output no longer, and a value the
-                // device clears on read would be lost; the next poll reads instead. Nothing was read, so this poll
-                // counts as failed.
-                pollingOutput.fail("Polling failed for adapter '" + adapterId
-                        + "' because too little of the poll's time was left to read [samplerTimeoutMillis="
-                        + TimeUnit.NANOSECONDS.toMillis(samplerTimeoutNanos) + ", readMarginMillis="
-                        + READ_MARGIN_MILLIS + "]");
+                // device clears on read would be lost; the next poll reads instead. The connection is up, so this
+                // poll ends without data rather than as a polling error: the SDK has no outcome that leaves the
+                // error count as it is, and failing it would stop an adapter at its limit before the next poll
+                // could read.
+                log.debug(
+                        "Too little of the poll's time was left to read, the next poll reads [adapterId={},"
+                                + " samplerTimeoutMillis={}, readMarginMillis={}]",
+                        adapterId,
+                        TimeUnit.NANOSECONDS.toMillis(samplerTimeoutNanos),
+                        READ_MARGIN_MILLIS);
+                dataPointsPublisher.publish();
                 return;
             }
             final CompletableFuture<? extends PlcReadResponse> sent = usable.read(tags);

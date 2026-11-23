@@ -256,10 +256,11 @@ class AbstractPlc4xAdapterLifetimeTest {
                 .isLessThan(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS));
     }
 
-    /// A poll whose connection attempt took most of its time fails without reading: the answer would come after the
-    /// sampler stopped waiting, and a value the device clears on read would be lost.
+    /// A poll whose connection attempt took most of its time ends without reading and without an error: the answer
+    /// would come after the sampler stopped waiting, and a value the device clears on read would be lost; the next
+    /// poll reads.
     @Test
-    void connectionEstablishedTooLateInThePoll_failsWithoutReading() {
+    void connectionEstablishedTooLateInThePoll_endsWithoutReadingAndTheNextPollReads() {
         final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
         adapter.connectGate = new CountDownLatch(1);
         adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
@@ -273,9 +274,14 @@ class AbstractPlc4xAdapterLifetimeTest {
                         > TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS - READ_MARGIN_MILLIS + 100));
         adapter.connectGate.countDown();
 
-        await().atMost(TIMEOUT).until(() -> waiting.failMessage != null);
-        assertThat(waiting.failMessage).contains("too little of the poll's time was left to read");
+        await().atMost(TIMEOUT).until(waiting::completed);
+        assertThat(waiting.failMessage).isNull();
+        assertThat(waiting.added).isEmpty();
         assertThat(adapter.reads.get()).isZero();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(1))));
+        final RecordingOutput next = adapter.poll();
+        await().atMost(TIMEOUT).until(next::completed);
+        assertThat(next.added).containsExactly("a");
     }
 
     /// The drivers answer one request at a time, so a poll that finds the previous read unanswered sends no read

@@ -169,7 +169,11 @@ class ModbusProtocolAdapterOfflineStartTest {
     private final @NotNull ProtocolAdapterState state = mock(ProtocolAdapterState.class);
     // When set, the device rejects every read with ILLEGAL_DATA_ADDRESS and then closes the connection.
     private final @NotNull AtomicBoolean rejectAndClose = new AtomicBoolean();
+    // When set, the device rejects the next read with SLAVE_DEVICE_BUSY and then closes the connection, once.
+    private final @NotNull AtomicBoolean busyOnceAndClose = new AtomicBoolean();
     private final @NotNull AtomicInteger rejections = new AtomicInteger();
+    // Every coil read the device received, answered or rejected.
+    private final @NotNull AtomicInteger coilReads = new AtomicInteger();
     // When set, every coil read clears the coil after answering it, as a device alarm that a read acknowledges.
     private final @NotNull AtomicBoolean clearsOnRead = new AtomicBoolean();
     // When set, the device answers reads of MISSING_COIL_ADDRESS, as a device does once the address is configured.
@@ -338,11 +342,11 @@ class ModbusProtocolAdapterOfflineStartTest {
         assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
     }
 
-    /// A poll whose reconnect succeeds later than the sampler's timeout less the client's request timeout fails
-    /// without reading, though the sampler would still take its output: a read then could be answered after the
-    /// sampler timed the poll out.
+    /// A poll whose reconnect succeeds later than the sampler's timeout less the client's request timeout ends
+    /// without reading and without an error, though the sampler would still take its output: a read then could be
+    /// answered after the sampler timed the poll out, and the next poll reads instead.
     @Test
-    void aPollWhoseReconnectComesTooLateForAReadFailsWithoutReading() throws Exception {
+    void aPollWhoseReconnectComesTooLateForAReadEndsWithoutReading() throws Exception {
         final List<Channel> connections = new CopyOnWriteArrayList<>();
         device = startDeviceOnAnyPort(connections, coilImage(true));
         final ModbusProtocolAdapter started =
@@ -353,17 +357,40 @@ class ModbusProtocolAdapterOfflineStartTest {
         final RecordingOutput waiting =
                 await().atMost(DROP_SEEN_WITHIN).until(() -> waitingPoll(started), Objects::nonNull);
 
+        final int readsBeforeTheReconnect = coilReads.get();
+
         waiting.ended.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
 
-        assertThat(waiting.readStarted).isFalse();
-        assertThatThrownBy(() -> waiting.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
-                .hasMessageContaining("reconnected too late");
+        assertThat(coilReads).hasValue(readsBeforeTheReconnect);
+        assertThat(waiting.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
+                .isEqualTo(PollingOutputImpl.PollingResult.NO_DATA);
         assertThat(pollPublishesTrue(started)).isTrue();
     }
 
-    /// Through the sampler, polling errors keep counting across reconnects until a read succeeds: a
-    /// device that rejects every read with ILLEGAL_DATA_ADDRESS and closes the connection stops the
-    /// adapter once its error limit is passed, though each rejection costs a reconnect.
+    /// Through the sampler with a limit of 1: a read the device rejects as busy before it closes the connection is
+    /// one polling error, and a poll whose reconnect comes too late to read adds none, so the adapter is not
+    /// stopped and the next poll reads the coil.
+    @Test
+    void aReconnectTooLateForAReadAfterARejectedReadDoesNotStopTheAdapter() throws Exception {
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final TagManager tagManager = mock(TagManager.class);
+        final ProtocolAdapterWrapper wrapper =
+                startPolling(startAdapter(1, false, LATE_READ_SAMPLER_TIMEOUT_MILLIS), tagManager);
+        verify(tagManager, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .feed(anyList());
+
+        busyOnceAndClose.set(true);
+        await().atMost(DROP_SEEN_WITHIN).until(() -> !busyOnceAndClose.get());
+        clearInvocations(tagManager);
+
+        verify(tagManager, timeout(RECONNECT_WAIT.toMillis())).feed(anyList());
+        verify(wrapper, never()).stopAsync(false);
+    }
+
+    /// Through the sampler, polling errors keep counting across reconnects that come in time to read: a device
+    /// that rejects every read with ILLEGAL_DATA_ADDRESS and closes the connection stops the adapter once its error
+    /// limit is passed, though each rejection costs a reconnect. A poll whose reconnect comes too late to read ends
+    /// without data and resets the count.
     @ParameterizedTest
     @ValueSource(ints = {1, 3})
     void aDeviceThatRejectsEveryReadAndClosesStopsTheAdapterPastItsLimit(final int limit) throws Exception {
@@ -872,11 +899,13 @@ class ModbusProtocolAdapterOfflineStartTest {
                     public ReadCoilsResponse readCoils(
                             final ModbusRequestContext context, final int unitId, final ReadCoilsRequest request)
                             throws ModbusResponseException, UnknownUnitIdException {
+                        coilReads.incrementAndGet();
                         if (request.address() == MISSING_COIL_ADDRESS && !missingCoilAnswers.get()) {
                             throw new ModbusResponseException(
                                     FunctionCode.READ_COILS, ExceptionCode.ILLEGAL_DATA_ADDRESS);
                         }
-                        if (!rejectAndClose.get()) {
+                        final boolean busy = busyOnceAndClose.getAndSet(false);
+                        if (!rejectAndClose.get() && !busy) {
                             final ReadCoilsResponse response = super.readCoils(context, unitId, request);
                             if (clearsOnRead.get()) {
                                 image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, false)));
@@ -893,7 +922,9 @@ class ModbusProtocolAdapterOfflineStartTest {
                                         },
                                         CLOSE_AFTER_REJECTION_MILLIS,
                                         TimeUnit.MILLISECONDS);
-                        throw new ModbusResponseException(FunctionCode.READ_COILS, ExceptionCode.ILLEGAL_DATA_ADDRESS);
+                        throw new ModbusResponseException(
+                                FunctionCode.READ_COILS,
+                                busy ? ExceptionCode.SLAVE_DEVICE_BUSY : ExceptionCode.ILLEGAL_DATA_ADDRESS);
                     }
                 });
         server.start();

@@ -246,9 +246,18 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                         return;
                     }
                     if (System.nanoTime() - pollStartNanos >= lateReadDeadlineNanos) {
-                        // A read now could still be under way when the sampler takes the poll's output no longer;
-                        // the next poll reads instead. No read succeeded, so this poll counts as failed.
-                        pollingOutput.fail(reconnectedTooLateMessage());
+                        // A read now could still be under way when the sampler takes the poll's output no longer,
+                        // and a value the device clears on read would be lost; the next poll reads instead. The
+                        // reconnect succeeded, so this poll ends without data rather than as a polling error: the
+                        // SDK has no outcome that leaves the error count as it is, and failing it would stop an
+                        // adapter at its limit before the next poll could read.
+                        log.debug(
+                                "Reconnected too late to read within this poll, the next poll reads [adapterId={},"
+                                        + " host={}, port={}]",
+                                adapterId,
+                                adapterConfig.getHost(),
+                                adapterConfig.getPort());
+                        pollingOutput.dataPointListPublisher().publish();
                         return;
                     }
                     // The read decides the poll, so polling errors keep counting until a read succeeds.
@@ -410,11 +419,6 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
      */
     private static void retire(final @NotNull DataPointListBuilder emptyPublisher) {
         emptyPublisher.publish();
-    }
-
-    private @NotNull String reconnectedTooLateMessage() {
-        return "The Modbus device reconnected too late to be read within this poll [host=" + adapterConfig.getHost()
-                + ", port=" + adapterConfig.getPort() + "]";
     }
 
     private @NotNull String notConnectedMessage(final @Nullable Throwable connectFailure) {
