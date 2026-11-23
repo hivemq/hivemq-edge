@@ -35,6 +35,10 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.digitalpetri.modbus.ExceptionCode;
 import com.digitalpetri.modbus.FunctionCode;
 import com.digitalpetri.modbus.exceptions.ModbusResponseException;
@@ -107,6 +111,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
 
 /// A Modbus device that is off when the adapter starts must not leave the adapter in ERROR for good: the start
 /// succeeds, polls fail at once while the device is away and count as polling errors like an outage does, data flows
@@ -117,6 +122,9 @@ class ModbusProtocolAdapterOfflineStartTest {
     private static final @NotNull String ADAPTER_ID = "modbus-offline-start";
     private static final int UNIT_ID = 1;
     private static final int COIL_ADDRESS = 0;
+    // The test device rejects every read of this coil with ILLEGAL_DATA_ADDRESS, as a device does for an address it
+    // does not have.
+    private static final int MISSING_COIL_ADDRESS = 7;
     private static final int UNLIMITED_POLLING_ERRORS = -1;
     // The module's minimum; a refused loopback connect fails at once, well inside POLL_WAIT_SECONDS.
     private static final int CONNECT_TIMEOUT_MILLIS = 1_000;
@@ -164,6 +172,8 @@ class ModbusProtocolAdapterOfflineStartTest {
     private final @NotNull AtomicInteger rejections = new AtomicInteger();
     // When set, every coil read clears the coil after answering it, as a device alarm that a read acknowledges.
     private final @NotNull AtomicBoolean clearsOnRead = new AtomicBoolean();
+    // When set, the device answers reads of MISSING_COIL_ADDRESS, as a device does once the address is configured.
+    private final @NotNull AtomicBoolean missingCoilAnswers = new AtomicBoolean();
     private int port;
     private @Nullable ModbusProtocolAdapter adapter;
     private @Nullable ModbusTcpServer device;
@@ -474,6 +484,125 @@ class ModbusProtocolAdapterOfflineStartTest {
         }
     }
 
+    /// A poll publishes the tags it read though another tag of the poll could not be read: the coil clears on
+    /// read, as a device alarm does, so failing the whole poll would lose it.
+    @Test
+    void aPollPublishesTheTagsItReadWhenAnotherTagCannotBeRead() throws Exception {
+        clearsOnRead.set(true);
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final ModbusProtocolAdapter started = startAdapter(
+                UNLIMITED_POLLING_ERRORS,
+                true,
+                ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS,
+                List.of(coilTag("coil", COIL_ADDRESS), coilTag("missing", MISSING_COIL_ADDRESS)));
+
+        assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+        assertThat(publishedValues(started)).containsExactly(BooleanNode.FALSE);
+    }
+
+    /// A tag that a poll cannot read while it reads others is logged once, not on every poll.
+    @Test
+    void aTagThatCannotBeReadIsLoggedOnce() throws Exception {
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final ModbusProtocolAdapter started = startAdapter(
+                UNLIMITED_POLLING_ERRORS,
+                false,
+                ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS,
+                List.of(coilTag("coil", COIL_ADDRESS), coilTag("missing", MISSING_COIL_ADDRESS)));
+        final Logger adapterLog = (Logger) LoggerFactory.getLogger(ModbusProtocolAdapter.class);
+        final ListAppender<ILoggingEvent> logged = new ListAppender<>();
+        logged.start();
+        adapterLog.addAppender(logged);
+        try {
+            for (int poll = 0; poll < 3; poll++) {
+                assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+            }
+        } finally {
+            adapterLog.detachAppender(logged);
+        }
+
+        assertThat(logged.list)
+                .filteredOn(event -> event.getLevel() == Level.WARN)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .singleElement()
+                .asString()
+                .contains("missing");
+    }
+
+    /// A tag read again after it was logged as unreadable is logged once at INFO, and is logged at WARN again
+    /// when it fails once more.
+    @Test
+    void aTagReadAgainIsLoggedOnceAndWarnedAgainWhenItFailsAgain() throws Exception {
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final ModbusProtocolAdapter started = startAdapter(
+                UNLIMITED_POLLING_ERRORS,
+                false,
+                ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS,
+                List.of(coilTag("coil", COIL_ADDRESS), coilTag("missing", MISSING_COIL_ADDRESS)));
+        final Logger adapterLog = (Logger) LoggerFactory.getLogger(ModbusProtocolAdapter.class);
+        final ListAppender<ILoggingEvent> logged = new ListAppender<>();
+        logged.start();
+        adapterLog.addAppender(logged);
+        try {
+            assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+            missingCoilAnswers.set(true);
+            for (int poll = 0; poll < 2; poll++) {
+                assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE, BooleanNode.FALSE);
+            }
+            missingCoilAnswers.set(false);
+            assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+        } finally {
+            adapterLog.detachAppender(logged);
+        }
+
+        assertThat(logged.list)
+                .filteredOn(event -> event.getLevel() == Level.WARN || event.getLevel() == Level.INFO)
+                .filteredOn(event -> event.getFormattedMessage().contains("missing"))
+                .extracting(ILoggingEvent::getLevel)
+                .containsExactly(Level.WARN, Level.INFO, Level.WARN);
+    }
+
+    /// A new run warns again about a tag that still cannot be read: the warning is once per tag and run.
+    @Test
+    void aTagStillUnreadableAfterARestartIsWarnedAboutAgain() throws Exception {
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final ModbusProtocolAdapter started = startAdapter(
+                UNLIMITED_POLLING_ERRORS,
+                false,
+                ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS,
+                List.of(coilTag("coil", COIL_ADDRESS), coilTag("missing", MISSING_COIL_ADDRESS)));
+        final Logger adapterLog = (Logger) LoggerFactory.getLogger(ModbusProtocolAdapter.class);
+        final ListAppender<ILoggingEvent> logged = new ListAppender<>();
+        logged.start();
+        adapterLog.addAppender(logged);
+        try {
+            assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+            restart(started);
+            await().atMost(RECONNECT_WAIT)
+                    .untilAsserted(() -> assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE));
+        } finally {
+            adapterLog.detachAppender(logged);
+        }
+
+        assertThat(logged.list)
+                .filteredOn(event -> event.getLevel() == Level.WARN)
+                .filteredOn(event -> event.getFormattedMessage().contains("missing"))
+                .hasSize(2);
+    }
+
+    /// A poll none of whose tags could be read fails, so it counts as a polling error.
+    @Test
+    void aPollThatReadsNoTagFails() throws Exception {
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final ModbusProtocolAdapter started = startAdapter(
+                UNLIMITED_POLLING_ERRORS,
+                false,
+                ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS,
+                List.of(coilTag("missing", MISSING_COIL_ADDRESS), coilTag("also-missing", MISSING_COIL_ADDRESS)));
+
+        assertThatThrownBy(() -> publishedValues(started)).hasMessageContaining("ILLEGAL_DATA_ADDRESS");
+    }
+
     /// The sampler timeout the adapter assumes is no longer than the sampler's own, so a publish the
     /// adapter records in its change cache was taken by the sampler.
     @Test
@@ -527,8 +656,20 @@ class ModbusProtocolAdapterOfflineStartTest {
             final int maxPollingErrorsBeforeRemoval,
             final boolean publishChangedDataOnly,
             final long samplerTimeoutMillis) {
-        final ModbusTag tag = new ModbusTag(
-                "coil", null, new ModbusTagDefinition(COIL_ADDRESS, ModbusAdu.COILS, UNIT_ID, false, null));
+        return startAdapter(
+                maxPollingErrorsBeforeRemoval,
+                publishChangedDataOnly,
+                samplerTimeoutMillis,
+                List.of(coilTag("coil", COIL_ADDRESS)));
+    }
+
+    /// Builds the adapter with the given polling-error limit, change-only publishing, assumed sampler timeout and
+    /// tags, starts it, and checks that the start succeeds.
+    private @NotNull ModbusProtocolAdapter startAdapter(
+            final int maxPollingErrorsBeforeRemoval,
+            final boolean publishChangedDataOnly,
+            final long samplerTimeoutMillis,
+            final @NotNull List<ModbusTag> tags) {
         final ModbusSpecificAdapterConfig config = new ModbusSpecificAdapterConfig(
                 port,
                 "127.0.0.1",
@@ -539,7 +680,7 @@ class ModbusProtocolAdapterOfflineStartTest {
         when(input.getAdapterId()).thenReturn(ADAPTER_ID);
         when(input.getConfig()).thenReturn(config);
         when(input.getProtocolAdapterState()).thenReturn(state);
-        when(input.getTags()).thenReturn(List.of(tag));
+        when(input.getTags()).thenReturn(List.copyOf(tags));
         final ModbusProtocolAdapter started =
                 new ModbusProtocolAdapter(mock(ProtocolAdapterInformation.class), input, samplerTimeoutMillis);
         adapter = started;
@@ -550,6 +691,11 @@ class ModbusProtocolAdapterOfflineStartTest {
                 .startedSuccessfully();
         verify(startOutput, never()).failStart(any(), any());
         return started;
+    }
+
+    /// A tag reading the coil at `address` of the test device's unit.
+    private static @NotNull ModbusTag coilTag(final @NotNull String name, final int address) {
+        return new ModbusTag(name, null, new ModbusTagDefinition(address, ModbusAdu.COILS, UNIT_ID, false, null));
     }
 
     private @NotNull ProtocolAdapterWrapper startPolling(final @NotNull ModbusProtocolAdapter started) {
@@ -694,7 +840,8 @@ class ModbusProtocolAdapterOfflineStartTest {
 
     /// Starts the device on `port`, serving `image` to every unit, and completes `bound` with the port it listens on.
     /// While `rejectAndClose` is set, it rejects every coil read with ILLEGAL_DATA_ADDRESS and then closes the
-    /// connection; while `clearsOnRead` is set, it clears the coil after each read it answers.
+    /// connection; while `clearsOnRead` is set, it clears the coil after each read it answers. It rejects every
+    /// read of `MISSING_COIL_ADDRESS` with ILLEGAL_DATA_ADDRESS unless `missingCoilAnswers` is set.
     private @NotNull ModbusTcpServer startDevice(
             final int port,
             final @NotNull List<Channel> connections,
@@ -725,6 +872,10 @@ class ModbusProtocolAdapterOfflineStartTest {
                     public ReadCoilsResponse readCoils(
                             final ModbusRequestContext context, final int unitId, final ReadCoilsRequest request)
                             throws ModbusResponseException, UnknownUnitIdException {
+                        if (request.address() == MISSING_COIL_ADDRESS && !missingCoilAnswers.get()) {
+                            throw new ModbusResponseException(
+                                    FunctionCode.READ_COILS, ExceptionCode.ILLEGAL_DATA_ADDRESS);
+                        }
                         if (!rejectAndClose.get()) {
                             final ReadCoilsResponse response = super.readCoils(context, unitId, request);
                             if (clearsOnRead.get()) {

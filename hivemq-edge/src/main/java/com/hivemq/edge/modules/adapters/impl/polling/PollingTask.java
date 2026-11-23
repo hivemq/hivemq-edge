@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +121,9 @@ public class PollingTask implements Runnable {
             final CompletableFuture<?> localExecutionFuture =
                     sampler.execute().copy().orTimeout(settings.watchdogTimeoutMillis(), TimeUnit.MILLISECONDS);
             localExecutionFuture.whenComplete((aVoid, throwable) -> {
+                if (isStopped(throwable)) {
+                    return;
+                }
                 if (throwable == null) {
                     resetErrorStats();
                     reschedule(0);
@@ -146,7 +150,27 @@ public class PollingTask implements Runnable {
         }
     }
 
+    // A completion that arrives after stopScheduling() belongs to a run that was stopped: it must not count errors,
+    // notify the sampler (whose wrapper a restarted run of the same adapter may already use) or reschedule. The check
+    // is not atomic with what follows it: a stop between the check and the effect still lets that one outcome through,
+    // which only a lock held across the sampler's callback would close.
+    private boolean isStopped(final @Nullable Throwable outcome) {
+        if (continueScheduling.get()) {
+            return false;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(
+                    "Dropped the outcome of a poll in sampler {}: polling was stopped",
+                    sampler.getAdapterId(),
+                    outcome);
+        }
+        return true;
+    }
+
     private void handleInterruptionException(final @NotNull Throwable throwable) {
+        if (isStopped(throwable)) {
+            return;
+        }
         // -- Job was killed by the framework as it took too long
         // -- Do not call back to the job here (notify) since it will
         // -- Not respond and we dont want to block other polls
@@ -184,6 +208,9 @@ public class PollingTask implements Runnable {
     }
 
     private void handleExceptionDuringPolling(final @NotNull Throwable throwable) {
+        if (isStopped(throwable)) {
+            return;
+        }
         final int errorCountTotal = applicationErrorCount.incrementAndGet();
         final int maxErrorsBeforeRemoval = sampler.getMaxErrorsBeforeRemoval();
         // case 1: Unlimited retry (maxErrorsBeforeRemoval < 0) or less errors than the limit

@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.plc4x;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +33,7 @@ public class PublishChangedDataOnlyHandler {
             if (value == null) {
                 replaced.set(true);
                 return newValue;
-            } else if (value.equals(newValue)) {
+            } else if (Objects.deepEquals(value, newValue)) {
                 return value;
             } else {
                 replaced.set(true);
@@ -40,6 +41,21 @@ public class PublishChangedDataOnlyHandler {
             }
         });
         return replaced.get();
+    }
+
+    /**
+     * Whether {@code newValue} differs from the last sample recorded for the tag; records nothing. Samples compare by
+     * content, arrays (a raw byte array tag) included.
+     */
+    public boolean isNew(final @NotNull String tagName, final @NotNull Object newValue) {
+        return !Objects.deepEquals(newValue, lastSamples.get(tagName));
+    }
+
+    /**
+     * Drops the tag's last sample when it differs from {@code value}, so the next sample is new; keeps an equal one.
+     */
+    public void forgetIfChanged(final @NotNull String tagName, final @NotNull Object value) {
+        lastSamples.computeIfPresent(tagName, (_, last) -> Objects.deepEquals(last, value) ? last : null);
     }
 
     public void clear() {

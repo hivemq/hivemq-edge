@@ -43,8 +43,10 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -76,6 +78,9 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     // holds another cache.
     private volatile @NotNull PublishChangedDataOnlyHandler changeCache = new PublishChangedDataOnlyHandler();
     private final @NotNull List<ModbusTag> tags;
+    // Tags a poll could not read while it read others, logged once each until read again; written by the poll's read
+    // callback on the client's threads.
+    private final @NotNull Set<String> unreadableTags = ConcurrentHashMap.newKeySet();
     private final @NotNull String adapterId;
     private final @NotNull AtomicBoolean stopRequested;
     private final @NotNull AtomicBoolean startRequested;
@@ -148,6 +153,8 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         if (!stopRequested.get() && startRequested.compareAndSet(false, true)) {
             changeCache = new PublishChangedDataOnlyHandler();
+            // A new run warns again about a tag that still cannot be read.
+            unreadableTags.clear();
             // The client connects persistently: when this first attempt fails, it keeps reconnecting with backoff
             // until stop() disconnects it, so an unreachable device does not fail the start.
             client.connect().whenComplete((_, throwable) -> {
@@ -284,23 +291,40 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         final boolean publishAllChanges = isPublishAllChanges();
 
         @SuppressWarnings("unused")
-        final var unused = CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
+        final var unused = CompletableFuture.allOf(readRegisterFutures).whenComplete((_, _) -> {
             try {
                 if (hasEnded(runChangeCache)) {
                     retire(dataPointsPublisher);
                     return;
                 }
-                if (throwable != null) {
+                // A tag that fails does not cost the others their values, which a device may clear on read: the poll
+                // publishes every tag that was read and fails only when none was. Every read has completed here.
+                Throwable firstFailure = null;
+                int readCount = 0;
+                for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
+                    if (!readRegisterFuture.isCompletedExceptionally()) {
+                        readCount++;
+                    } else if (firstFailure == null) {
+                        firstFailure = readRegisterFuture.exceptionNow();
+                    }
+                }
+                if (firstFailure != null && readCount == 0) {
                     protocolAdapterState.setConnectionStatus(ERROR);
-                    pollingOutput.fail(throwable, "Unable to read tags from modbus");
+                    pollingOutput.fail(firstFailure, "Unable to read tags from modbus");
                     return;
                 }
 
                 protocolAdapterState.setConnectionStatus(CONNECTED);
 
-                for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
-                    final ResulTuple entry = readRegisterFuture.join();
+                for (int i = 0; i < limit; i++) {
+                    final CompletableFuture<ResulTuple> readRegisterFuture = readRegisterFutures[i];
+                    if (readRegisterFuture.isCompletedExceptionally()) {
+                        reportUnreadable(tags.get(i), readRegisterFuture.exceptionNow());
+                        continue;
+                    }
+                    final ResulTuple entry = readRegisterFuture.resultNow();
                     final var tag = entry.tag();
+                    reportReadable(tag);
                     final var value = entry.value();
                     if (publishAllChanges || runChangeCache.isNew(tag.getName(), value)) {
                         final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
@@ -332,7 +356,10 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                 } finally {
                     if (!publishAllChanges) {
                         for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
-                            final ResulTuple entry = readRegisterFuture.join();
+                            if (readRegisterFuture.isCompletedExceptionally()) {
+                                continue;
+                            }
+                            final ResulTuple entry = readRegisterFuture.resultNow();
                             if (delivered) {
                                 runChangeCache.replaceIfValueIsNew(entry.tag().getName(), entry.value());
                             } else {
@@ -345,6 +372,24 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                 pollingOutput.fail(e, "Unable to read tags from modbus");
             }
         });
+    }
+
+    /** Logs a tag that a poll could not read while it read others, once until the tag is read again. */
+    private void reportUnreadable(final @NotNull ModbusTag tag, final @NotNull Throwable failure) {
+        if (unreadableTags.add(tag.getName())) {
+            log.warn(
+                    "Modbus adapter {} could not read tag {}, the other tags are published: {}",
+                    adapterId,
+                    tag.getName(),
+                    failure.getMessage());
+        }
+    }
+
+    /** Logs a tag that is read again after {@link #reportUnreadable} logged it. */
+    private void reportReadable(final @NotNull ModbusTag tag) {
+        if (!unreadableTags.isEmpty() && unreadableTags.remove(tag.getName())) {
+            log.info("Modbus adapter {} reads tag {} again", adapterId, tag.getName());
+        }
     }
 
     /**

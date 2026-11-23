@@ -18,6 +18,7 @@ package com.hivemq.edge.modules.adapters.impl.polling;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -32,6 +33,7 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import com.hivemq.util.NanoTimeProvider;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -225,6 +227,81 @@ class PollingTaskTest {
         await().untilAsserted(() ->
                 verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS)));
         assertThat(samplerFuture).isNotDone();
+    }
+
+    /// A poll whose failure arrives after `stopScheduling()` is dropped: the sampler, whose wrapper a restarted run of
+    /// the same adapter may use, is not notified, and nothing is rescheduled.
+    @Test
+    void run_whenPollFailsAfterStopScheduling_thenSamplerIsNotNotifiedAndNothingIsRescheduled() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        final CompletableFuture<Object> samplerFuture = new CompletableFuture<>();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(0);
+        when(sampler.execute()).thenAnswer(_ -> samplerFuture);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+        pollingTask.run();
+
+        pollingTask.stopScheduling();
+        samplerFuture.completeExceptionally(new RuntimeException("late failure"));
+
+        verify(sampler, never()).error(any(), anyBoolean());
+        verify(mockedExecutor, never()).schedule(any(Runnable.class), anyLong(), any());
+    }
+
+    /// A poll the watchdog gives up on after `stopScheduling()` is dropped: the sampler is not notified and nothing is
+    /// rescheduled.
+    @Test
+    void run_whenWatchdogFiresAfterStopScheduling_thenSamplerIsNotNotifiedAndNothingIsRescheduled() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(0);
+        when(sampler.execute()).thenAnswer(_ -> new CompletableFuture<>());
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, watchdog(100, 0));
+        pollingTask.run();
+
+        pollingTask.stopScheduling();
+
+        await().during(Duration.ofMillis(500)).atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            verify(sampler, never()).error(any(), anyBoolean());
+            verify(mockedExecutor, never()).schedule(any(Runnable.class), anyLong(), any());
+        });
+    }
+
+    /// A poll that succeeds after `stopScheduling()` is dropped: it neither reschedules nor reports that it cannot keep
+    /// up with the period.
+    @Test
+    void run_whenPollSucceedsAfterStopScheduling_thenNothingIsRescheduledOrReported() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        final CompletableFuture<Object> samplerFuture = new CompletableFuture<>();
+        // the poll takes 4 ms against a period of 1 ms, so a task that was not stopped reports it
+        when(sampler.getPeriod()).thenReturn(1L);
+        when(nanoTimeProvider.nanoTime()).thenReturn(0L, TimeUnit.MILLISECONDS.toNanos(4));
+        when(sampler.execute()).thenAnswer(_ -> samplerFuture);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+        pollingTask.run();
+
+        pollingTask.stopScheduling();
+        samplerFuture.complete(null);
+
+        verify(mockedExecutor, never()).schedule(any(Runnable.class), anyLong(), any());
+        verify(eventService, never()).createAdapterEvent(any(), any());
+    }
+
+    /// A sampler that throws after `stopScheduling()` is dropped as well: the synchronous failure path does not
+    /// notify the sampler or reschedule.
+    @Test
+    void run_whenSamplerThrowsAfterStopScheduling_thenSamplerIsNotNotifiedAndNothingIsRescheduled() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(0);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+        when(sampler.execute()).thenAnswer(_ -> {
+            pollingTask.stopScheduling();
+            throw new RuntimeException("failure while stopping");
+        });
+
+        pollingTask.run();
+
+        verify(sampler, never()).error(any(), anyBoolean());
+        verify(mockedExecutor, never()).schedule(any(Runnable.class), anyLong(), any());
     }
 
     @Test

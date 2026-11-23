@@ -271,7 +271,9 @@ class AbstractPlc4xAdapterReconnectTest {
         releasePoll.countDown();
         final CapturingPollingOutput output = poll.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
 
-        await().atMost(TIMEOUT).until(() -> output.failMessage != null);
+        // The poll belongs to the run that stop() ended, so it completes without data rather than failing.
+        await().atMost(TIMEOUT).until(() -> output.published || output.failMessage != null);
+        assertThat(output.failMessage).isNull();
         assertThat(adapter.connectionsCreated.get())
                 .as("a stopped adapter must not start a connection attempt")
                 .isEqualTo(1);
