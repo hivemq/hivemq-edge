@@ -45,6 +45,13 @@ public class PublishChangedDataOnlyHandler {
         return replaced.get();
     }
 
+    /**
+     * Whether {@code newValue} differs from the last sample recorded for the tag; records nothing.
+     */
+    public boolean isNew(final @NotNull String tagName, final @NotNull Object newValue) {
+        return !newValue.equals(lastSamples.get(tagName));
+    }
+
     public void clear() {
         lastSamples.clear();
     }

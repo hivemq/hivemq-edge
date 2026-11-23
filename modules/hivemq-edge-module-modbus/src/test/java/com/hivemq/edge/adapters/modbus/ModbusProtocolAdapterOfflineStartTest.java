@@ -34,6 +34,13 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.digitalpetri.modbus.ExceptionCode;
+import com.digitalpetri.modbus.FunctionCode;
+import com.digitalpetri.modbus.exceptions.ModbusResponseException;
+import com.digitalpetri.modbus.exceptions.UnknownUnitIdException;
+import com.digitalpetri.modbus.pdu.ReadCoilsRequest;
+import com.digitalpetri.modbus.pdu.ReadCoilsResponse;
+import com.digitalpetri.modbus.server.ModbusRequestContext;
 import com.digitalpetri.modbus.server.ModbusTcpServer;
 import com.digitalpetri.modbus.server.ProcessImage;
 import com.digitalpetri.modbus.server.ReadWriteModbusServices;
@@ -61,13 +68,17 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingTask;
+import com.hivemq.protocols.AbstractSubscriptionSampler;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.northbound.PerAdapterSampler;
 import com.hivemq.util.NanoTimeProvider;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
@@ -82,11 +93,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 /// A Modbus device that is off when the adapter starts must not leave the adapter in ERROR for good: the start
@@ -119,12 +133,23 @@ class ModbusProtocolAdapterOfflineStartTest {
     // long enough for an adapter that fails its polls at once to pass a limit of 1 at a 100 ms interval.
     private static final @NotNull Duration FIRST_RECONNECT_WINDOW = Duration.ofSeconds(3);
     // The sampler times a poll out at 10 s, past the client's first reconnect 1 s after a drop; a waiting poll timed
-    // out after 100 ms ends well before that reconnect, as one that waits longer than 10 s for it does.
-    private static final long WAITING_POLL_TIMEOUT_MILLIS = 100;
+    // out after 600 ms ends well before that reconnect, as one that waits longer than 10 s for it does.
+    private static final long WAITING_POLL_TIMEOUT_MILLIS = 600;
+    // The sampler timeout the adapter is told in that test: no longer than WAITING_POLL_TIMEOUT_MILLIS, as production's
+    // equals the sampler's 10 s, and far above a loopback read.
+    private static final long SHORT_SAMPLER_TIMEOUT_MILLIS = 500;
+    // A device that rejects every read and closes the connection costs the adapter one reconnect, 1 s, per rejected
+    // read; 20 s covers four of them with room for a slow machine.
+    private static final @NotNull Duration REJECTIONS_WINDOW = Duration.ofSeconds(20);
+    // The device closes the connection this long after it rejects a read, so the rejection reaches the client first.
+    private static final long CLOSE_AFTER_REJECTION_MILLIS = 20;
     // The client sees a drop a few milliseconds after the device closes the connection; 5 s only bounds a hang.
     private static final @NotNull Duration DROP_SEEN_WITHIN = Duration.ofSeconds(5);
 
     private final @NotNull ProtocolAdapterState state = mock(ProtocolAdapterState.class);
+    // When set, the device rejects every read with ILLEGAL_DATA_ADDRESS and then closes the connection.
+    private final @NotNull AtomicBoolean rejectAndClose = new AtomicBoolean();
+    private final @NotNull AtomicInteger rejections = new AtomicInteger();
     private int port;
     private @Nullable ModbusProtocolAdapter adapter;
     private @Nullable ModbusTcpServer device;
@@ -239,7 +264,7 @@ class ModbusProtocolAdapterOfflineStartTest {
     @Test
     void aDroppedConnectionIsReconnectedBeforeAnErrorLimitOfOneStopsTheAdapter() throws Exception {
         final List<Channel> connections = new CopyOnWriteArrayList<>();
-        device = startDevice(port, connections);
+        device = startDeviceOnAnyPort(connections, coilImage(true));
         final TagManager tagManager = mock(TagManager.class);
         final ProtocolAdapterWrapper wrapper = startPolling(startAdapter(1), tagManager);
         verify(tagManager, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
@@ -257,17 +282,18 @@ class ModbusProtocolAdapterOfflineStartTest {
         assertThat(connections).hasSize(2);
     }
 
-    /// With `publishChangedDataOnly`, a coil that changes while a dropped connection is down reaches the consumer on
-    /// the first healthy poll after the poll that waited on the reconnect timed out: the timed-out poll does not
-    /// record the new value as published. The waiting poll is timed out the sampler's way, by `orTimeout` on its
-    /// output, before the client's first reconnect.
+    /// With `publishChangedDataOnly`, a coil that changes while a connection is down reaches the
+    /// consumer on the first healthy poll after the poll that waited on the reconnect timed out: the
+    /// timed-out poll does not record the new value as published. The waiting poll is timed out the
+    /// sampler's way, by `orTimeout` on its output, before the client's first reconnect; the adapter
+    /// is told a sampler timeout no longer than that, as in production.
     @Test
     void aChangeWhileTheConnectionIsDownIsPublishedOnceTheWaitingPollTimedOut() throws Exception {
         final List<Channel> connections = new CopyOnWriteArrayList<>();
-        final ProcessImage image = new ProcessImage();
-        image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, false)));
-        device = startDevice(port, connections, image);
-        final ModbusProtocolAdapter started = startAdapter(UNLIMITED_POLLING_ERRORS, true);
+        final ProcessImage image = coilImage(false);
+        device = startDeviceOnAnyPort(connections, image);
+        final ModbusProtocolAdapter started =
+                startAdapter(UNLIMITED_POLLING_ERRORS, true, SHORT_SAMPLER_TIMEOUT_MILLIS);
         assertThat(publishedValues(started)).containsExactly(BooleanNode.FALSE);
         assertThat(connections).hasSize(1);
 
@@ -281,9 +307,36 @@ class ModbusProtocolAdapterOfflineStartTest {
         assertThatThrownBy(() -> expired.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
                 .hasCauseInstanceOf(TimeoutException.class);
         // The waiting poll ends once the reconnect does; the client is connected again from then on.
-        waiting.published.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
+        waiting.ended.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
 
         assertThat(publishedValues(started)).containsExactly(BooleanNode.TRUE);
+    }
+
+    /// Through the sampler, polling errors keep counting across reconnects until a read succeeds: a
+    /// device that rejects every read with ILLEGAL_DATA_ADDRESS and closes the connection stops the
+    /// adapter once its error limit is passed, though each rejection costs a reconnect.
+    @ParameterizedTest
+    @ValueSource(ints = {1, 3})
+    void aDeviceThatRejectsEveryReadAndClosesStopsTheAdapterPastItsLimit(final int limit) throws Exception {
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final TagManager tagManager = mock(TagManager.class);
+        final ProtocolAdapterWrapper wrapper = startPolling(startAdapter(limit), tagManager);
+        verify(tagManager, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .feed(anyList());
+
+        rejectAndClose.set(true);
+
+        verify(wrapper, timeout(REJECTIONS_WINDOW.toMillis())).stopAsync(false);
+        verify(wrapper, atLeast(limit + 1)).setErrorConnectionStatus(any(), isNull());
+        assertThat(rejections).hasPositiveValue();
+    }
+
+    /// The sampler timeout the adapter assumes is no longer than the sampler's own, so a publish the
+    /// adapter records in its change cache was taken by the sampler.
+    @Test
+    void theAdaptersSamplerTimeoutIsNoLongerThanTheSamplers() {
+        assertThat(ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS)
+                .isLessThanOrEqualTo(AbstractSubscriptionSampler.POLL_OUTPUT_TIMEOUT_MILLIS);
     }
 
     /// Builds the adapter with the given polling-error limit, starts it with nothing listening on its port, and
@@ -302,6 +355,16 @@ class ModbusProtocolAdapterOfflineStartTest {
     /// the start succeeds.
     private @NotNull ModbusProtocolAdapter startAdapter(
             final int maxPollingErrorsBeforeRemoval, final boolean publishChangedDataOnly) {
+        return startAdapter(
+                maxPollingErrorsBeforeRemoval, publishChangedDataOnly, ModbusProtocolAdapter.SAMPLER_TIMEOUT_MILLIS);
+    }
+
+    /// Builds the adapter with the given polling-error limit, change-only publishing and assumed sampler
+    /// timeout, starts it, and checks that the start succeeds.
+    private @NotNull ModbusProtocolAdapter startAdapter(
+            final int maxPollingErrorsBeforeRemoval,
+            final boolean publishChangedDataOnly,
+            final long samplerTimeoutMillis) {
         final ModbusTag tag = new ModbusTag(
                 "coil", null, new ModbusTagDefinition(COIL_ADDRESS, ModbusAdu.COILS, UNIT_ID, false, null));
         final ModbusSpecificAdapterConfig config = new ModbusSpecificAdapterConfig(
@@ -315,7 +378,8 @@ class ModbusProtocolAdapterOfflineStartTest {
         when(input.getConfig()).thenReturn(config);
         when(input.getProtocolAdapterState()).thenReturn(state);
         when(input.getTags()).thenReturn(List.of(tag));
-        final ModbusProtocolAdapter started = new ModbusProtocolAdapter(mock(ProtocolAdapterInformation.class), input);
+        final ModbusProtocolAdapter started =
+                new ModbusProtocolAdapter(mock(ProtocolAdapterInformation.class), input, samplerTimeoutMillis);
         adapter = started;
 
         final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
@@ -413,45 +477,86 @@ class ModbusProtocolAdapterOfflineStartTest {
         return null;
     }
 
-    private static @NotNull ModbusTcpServer startDevice(final int port) throws Exception {
-        return startDevice(port, new CopyOnWriteArrayList<>());
+    /// Starts the device on the adapter's port, which nothing listened on until now, with the coil set.
+    private @NotNull ModbusTcpServer startDevice(final int port) throws Exception {
+        return startDevice(port, new CopyOnWriteArrayList<>(), coilImage(true), new CompletableFuture<>());
     }
 
-    /// Starts the device on the port with the coil set; every connection it accepts is added to `connections`, so a
-    /// test can close one while the device keeps listening.
-    private static @NotNull ModbusTcpServer startDevice(final int port, final @NotNull List<Channel> connections)
-            throws Exception {
-        final ProcessImage image = new ProcessImage();
-        image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, true)));
-        return startDevice(port, connections, image);
+    /// Starts the device on a port the system picks and points `port`, the port the adapter is built with, at it;
+    /// every connection it accepts is added to `connections`, so a test can close one while the device keeps
+    /// listening.
+    private @NotNull ModbusTcpServer startDeviceOnAnyPort(
+            final @NotNull List<Channel> connections, final @NotNull ProcessImage image) throws Exception {
+        final CompletableFuture<Integer> bound = new CompletableFuture<>();
+        final ModbusTcpServer server = startDevice(0, connections, image, bound);
+        port = bound.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
+        return server;
     }
 
-    /// Starts the device on the port, serving `image` to every unit; every connection it accepts is added to
-    /// `connections`.
-    private static @NotNull ModbusTcpServer startDevice(
-            final int port, final @NotNull List<Channel> connections, final @NotNull ProcessImage image)
+    /// Starts the device on `port`, serving `image` to every unit, and completes `bound` with the port it listens on.
+    /// While `rejectAndClose` is set, it rejects every coil read with ILLEGAL_DATA_ADDRESS and then closes the
+    /// connection.
+    private @NotNull ModbusTcpServer startDevice(
+            final int port,
+            final @NotNull List<Channel> connections,
+            final @NotNull ProcessImage image,
+            final @NotNull CompletableFuture<Integer> bound)
             throws Exception {
         final ModbusTcpServer server = ModbusTcpServer.create(
                 NettyTcpServerTransport.create(cfg -> {
                     cfg.bindAddress = "127.0.0.1";
                     cfg.port = port;
                     cfg.pipelineCustomizer = pipeline -> connections.add(pipeline.channel());
+                    cfg.bootstrapCustomizer = bootstrap -> bootstrap.handler(new ChannelInboundHandlerAdapter() {
+                        @Override
+                        public void channelActive(final @NotNull ChannelHandlerContext context) {
+                            bound.complete(
+                                    ((InetSocketAddress) context.channel().localAddress()).getPort());
+                            context.fireChannelActive();
+                        }
+                    });
                 }),
                 new ReadWriteModbusServices() {
                     @Override
                     protected Optional<ProcessImage> getProcessImage(final int unitId) {
                         return Optional.of(image);
                     }
+
+                    @Override
+                    public ReadCoilsResponse readCoils(
+                            final ModbusRequestContext context, final int unitId, final ReadCoilsRequest request)
+                            throws ModbusResponseException, UnknownUnitIdException {
+                        if (!rejectAndClose.get()) {
+                            return super.readCoils(context, unitId, request);
+                        }
+                        rejections.incrementAndGet();
+                        final Channel connection = connections.getLast();
+                        connection
+                                .eventLoop()
+                                .schedule(
+                                        () -> {
+                                            connection.close();
+                                        },
+                                        CLOSE_AFTER_REJECTION_MILLIS,
+                                        TimeUnit.MILLISECONDS);
+                        throw new ModbusResponseException(FunctionCode.READ_COILS, ExceptionCode.ILLEGAL_DATA_ADDRESS);
+                    }
                 });
         server.start();
         return server;
     }
 
+    private static @NotNull ProcessImage coilImage(final boolean coil) {
+        final ProcessImage image = new ProcessImage();
+        image.with(tx -> tx.writeCoils(coils -> coils.put(COIL_ADDRESS, coil)));
+        return image;
+    }
+
     /// A poll's output that records when the adapter takes its publisher, which a read does first, and when the poll
-    /// publishes, which ends it even after it timed out.
+    /// ends, by a publish or a failure, which can come after it timed out.
     private static final class RecordingOutput extends PollingOutputImpl {
         private final @NotNull AtomicBoolean readStarted = new AtomicBoolean();
-        private final @NotNull CompletableFuture<Void> published = new CompletableFuture<>();
+        private final @NotNull CompletableFuture<Void> ended = new CompletableFuture<>();
 
         private RecordingOutput() {
             super(new ProtocolAdapterDataSampleImpl(ADAPTER_ID), ADAPTER_ID);
@@ -466,7 +571,19 @@ class ModbusProtocolAdapterOfflineStartTest {
         @Override
         public void finish() {
             super.finish();
-            published.complete(null);
+            ended.complete(null);
+        }
+
+        @Override
+        public void fail(final @NotNull Throwable t, final @Nullable String errorMessage) {
+            super.fail(t, errorMessage);
+            ended.complete(null);
+        }
+
+        @Override
+        public void fail(final @NotNull String errorMessage) {
+            super.fail(errorMessage);
+            ended.complete(null);
         }
     }
 }

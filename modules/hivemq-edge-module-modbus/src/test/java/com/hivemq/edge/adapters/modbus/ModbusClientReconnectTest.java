@@ -26,9 +26,10 @@ import com.digitalpetri.modbus.tcp.server.NettyTcpServerTransport;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
 import io.netty.channel.Channel;
-import java.io.IOException;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import java.net.ConnectException;
-import java.net.ServerSocket;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -64,9 +65,6 @@ class ModbusClientReconnectTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        try (final ServerSocket socket = new ServerSocket(0)) {
-            port = socket.getLocalPort();
-        }
         connections.clear();
         device = startDevice();
         final ModbusClient connected = new ModbusClient(new ModbusSpecificAdapterConfig(
@@ -161,14 +159,24 @@ class ModbusClientReconnectTest {
         return await().atMost(SEEN_WITHIN).until(connected::reconnectAfterDrop, Objects::nonNull);
     }
 
-    /// Starts a device on the port that answers every unit; every connection it accepts is added to `connections`.
-    private @NotNull ModbusTcpServer startDevice() throws ExecutionException, InterruptedException, IOException {
+    /// Starts a device on a port the system picks, sets `port` to it, and answers every unit; every connection it
+    /// accepts is added to `connections`.
+    private @NotNull ModbusTcpServer startDevice() throws Exception {
         final ProcessImage image = new ProcessImage();
+        final CompletableFuture<Integer> bound = new CompletableFuture<>();
         final ModbusTcpServer server = ModbusTcpServer.create(
                 NettyTcpServerTransport.create(cfg -> {
                     cfg.bindAddress = "127.0.0.1";
-                    cfg.port = port;
+                    cfg.port = 0;
                     cfg.pipelineCustomizer = pipeline -> connections.add(pipeline.channel());
+                    cfg.bootstrapCustomizer = bootstrap -> bootstrap.handler(new ChannelInboundHandlerAdapter() {
+                        @Override
+                        public void channelActive(final @NotNull ChannelHandlerContext context) {
+                            bound.complete(
+                                    ((InetSocketAddress) context.channel().localAddress()).getPort());
+                            context.fireChannelActive();
+                        }
+                    });
                 }),
                 new ReadWriteModbusServices() {
                     @Override
@@ -177,6 +185,7 @@ class ModbusClientReconnectTest {
                     }
                 });
         server.start();
+        port = bound.get(WAIT_SECONDS, TimeUnit.SECONDS);
         return server;
     }
 }

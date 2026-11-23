@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,6 +60,9 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final int ADDRESS_START_IDX = 1;
     private static final int ADDRESS_GROUP_IDX = 16;
     private static final int ADDRESS_GROUP_MAX = 256;
+    // The sampler times a poll out 10 s after poll() returns (AbstractSubscriptionSampler.POLL_OUTPUT_TIMEOUT_MILLIS
+    // in Edge, which a test holds this to): a publish within this time of poll() is handed on.
+    static final long SAMPLER_TIMEOUT_MILLIS = 10_000;
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ModbusSpecificAdapterConfig adapterConfig;
@@ -70,10 +74,23 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull String adapterId;
     private final @NotNull AtomicBoolean stopRequested;
     private final @NotNull AtomicBoolean startRequested;
+    private final long samplerTimeoutNanos;
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<ModbusSpecificAdapterConfig> input) {
+        this(adapterInformation, input, SAMPLER_TIMEOUT_MILLIS);
+    }
+
+    /**
+     * {@code samplerTimeoutMillis} is how long after {@code poll} is called the sampler still takes its output; a
+     * publish later than that is not recorded in the change cache.
+     */
+    ModbusProtocolAdapter(
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<ModbusSpecificAdapterConfig> input,
+            final long samplerTimeoutMillis) {
+        this.samplerTimeoutNanos = TimeUnit.MILLISECONDS.toNanos(samplerTimeoutMillis);
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
@@ -187,9 +204,10 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
+        final long pollStartNanos = System.nanoTime();
         if (startRequested.get() && !stopRequested.get()) {
             if (client.isConnected()) {
-                readTags(pollingOutput);
+                readTags(pollingOutput, pollStartNanos);
                 return;
             }
             final CompletableFuture<Void> reconnect = client.reconnectAfterDrop();
@@ -203,18 +221,20 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                         pollingOutput.fail(notConnectedMessage(throwable));
                         return;
                     }
-                    // The poll ends without data and the next poll reads on the new connection. The reconnect can end
-                    // after the sampler has timed this poll out, and the adapter cannot tell: a read here would then
-                    // record its values as published in the change cache while no consumer received them, and with
-                    // publishChangedDataOnly the next poll would suppress them as unchanged.
-                    pollingOutput.dataPointListPublisher().publish();
+                    // The read decides the poll, so polling errors keep counting until a read succeeds.
+                    try {
+                        readTags(pollingOutput, pollStartNanos);
+                    } catch (final RuntimeException e) {
+                        // The poll's caller catches what a direct read throws; here no caller would.
+                        pollingOutput.fail(e, "Unable to read tags from modbus");
+                    }
                 });
                 return;
             }
             // The reconnect may have succeeded between the two reads above: the client's state machine sets the state
             // and takes the future under one lock, so a second read sees the connection.
             if (client.isConnected()) {
-                readTags(pollingOutput);
+                readTags(pollingOutput, pollStartNanos);
                 return;
             }
         }
@@ -223,7 +243,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         pollingOutput.fail(notConnectedMessage(client.lastConnectFailure()));
     }
 
-    private void readTags(final @NotNull BatchPollingOutput pollingOutput) {
+    private void readTags(final @NotNull BatchPollingOutput pollingOutput, final long pollStartNanos) {
         final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
 
         final int limit = tags.size();
@@ -252,7 +272,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     final ResulTuple entry = readRegisterFuture.join();
                     final var tag = entry.tag();
                     final var value = entry.value();
-                    if (publishAllChanges || publishChangedDataOnlyHandler.replaceIfValueIsNew(tag.getName(), value)) {
+                    if (publishAllChanges || publishChangedDataOnlyHandler.isNew(tag.getName(), value)) {
                         final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
                         switch (value) {
                             case final Long val -> dataPointBuilder.value(val);
@@ -271,6 +291,17 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     }
                 }
                 dataPointsPublisher.publish();
+                // The change cache records a value as published only once the publish is known to have reached the
+                // sampler: the publish completes the poll's output at once, and the sampler cannot time the output
+                // out earlier than its timeout after poll(). A later publish may have been dropped, so the cache stays
+                // as it was and the next poll publishes the change again.
+                if (!publishAllChanges && System.nanoTime() - pollStartNanos < samplerTimeoutNanos) {
+                    for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
+                        final ResulTuple entry = readRegisterFuture.join();
+                        publishChangedDataOnlyHandler.replaceIfValueIsNew(
+                                entry.tag().getName(), entry.value());
+                    }
+                }
             } catch (final Exception e) {
                 pollingOutput.fail(e, "Unable to read tags from modbus");
             }
