@@ -34,8 +34,11 @@ import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import com.hivemq.util.NanoTimeProvider;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -227,6 +230,58 @@ class PollingTaskTest {
         await().untilAsserted(() ->
                 verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS)));
         assertThat(samplerFuture).isNotDone();
+    }
+
+    /// A poll the adapter did not carry out (it ended the poll with a cancellation, wrapped as the sampler's future
+    /// passes it on) leaves the error count as it is: with a limit of 1, a failed poll, one not carried out and
+    /// another failed poll stop polling, as two failed polls in a row would.
+    @Test
+    void run_whenAPollIsNotCarriedOutBetweenTwoFailures_thenTheErrorCountIsKeptAndPollingStops() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
+        final Iterator<CompletableFuture<?>> outcomes =
+                List.<CompletableFuture<?>>of(busy(), notCarriedOut(), busy()).iterator();
+        when(sampler.execute()).thenAnswer(_ -> outcomes.next());
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+
+        pollingTask.run();
+        pollingTask.run();
+        pollingTask.run();
+
+        verify(mockedExecutor, times(2)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        verify(sampler, times(1)).error(any(), eq(true));
+        verify(sampler, times(1)).error(any(), eq(false));
+    }
+
+    /// A poll not carried out after a failure does not stop polling at a limit of 1, and a successful poll after it
+    /// resets the count: one busy answer recovers.
+    @Test
+    void run_whenAPollIsNotCarriedOutAfterAFailure_thenTheNextSuccessfulPollResetsTheCount() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
+        final Iterator<CompletableFuture<?>> outcomes = List.<CompletableFuture<?>>of(
+                        busy(), notCarriedOut(), CompletableFuture.completedFuture(null), busy())
+                .iterator();
+        when(sampler.execute()).thenAnswer(_ -> outcomes.next());
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+
+        pollingTask.run();
+        pollingTask.run();
+        pollingTask.run();
+        pollingTask.run();
+
+        verify(mockedExecutor, times(4)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        verify(sampler, never()).error(any(), eq(false));
+        verify(sampler, times(2)).error(any(), eq(true));
+    }
+
+    private static @NotNull CompletableFuture<Object> busy() {
+        return CompletableFuture.failedFuture(new RuntimeException("busy"));
+    }
+
+    private static @NotNull CompletableFuture<Object> notCarriedOut() {
+        return CompletableFuture.failedFuture(
+                new CompletionException(new CancellationException("Reconnected too late to read within this poll")));
     }
 
     /// A poll whose failure arrives after `stopScheduling()` is dropped: the sampler, whose wrapper a restarted run of

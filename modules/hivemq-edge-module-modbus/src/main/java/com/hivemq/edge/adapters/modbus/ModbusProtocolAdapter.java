@@ -44,6 +44,7 @@ import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -247,17 +248,17 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     }
                     if (System.nanoTime() - pollStartNanos >= lateReadDeadlineNanos) {
                         // A read now could still be under way when the sampler takes the poll's output no longer,
-                        // and a value the device clears on read would be lost; the next poll reads instead. The
-                        // reconnect succeeded, so this poll ends without data rather than as a polling error: the
-                        // SDK has no outcome that leaves the error count as it is, and failing it would stop an
-                        // adapter at its limit before the next poll could read.
+                        // and a value the device clears on read would be lost; the next poll reads instead. This
+                        // poll is not carried out: Edge leaves the polling-error count as it is, so the first
+                        // reconnect costs no error, and a device whose every read fails still reaches its limit.
                         log.debug(
                                 "Reconnected too late to read within this poll, the next poll reads [adapterId={},"
                                         + " host={}, port={}]",
                                 adapterId,
                                 adapterConfig.getHost(),
                                 adapterConfig.getPort());
-                        pollingOutput.dataPointListPublisher().publish();
+                        pollingOutput.fail(
+                                new CancellationException("Reconnected too late to read within this poll"), null);
                         return;
                     }
                     // The read decides the poll, so polling errors keep counting until a read succeeds.
@@ -265,7 +266,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                         readTags(pollingOutput, pollStartNanos, runChangeCache);
                     } catch (final RuntimeException e) {
                         // The poll's caller catches what a direct read throws; here no caller would.
-                        pollingOutput.fail(e, "Unable to read tags from modbus");
+                        pollingOutput.fail(asPollingError(e), "Unable to read tags from modbus");
                     }
                 });
                 return;
@@ -319,7 +320,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                 }
                 if (firstFailure != null && readCount == 0) {
                     protocolAdapterState.setConnectionStatus(ERROR);
-                    pollingOutput.fail(firstFailure, "Unable to read tags from modbus");
+                    pollingOutput.fail(asPollingError(firstFailure), "Unable to read tags from modbus");
                     return;
                 }
 
@@ -378,9 +379,19 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     }
                 }
             } catch (final Exception e) {
-                pollingOutput.fail(e, "Unable to read tags from modbus");
+                pollingOutput.fail(asPollingError(e), "Unable to read tags from modbus");
             }
         });
+    }
+
+    /**
+     * A read that failed is a polling error. A cancellation passed on as it is would tell Edge the poll was not
+     * carried out, which leaves the error count as it is: a read the client cancelled is wrapped, so it counts.
+     */
+    private static @NotNull Throwable asPollingError(final @NotNull Throwable failure) {
+        return failure instanceof CancellationException
+                ? new IllegalStateException("The read was cancelled", failure)
+                : failure;
     }
 
     /** Logs a tag that a poll could not read while it read others, once until the tag is read again. */

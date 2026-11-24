@@ -127,6 +127,8 @@ public class PollingTask implements Runnable {
                 if (throwable == null) {
                     resetErrorStats();
                     reschedule(0);
+                } else if (PollingOutputImpl.isNotCarriedOut(throwable)) {
+                    handleNotCarriedOut(throwable);
                 } else {
                     if (throwable instanceof TimeoutException || ExceptionUtils.isInterruptedException(throwable)) {
                         handleInterruptionException(throwable);
@@ -165,6 +167,19 @@ public class PollingTask implements Runnable {
                     outcome);
         }
         return true;
+    }
+
+    // A poll the adapter did not carry out read nothing and failed nothing: the error counts stay as they are, so a
+    // device whose every read fails still reaches its limit, and the next poll keeps the backoff those errors set.
+    private void handleNotCarriedOut(final @NotNull Throwable outcome) {
+        if (log.isDebugEnabled()) {
+            log.debug(
+                    "A poll was not carried out, the polling-error count stays [adapterId={}, errorCount={}, reason={}]",
+                    sampler.getAdapterId(),
+                    applicationErrorCount.get(),
+                    outcome.getMessage());
+        }
+        reschedule(applicationErrorCount.get());
     }
 
     private void handleInterruptionException(final @NotNull Throwable throwable) {

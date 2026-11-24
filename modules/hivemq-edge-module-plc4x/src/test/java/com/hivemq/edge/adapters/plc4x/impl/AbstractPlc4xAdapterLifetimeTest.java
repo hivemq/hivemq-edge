@@ -58,6 +58,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -91,6 +92,8 @@ class AbstractPlc4xAdapterLifetimeTest {
     private static final @NotNull Duration STOP_ENDS_POLL_WITHIN = Duration.ofSeconds(1);
     // Short enough to watch a poll run out of time; the read budget is this minus the adapter's read margin.
     private static final long SHORT_SAMPLER_TIMEOUT_MILLIS = 1_000;
+    // A send that blocks inside poll() this long, well under SHORT_SAMPLER_TIMEOUT_MILLIS.
+    private static final long SLOW_SEND_MILLIS = 300;
     private static final @NotNull Plc4xTag TAG_A = tag("a");
     private static final @NotNull Plc4xTag TAG_B = tag("b");
 
@@ -238,10 +241,10 @@ class AbstractPlc4xAdapterLifetimeTest {
         assertThat(SAMPLER_TIMEOUT_MILLIS).isLessThanOrEqualTo(AbstractSubscriptionSampler.POLL_OUTPUT_TIMEOUT_MILLIS);
     }
 
-    /// A device that never answers fails the poll before the sampler's timeout, not after the driver's own limit,
-    /// which for S7 is longer than the sampler waits.
+    /// A device that never answers fails the poll at the sampler's timeout, not after the driver's own limit, which
+    /// for S7 is longer than the sampler waits; the read margin does not shorten a read already sent.
     @Test
-    void readTheDeviceNeverAnswers_failsThePollBeforeTheSamplersTimeout() {
+    void readTheDeviceNeverAnswers_failsThePollAtTheSamplersTimeout() {
         final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
         adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
         adapter.awaitConnected();
@@ -253,12 +256,113 @@ class AbstractPlc4xAdapterLifetimeTest {
         await().atMost(TIMEOUT).until(() -> unanswered.failMessage != null);
         assertThat(unanswered.failMessage).contains("did not answer the read in time");
         assertThat(unanswered.failedAtNanos - pollStartNanos)
-                .isLessThan(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS));
+                .isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS))
+                .isLessThan(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS) + TIMEOUT.toNanos());
     }
 
-    /// A poll whose connection attempt took most of its time ends without reading and without an error: the answer
-    /// would come after the sampler stopped waiting, and a value the device clears on read would be lost; the next
-    /// poll reads.
+    /// A read sent at once and answered after the read margin but before the sampler's timeout is published, so an
+    /// alarm the device cleared on that read reaches the consumer. The margin decides only whether a read starts.
+    @Test
+    void readAnsweredInsideTheSamplersTimeoutButPastTheMargin_isPublished() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        final CompletableFuture<PlcReadResponse> late = new CompletableFuture<>();
+        adapter.answer = () -> late;
+
+        final long pollStartNanos = System.nanoTime();
+        final RecordingOutput alarm = adapter.poll();
+        await().atMost(TIMEOUT)
+                .pollInterval(Duration.ofMillis(10))
+                .until(() -> System.nanoTime() - pollStartNanos
+                        > TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS - READ_MARGIN_MILLIS + 200));
+        late.complete(response(Map.of("a", ok(1))));
+
+        await().atMost(TIMEOUT).until(alarm::completed);
+        assertThat(alarm.failMessage).isNull();
+        assertThat(alarm.added).containsExactly("a");
+    }
+
+    /// A send that takes time inside `poll()` does not shorten the read: the sampler's timeout starts only once
+    /// `poll()` returns, so an answer within the sampler's time after that return is published.
+    @Test
+    void slowSendInsideThePoll_doesNotShortenTheRead() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        final CompletableFuture<PlcReadResponse> late = new CompletableFuture<>();
+        adapter.answer = () -> {
+            try {
+                Thread.sleep(SLOW_SEND_MILLIS);
+            } catch (final InterruptedException _) {
+                Thread.currentThread().interrupt();
+            }
+            return late;
+        };
+
+        final RecordingOutput polled = adapter.poll();
+        final long returnedNanos = System.nanoTime();
+        await().atMost(TIMEOUT)
+                .pollInterval(Duration.ofMillis(10))
+                .until(() -> System.nanoTime() - returnedNanos
+                        > TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS - SLOW_SEND_MILLIS + 100));
+        late.complete(response(Map.of("a", ok(1))));
+
+        await().atMost(TIMEOUT).until(polled::completed);
+        assertThat(polled.failMessage).isNull();
+        assertThat(polled.added).containsExactly("a");
+    }
+
+    /// A read the driver cancels is a polling error: the cancellation reaches the output wrapped, so Edge does not
+    /// take it for a poll the adapter did not carry out, which would leave the error count as it is.
+    @Test
+    void readTheDriverCancels_failsThePollAsAPollingError() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> {
+            final CompletableFuture<PlcReadResponse> cancelled = new CompletableFuture<>();
+            cancelled.cancel(false);
+            return cancelled;
+        };
+
+        final RecordingOutput polled = adapter.poll();
+
+        await().atMost(TIMEOUT).until(polled::completed);
+        assertThat(polled.failure).isNotNull().isNotInstanceOf(CancellationException.class);
+        assertThat(polled.failure).hasCauseInstanceOf(CancellationException.class);
+    }
+
+    /// A read the driver never completes (S7 0.13.1 drops a response it cannot decode)
+    /// holds the next poll only until that poll's time to start a read runs out; then the connection is closed, the
+    /// poll ends as not carried out (the read's own poll already counted it), and the poll after it connects again
+    /// and reads.
+    @Test
+    void readTheDriverNeverCompletes_isAbandonedByTheNextPollAndTheConnectionReopened() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.poll();
+
+        final RecordingOutput waiting = adapter.poll();
+
+        await().atMost(TIMEOUT).until(waiting::completed);
+        assertThat(waiting.failure).isInstanceOf(CancellationException.class);
+        assertThat(waiting.failMessage).contains("left the previous read unanswered");
+        assertThat(adapter.reads.get()).isEqualTo(1);
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            final RecordingOutput next = adapter.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+            assertThat(next.added).containsExactly("a");
+        });
+        assertThat(adapter.connections).hasSize(2);
+    }
+
+    /// A poll whose connection attempt took most of its time ends without reading, as a poll not carried out, which
+    /// Edge counts neither as an error nor as a success: the answer would come after the sampler stopped waiting,
+    /// and a value the device clears on read would be lost; the next poll reads.
     @Test
     void connectionEstablishedTooLateInThePoll_endsWithoutReadingAndTheNextPollReads() {
         final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
@@ -275,7 +379,7 @@ class AbstractPlc4xAdapterLifetimeTest {
         adapter.connectGate.countDown();
 
         await().atMost(TIMEOUT).until(waiting::completed);
-        assertThat(waiting.failMessage).isNull();
+        assertThat(waiting.failure).isInstanceOf(CancellationException.class);
         assertThat(waiting.added).isEmpty();
         assertThat(adapter.reads.get()).isZero();
         adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(1))));
@@ -713,6 +817,7 @@ class AbstractPlc4xAdapterLifetimeTest {
         volatile boolean publishGateExpired;
         volatile boolean published;
         volatile @Nullable String failMessage;
+        volatile @Nullable Throwable failure;
         volatile long failedAtNanos;
 
         boolean completed() {
@@ -759,6 +864,7 @@ class AbstractPlc4xAdapterLifetimeTest {
 
         @Override
         public void fail(final @NotNull Throwable t, final @Nullable String errorMessage) {
+            failure = t;
             fail(errorMessage != null ? errorMessage : String.valueOf(t.getMessage()));
         }
 

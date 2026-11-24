@@ -343,8 +343,8 @@ class ModbusProtocolAdapterOfflineStartTest {
     }
 
     /// A poll whose reconnect succeeds later than the sampler's timeout less the client's request timeout ends
-    /// without reading and without an error, though the sampler would still take its output: a read then could be
-    /// answered after the sampler timed the poll out, and the next poll reads instead.
+    /// without reading, as a poll not carried out, though the sampler would still take its output: a read then may
+    /// be answered after the sampler timed the poll out, and the next poll reads instead.
     @Test
     void aPollWhoseReconnectComesTooLateForAReadEndsWithoutReading() throws Exception {
         final List<Channel> connections = new CopyOnWriteArrayList<>();
@@ -362,14 +362,13 @@ class ModbusProtocolAdapterOfflineStartTest {
         waiting.ended.get(POLL_WAIT_SECONDS, TimeUnit.SECONDS);
 
         assertThat(coilReads).hasValue(readsBeforeTheReconnect);
-        assertThat(waiting.getOutputFuture().get(POLL_WAIT_SECONDS, TimeUnit.SECONDS))
-                .isEqualTo(PollingOutputImpl.PollingResult.NO_DATA);
+        assertThat(waiting.getOutputFuture().isCancelled()).isTrue();
         assertThat(pollPublishesTrue(started)).isTrue();
     }
 
     /// Through the sampler with a limit of 1: a read the device rejects as busy before it closes the connection is
-    /// one polling error, and a poll whose reconnect comes too late to read adds none, so the adapter is not
-    /// stopped and the next poll reads the coil.
+    /// one polling error, and a poll whose reconnect comes too late to read neither adds one nor resets the count,
+    /// so the adapter is not stopped and the next poll reads the coil.
     @Test
     void aReconnectTooLateForAReadAfterARejectedReadDoesNotStopTheAdapter() throws Exception {
         device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
@@ -389,8 +388,7 @@ class ModbusProtocolAdapterOfflineStartTest {
 
     /// Through the sampler, polling errors keep counting across reconnects that come in time to read: a device
     /// that rejects every read with ILLEGAL_DATA_ADDRESS and closes the connection stops the adapter once its error
-    /// limit is passed, though each rejection costs a reconnect. A poll whose reconnect comes too late to read ends
-    /// without data and resets the count.
+    /// limit is passed, though each rejection costs a reconnect.
     @ParameterizedTest
     @ValueSource(ints = {1, 3})
     void aDeviceThatRejectsEveryReadAndClosesStopsTheAdapterPastItsLimit(final int limit) throws Exception {
@@ -405,6 +403,24 @@ class ModbusProtocolAdapterOfflineStartTest {
         verify(wrapper, timeout(REJECTIONS_WINDOW.toMillis())).stopAsync(false);
         verify(wrapper, atLeast(limit + 1)).setErrorConnectionStatus(any(), isNull());
         assertThat(rejections).hasPositiveValue();
+    }
+
+    /// Through the sampler with a limit of 1, a device that rejects every read and closes the connection, and
+    /// every reconnect comes too late for its poll to read. The polls not carried out keep the count, so the second
+    /// rejected read passes the limit and the adapter is stopped.
+    @Test
+    void aDeviceThatRejectsEveryReadAndReconnectsTooLateStopsTheAdapterPastItsLimit() throws Exception {
+        device = startDeviceOnAnyPort(new CopyOnWriteArrayList<>(), coilImage(true));
+        final TagManager tagManager = mock(TagManager.class);
+        final ProtocolAdapterWrapper wrapper =
+                startPolling(startAdapter(1, false, LATE_READ_SAMPLER_TIMEOUT_MILLIS), tagManager);
+        verify(tagManager, timeout(TimeUnit.SECONDS.toMillis(POLL_WAIT_SECONDS)))
+                .feed(anyList());
+
+        rejectAndClose.set(true);
+
+        verify(wrapper, timeout(REJECTIONS_WINDOW.toMillis())).stopAsync(false);
+        assertThat(rejections).hasValue(2);
     }
 
     /// With `publishChangedDataOnly`, a coil that goes `false`, `true`, `false` reaches the consumer as all three

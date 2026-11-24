@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -239,8 +240,19 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 retire(pollingOutput.dataPointListPublisher());
                 return;
             }
-            pollingOutput.fail(e, "Polling failed for adapter '" + adapterId + "' while reading from the device");
+            pollingOutput.fail(
+                    asPollingError(e), "Polling failed for adapter '" + adapterId + "' while reading from the device");
         }
+    }
+
+    /**
+     * A read that failed is a polling error. A cancellation passed on as it is would tell Edge the poll was not
+     * carried out, which leaves the error count as it is: a read the driver cancelled is wrapped, so it counts.
+     */
+    private static @NotNull Throwable asPollingError(final @NotNull Throwable failure) {
+        return failure instanceof CancellationException
+                ? new IllegalStateException("The read was cancelled", failure)
+                : failure;
     }
 
     private void readTags(
@@ -257,13 +269,24 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 // The drivers send one request at a time, so a read sent now would queue behind the unanswered one.
                 // Failing this poll instead would count one unanswered read twice: S7 holds a request for 10 s, past
                 // the poll that gave up on it, into the next poll. This poll reads once the driver answers or gives
-                // up, within what is left of its own time; off the driver's thread, which completes the previous read.
+                // up, within what is left of its own time to start a read; off the driver's thread, which completes
+                // the previous read. A driver can leave a read unanswered for good (S7 0.13.1 catches a response it
+                // cannot decode and never completes the request): when the wait runs out, the connection is closed,
+                // which fails that read, this poll is not carried out, and the next poll connects again.
+                final long waitBudgetNanos = readStartBudgetNanos(pollStartNanos);
                 @SuppressWarnings("unused")
                 final var waited = previous.read()
+                        .copy()
+                        .orTimeout(Math.max(0, waitBudgetNanos), TimeUnit.NANOSECONDS)
                         .whenCompleteAsync(
-                                (_, _) -> {
+                                (_, failure) -> {
                                     if (hasEnded(runChangeCache)) {
                                         retire(dataPointsPublisher);
+                                        return;
+                                    }
+                                    if (failure instanceof TimeoutException
+                                            && !previous.read().isDone()) {
+                                        abandonUnanswered(usable, pollingOutput);
                                         return;
                                     }
                                     read(usable, pollingOutput, pollStartNanos, runChangeCache);
@@ -271,26 +294,29 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                                 Plc4xConnection.connectExecutor());
                 return;
             }
-            final long readBudgetNanos = samplerTimeoutNanos - READ_MARGIN_NANOS - (System.nanoTime() - pollStartNanos);
-            if (readBudgetNanos <= 0) {
+            if (readStartBudgetNanos(pollStartNanos) <= 0) {
                 // A read now would be answered after the sampler takes the poll's output no longer, and a value the
                 // device clears on read would be lost; the next poll reads instead. The connection is up, so this
-                // poll ends without data rather than as a polling error: the SDK has no outcome that leaves the
-                // error count as it is, and failing it would stop an adapter at its limit before the next poll
-                // could read.
+                // poll is not carried out: Edge leaves the polling-error count as it is, so the read the next poll
+                // makes decides, and a device whose every read fails still reaches its limit.
                 log.debug(
                         "Too little of the poll's time was left to read, the next poll reads [adapterId={},"
                                 + " samplerTimeoutMillis={}, readMarginMillis={}]",
                         adapterId,
                         TimeUnit.NANOSECONDS.toMillis(samplerTimeoutNanos),
                         READ_MARGIN_MILLIS);
-                dataPointsPublisher.publish();
+                pollingOutput.fail(new CancellationException("Too little of the poll's time was left to read"), null);
                 return;
             }
+            // The margin decides whether a read starts; a read sent may answer until the sampler's timeout, and an
+            // answer the device has sent (and possibly cleared on read) is handed on whenever the sampler still takes
+            // it. The time is taken before the send: the sampler's timeout starts only once poll() returns, after a
+            // send made within poll(), so time the send takes there does not shorten the read. Timed out on a copy:
+            // the connection's own future stays pending until the driver answers or the connection closes, which is
+            // what the in-flight check above looks at.
+            final long readBudgetNanos = samplerTimeoutNanos - (System.nanoTime() - pollStartNanos);
             final CompletableFuture<? extends PlcReadResponse> sent = usable.read(tags);
             lastRead = new InFlightRead(usable, sent);
-            // Timed out on a copy: the connection's own future stays pending until the driver answers or the
-            // connection closes, which is what the in-flight check above looks at.
             @SuppressWarnings("unused")
             final var unused = sent.copy()
                     .orTimeout(readBudgetNanos, TimeUnit.NANOSECONDS)
@@ -312,7 +338,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                                     + "' because the device did not answer the read in time [readTimeoutMillis="
                                     + TimeUnit.NANOSECONDS.toMillis(readBudgetNanos) + "]");
                         } else if (t != null) {
-                            pollingOutput.fail(t, null);
+                            pollingOutput.fail(asPollingError(t), null);
                         } else {
                             try {
                                 publishResponse(
@@ -802,6 +828,31 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     public int getMaxPollingErrorsBeforeRemoval() {
         final var cfg = adapterConfig.getPlc4xToMqttConfig();
         return cfg != null ? cfg.getMaxPollingErrorsBeforeRemoval() : 5;
+    }
+
+    /** How long after now a read may still start in a poll that started at {@code pollStartNanos}. */
+    private long readStartBudgetNanos(final long pollStartNanos) {
+        return samplerTimeoutNanos - READ_MARGIN_NANOS - (System.nanoTime() - pollStartNanos);
+    }
+
+    /**
+     * Closes a connection whose previous read the driver left unanswered past a whole poll; closing fails that read,
+     * and the next poll connects again. This poll is not carried out: the poll that sent the read already counted
+     * it as a polling error, and counting it again would stop an adapter at its limit before the reconnect.
+     */
+    private void abandonUnanswered(
+            final @NotNull Plc4xConnection<T> usable, final @NotNull BatchPollingOutput pollingOutput) {
+        if (release(usable)) {
+            log.warn(
+                    "The device did not answer a read for a whole poll, reconnecting [adapterId={},"
+                            + " samplerTimeoutMillis={}]",
+                    adapterId,
+                    TimeUnit.NANOSECONDS.toMillis(samplerTimeoutNanos));
+            disconnectQuietly(usable);
+        }
+        pollingOutput.fail(
+                new CancellationException("The device left the previous read unanswered; the next poll reconnects"),
+                null);
     }
 
     public enum ReadType {

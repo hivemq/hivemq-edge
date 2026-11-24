@@ -23,7 +23,9 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.datapoint.DataPointListBuilderImpl;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,6 +44,21 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
     public PollingOutputImpl(final @NotNull ProtocolAdapterDataSample dataSample, final @NotNull String adapterId) {
         this.dataSample = dataSample;
         this.adapterId = adapterId;
+    }
+
+    /**
+     * Whether a poll's outcome says the poll was not carried out: the adapter ended it with
+     * {@code fail(CancellationException, ...)} because nothing could be read within the poll's time, for instance a
+     * reconnect that completed too late to start a read. Such a poll is neither a polling error nor a successful poll,
+     * so it leaves the polling-error count as it is. The SDK has no outcome of its own for this; a cancellation is the
+     * nearest one, as the poll's work was abandoned by the adapter, not failed by the device.
+     */
+    public static boolean isNotCarriedOut(final @NotNull Throwable outcome) {
+        Throwable cause = outcome;
+        while (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause instanceof CancellationException;
     }
 
     /**
