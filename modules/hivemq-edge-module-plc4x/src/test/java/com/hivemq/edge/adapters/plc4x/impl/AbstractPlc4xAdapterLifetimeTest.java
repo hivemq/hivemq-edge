@@ -96,6 +96,14 @@ class AbstractPlc4xAdapterLifetimeTest {
     private static final long SLOW_SEND_MILLIS = 300;
     // A close that takes longer than what is left of a poll after it waited on an unanswered read (the read margin).
     private static final long SLOW_CLOSE_MILLIS = 850;
+    // A close that does not end within the test: far longer than SHORT_SAMPLER_TIMEOUT_MILLIS and within TIMEOUT.
+    private static final long HUNG_CLOSE_MILLIS = 4_000;
+    // A close that a one-session device takes, shorter than what is left of a poll after it waited on an unanswered
+    // read, so the next poll can wait for it and still read.
+    private static final long ONE_SESSION_CLOSE_MILLIS = 410;
+    // How long after the abandoning poll the next one starts: well inside ONE_SESSION_CLOSE_MILLIS, so the close is
+    // still running, and leaving that poll time to read after the close.
+    private static final long NEXT_POLL_AFTER_MILLIS = 200;
     private static final @NotNull Plc4xTag TAG_A = tag("a");
     private static final @NotNull Plc4xTag TAG_B = tag("b");
 
@@ -334,6 +342,59 @@ class AbstractPlc4xAdapterLifetimeTest {
         assertThat(waiting.failure).isInstanceOf(CancellationException.class);
         assertThat(waiting.failedAtNanos - pollStartNanos)
                 .isLessThan(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS));
+    }
+
+    /// A device that takes one session at a time refuses a new one while it still closes the old: the poll after the
+    /// abandoning one waits for the slow close of the abandoned connection, then connects and reads, so the read
+    /// left unanswered costs no second polling error.
+    @Test
+    void readTheDriverNeverCompletes_nextPollConnectsOnceTheAbandonedConnectionClosed() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.oneSession = true;
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = ONE_SESSION_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        final long abandonedNanos = System.nanoTime();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+        await().atMost(TIMEOUT)
+                .pollInterval(Duration.ofMillis(10))
+                .until(() ->
+                        System.nanoTime() - abandonedNanos > TimeUnit.MILLISECONDS.toNanos(NEXT_POLL_AFTER_MILLIS));
+
+        final RecordingOutput next = adapter.poll();
+
+        await().atMost(TIMEOUT).until(next::completed);
+        assertThat(next.failMessage).isNull();
+        assertThat(next.added).containsExactly("a");
+        assertThat(adapter.connections).hasSize(2);
+    }
+
+    /// A close of the abandoned connection that hangs holds the next connection attempt only for one sampler timeout:
+    /// a driver's close has no timeout of its own, and the adapter must still connect again.
+    @Test
+    void abandonedConnectionWhoseCloseHangs_holdsTheNextAttemptForOneSamplerTimeoutOnly() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = HUNG_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        final long abandonedNanos = System.nanoTime();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            final RecordingOutput next = adapter.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+            assertThat(next.added).containsExactly("a");
+        });
+        assertThat(System.nanoTime() - abandonedNanos).isLessThan(TimeUnit.MILLISECONDS.toNanos(HUNG_CLOSE_MILLIS));
     }
 
     /// A read the driver cancels is a polling error: the cancellation reaches the output wrapped, so Edge does not
@@ -654,6 +715,11 @@ class AbstractPlc4xAdapterLifetimeTest {
         // How long a disconnect takes, as a driver that closes slowly. Set by the test thread before the polls, read by
         // the thread that disconnects.
         volatile long closeMillis;
+        // Whether the device takes one session at a time: a connect fails while another connection is still closing.
+        // Set by the test thread before start(), read by the connect threads.
+        volatile boolean oneSession;
+        // The disconnects still running, counted by the threads that disconnect, read by the connect threads.
+        final @NotNull AtomicInteger closesInProgress = new AtomicInteger();
 
         LifetimeAdapter(final @NotNull List<Plc4xTag> tags, final long samplerTimeoutMillis) {
             this(tags, samplerTimeoutMillis, true);
@@ -763,6 +829,9 @@ class AbstractPlc4xAdapterLifetimeTest {
                 final @NotNull String adapterId,
                 final @NotNull String protocolId)
                 throws Plc4xException {
+            if (adapter.oneSession && adapter.closesInProgress.get() > 0) {
+                throw new Plc4xException("the device still holds another session");
+            }
             connecting = Thread.currentThread();
             try {
                 if (closed.getCount() == 0) {
@@ -807,12 +876,15 @@ class AbstractPlc4xAdapterLifetimeTest {
 
         @Override
         public void disconnect() {
-            if (adapter.closeMillis > 0) {
-                try {
+            adapter.closesInProgress.incrementAndGet();
+            try {
+                if (adapter.closeMillis > 0) {
                     Thread.sleep(adapter.closeMillis);
-                } catch (final InterruptedException _) {
-                    Thread.currentThread().interrupt();
                 }
+            } catch (final InterruptedException _) {
+                Thread.currentThread().interrupt();
+            } finally {
+                adapter.closesInProgress.decrementAndGet();
             }
             connected = false;
             closed.countDown();

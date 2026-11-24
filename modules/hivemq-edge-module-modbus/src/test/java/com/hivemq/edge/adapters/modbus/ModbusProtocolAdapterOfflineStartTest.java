@@ -92,7 +92,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -403,6 +405,20 @@ class ModbusProtocolAdapterOfflineStartTest {
         verify(wrapper, timeout(REJECTIONS_WINDOW.toMillis())).stopAsync(false);
         verify(wrapper, atLeast(limit + 1)).setErrorConnectionStatus(any(), isNull());
         assertThat(rejections).hasPositiveValue();
+    }
+
+    /// Edge takes a poll the Modbus adapter ended with a cancellation for a poll not carried out only by the adapter's
+    /// protocol id, and a read the client cancelled, wrapped by the adapter, still counts.
+    @Test
+    void edgeTakesOnlyTheModbusAdaptersOwnCancellationForAPollNotCarriedOut() {
+        assertThat(PollingOutputImpl.isNotCarriedOut(
+                        ModbusProtocolAdapterInformation.PROTOCOL_ID,
+                        new CompletionException(new CancellationException("Reconnected too late"))))
+                .isTrue();
+        assertThat(PollingOutputImpl.isNotCarriedOut(
+                        ModbusProtocolAdapterInformation.PROTOCOL_ID,
+                        new IllegalStateException("The read was cancelled", new CancellationException())))
+                .isFalse();
     }
 
     /// Through the sampler with a limit of 1, a device that rejects every read and closes the connection, and

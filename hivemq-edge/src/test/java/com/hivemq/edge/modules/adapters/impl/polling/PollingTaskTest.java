@@ -47,6 +47,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 class PollingTaskTest {
@@ -232,12 +234,15 @@ class PollingTaskTest {
         assertThat(samplerFuture).isNotDone();
     }
 
-    /// A poll the adapter did not carry out (it ended the poll with a cancellation, wrapped as the sampler's future
-    /// passes it on) leaves the error count as it is: with a limit of 1, a failed poll, one not carried out and
-    /// another failed poll stop polling, as two failed polls in a row would.
-    @Test
-    void run_whenAPollIsNotCarriedOutBetweenTwoFailures_thenTheErrorCountIsKeptAndPollingStops() {
+    /// A poll a built-in Modbus or PLC4X adapter did not carry out (it ended the poll with a cancellation, wrapped as
+    /// the sampler's future passes it on) leaves the error count as it is: at a limit of 1, a failed poll, a poll
+    /// not carried out and another failed poll stop polling, as two failed polls in a row would.
+    @ParameterizedTest
+    @ValueSource(strings = {"modbus", "s7", "ads"})
+    void run_whenAPollIsNotCarriedOutBetweenTwoFailures_thenTheErrorCountIsKeptAndPollingStops(
+            final @NotNull String protocolId) {
         final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getProtocolId()).thenReturn(protocolId);
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
         final Iterator<CompletableFuture<?>> outcomes =
                 List.<CompletableFuture<?>>of(busy(), notCarriedOut(), busy()).iterator();
@@ -255,9 +260,12 @@ class PollingTaskTest {
 
     /// A poll not carried out after a failure does not stop polling at a limit of 1, and a successful poll after it
     /// resets the count: one busy answer recovers.
-    @Test
-    void run_whenAPollIsNotCarriedOutAfterAFailure_thenTheNextSuccessfulPollResetsTheCount() {
+    @ParameterizedTest
+    @ValueSource(strings = {"modbus", "s7", "ads"})
+    void run_whenAPollIsNotCarriedOutAfterAFailure_thenTheNextSuccessfulPollResetsTheCount(
+            final @NotNull String protocolId) {
         final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getProtocolId()).thenReturn(protocolId);
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
         final Iterator<CompletableFuture<?>> outcomes = List.<CompletableFuture<?>>of(
                         busy(), notCarriedOut(), CompletableFuture.completedFuture(null), busy())
@@ -273,6 +281,24 @@ class PollingTaskTest {
         verify(mockedExecutor, times(4)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
         verify(sampler, never()).error(any(), eq(false));
         verify(sampler, times(2)).error(any(), eq(true));
+    }
+
+    /// A cancelled request from any other adapter, HTTP or a third party, is an ordinary polling error: with a limit
+    /// of 0, polling stops at the first cancellation, as it did before polls not carried out existed.
+    @ParameterizedTest
+    @ValueSource(strings = {"http", "test-protocol"})
+    void run_whenAnotherAdaptersRequestIsCancelled_thenItCountsAndALimitOfZeroStopsPolling(
+            final @NotNull String protocolId) {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getProtocolId()).thenReturn(protocolId);
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(0);
+        when(sampler.execute()).thenAnswer(_ -> notCarriedOut());
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+
+        pollingTask.run();
+
+        verify(mockedExecutor, never()).schedule(any(Runnable.class), anyLong(), any());
+        verify(sampler, times(1)).error(any(), eq(false));
     }
 
     private static @NotNull CompletableFuture<Object> busy() {

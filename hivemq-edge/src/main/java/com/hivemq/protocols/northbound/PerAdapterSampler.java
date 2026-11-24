@@ -81,7 +81,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
         });
         return completeBeforeReporting(poll, (_, throwable) -> {
             if (throwable != null) {
-                if (PollingOutputImpl.isNotCarriedOut(throwable)) {
+                if (PollingOutputImpl.isNotCarriedOut(getProtocolId(), throwable)) {
                     // Not an error: the polling task leaves the error count as it is and logs the poll.
                     return;
                 }

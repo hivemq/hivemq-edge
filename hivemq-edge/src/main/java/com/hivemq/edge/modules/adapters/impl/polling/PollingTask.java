@@ -127,7 +127,7 @@ public class PollingTask implements Runnable {
                 if (throwable == null) {
                     resetErrorStats();
                     reschedule(0);
-                } else if (PollingOutputImpl.isNotCarriedOut(throwable)) {
+                } else if (PollingOutputImpl.isNotCarriedOut(sampler.getProtocolId(), throwable)) {
                     handleNotCarriedOut(throwable);
                 } else {
                     if (throwable instanceof TimeoutException || ExceptionUtils.isInterruptedException(throwable)) {

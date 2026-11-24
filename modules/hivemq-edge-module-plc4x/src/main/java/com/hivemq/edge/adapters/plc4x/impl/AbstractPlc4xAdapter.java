@@ -115,6 +115,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private boolean stopped;
     // Guarded by lock: the connection of the latest attempt, whose connect may still be ending after a timeout.
     private @Nullable Plc4xConnection<T> latestAttempt;
+    // Guarded by lock: the close of the latest connection abandoned for an unanswered read, which never completes
+    // exceptionally. Set by the poll that abandons it, on a connect thread; read by connect(), on the polling or the
+    // lifecycle thread, which starts the next connection attempt only once this close has ended or one sampler timeout
+    // has passed.
+    private @NotNull CompletableFuture<Void> abandonedClose = CompletableFuture.completedFuture(null);
 
     protected volatile @Nullable Plc4xConnection<T> connection;
     private volatile @Nullable EventService eventService;
@@ -430,8 +435,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             // after it, and the adapter wrapper does not report a start that left DISCONNECTED as CONNECTED.
             protocolAdapterState.setConnectionStatus(CONNECTING);
             try {
+                // A device may take one session at a time, and refuse a new one while it still holds the abandoned
+                // one: the attempt connects once that close has ended, and the poll waiting on it waits for the close.
                 @SuppressWarnings("unused")
-                final var unused = CompletableFuture.runAsync(
+                final var unused = abandonedClose
+                        .thenRunAsync(
                                 () -> {
                                     try {
                                         tempConnection.startConnection(
@@ -840,13 +848,29 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * and the next poll connects again. This poll is not carried out: the poll that sent the read already counted
      * it as a polling error, and counting it again would stop an adapter at its limit before the reconnect. The poll
      * ends once the connection is released, before the close, which a driver may take its time over: little of the
-     * poll's time is left, and a close past the sampler's timeout would turn the poll into a polling error. The next
-     * poll may therefore connect while the old connection is still closing; the close touches only that connection,
-     * and a device that takes one session at a time and refuses the new one meanwhile costs that poll one error.
+     * poll's time is left, and a close past the sampler's timeout would turn the poll into a polling error. The close
+     * runs on a connect thread, and the next connection attempt starts once it has ended: a device that takes one
+     * session at a time would refuse the new one while it still holds the old. The next poll waits for the close
+     * within its own time.
      */
     private void abandonUnanswered(
             final @NotNull Plc4xConnection<T> usable, final @NotNull BatchPollingOutput pollingOutput) {
         final boolean released = release(usable);
+        if (released) {
+            // Set before this poll completes, so the poll the sampler starts next finds the close to wait for.
+            synchronized (lock) {
+                // The wait for the close is bounded by one sampler timeout: a driver's close has no timeout of its
+                // own, and one that hangs must not keep the adapter from ever connecting again. Past it the next
+                // attempt connects; a device that still holds the old session refuses it, one polling error.
+                abandonedClose = CompletableFuture.runAsync(
+                                () -> disconnectQuietly(usable), Plc4xConnection.connectExecutor())
+                        .exceptionally(t -> {
+                            log.error("Error closing the abandoned PLC4X connection [adapterId={}]", adapterId, t);
+                            return null;
+                        })
+                        .completeOnTimeout(null, samplerTimeoutNanos, TimeUnit.NANOSECONDS);
+            }
+        }
         pollingOutput.fail(
                 new CancellationException("The device left the previous read unanswered; the next poll reconnects"),
                 null);
@@ -856,7 +880,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                             + " samplerTimeoutMillis={}]",
                     adapterId,
                     TimeUnit.NANOSECONDS.toMillis(samplerTimeoutNanos));
-            disconnectQuietly(usable);
         }
     }
 
