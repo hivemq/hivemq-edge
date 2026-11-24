@@ -838,11 +838,19 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     /**
      * Closes a connection whose previous read the driver left unanswered past a whole poll; closing fails that read,
      * and the next poll connects again. This poll is not carried out: the poll that sent the read already counted
-     * it as a polling error, and counting it again would stop an adapter at its limit before the reconnect.
+     * it as a polling error, and counting it again would stop an adapter at its limit before the reconnect. The poll
+     * ends once the connection is released, before the close, which a driver may take its time over: little of the
+     * poll's time is left, and a close past the sampler's timeout would turn the poll into a polling error. The next
+     * poll may therefore connect while the old connection is still closing; the close touches only that connection,
+     * and a device that takes one session at a time and refuses the new one meanwhile costs that poll one error.
      */
     private void abandonUnanswered(
             final @NotNull Plc4xConnection<T> usable, final @NotNull BatchPollingOutput pollingOutput) {
-        if (release(usable)) {
+        final boolean released = release(usable);
+        pollingOutput.fail(
+                new CancellationException("The device left the previous read unanswered; the next poll reconnects"),
+                null);
+        if (released) {
             log.warn(
                     "The device did not answer a read for a whole poll, reconnecting [adapterId={},"
                             + " samplerTimeoutMillis={}]",
@@ -850,9 +858,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                     TimeUnit.NANOSECONDS.toMillis(samplerTimeoutNanos));
             disconnectQuietly(usable);
         }
-        pollingOutput.fail(
-                new CancellationException("The device left the previous read unanswered; the next poll reconnects"),
-                null);
     }
 
     public enum ReadType {

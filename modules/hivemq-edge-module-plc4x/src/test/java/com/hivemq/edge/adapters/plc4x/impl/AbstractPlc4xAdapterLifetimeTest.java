@@ -94,6 +94,8 @@ class AbstractPlc4xAdapterLifetimeTest {
     private static final long SHORT_SAMPLER_TIMEOUT_MILLIS = 1_000;
     // A send that blocks inside poll() this long, well under SHORT_SAMPLER_TIMEOUT_MILLIS.
     private static final long SLOW_SEND_MILLIS = 300;
+    // A close that takes longer than what is left of a poll after it waited on an unanswered read (the read margin).
+    private static final long SLOW_CLOSE_MILLIS = 850;
     private static final @NotNull Plc4xTag TAG_A = tag("a");
     private static final @NotNull Plc4xTag TAG_B = tag("b");
 
@@ -311,6 +313,27 @@ class AbstractPlc4xAdapterLifetimeTest {
         await().atMost(TIMEOUT).until(polled::completed);
         assertThat(polled.failMessage).isNull();
         assertThat(polled.added).containsExactly("a");
+    }
+
+    /// A poll that abandons an unanswered read ends before the slow close of its connection: the close takes longer
+    /// than the poll has left, and a poll ended after it would be timed out by the sampler, a second polling error
+    /// for one unanswered read.
+    @Test
+    void readTheDriverNeverCompletes_abandoningPollEndsBeforeASlowClose() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = SLOW_CLOSE_MILLIS;
+        adapter.poll();
+
+        final long pollStartNanos = System.nanoTime();
+        final RecordingOutput waiting = adapter.poll();
+
+        await().atMost(TIMEOUT).until(waiting::completed);
+        assertThat(waiting.failure).isInstanceOf(CancellationException.class);
+        assertThat(waiting.failedAtNanos - pollStartNanos)
+                .isLessThan(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS));
     }
 
     /// A read the driver cancels is a polling error: the cancellation reaches the output wrapped, so Edge does not
@@ -628,6 +651,9 @@ class AbstractPlc4xAdapterLifetimeTest {
         // Set by the test thread, read by the thread that disconnects (the test thread in stop(), a poll that releases
         // a lost connection).
         volatile boolean readsFailOnClose = true;
+        // How long a disconnect takes, as a driver that closes slowly. Set by the test thread before the polls, read by
+        // the thread that disconnects.
+        volatile long closeMillis;
 
         LifetimeAdapter(final @NotNull List<Plc4xTag> tags, final long samplerTimeoutMillis) {
             this(tags, samplerTimeoutMillis, true);
@@ -781,6 +807,13 @@ class AbstractPlc4xAdapterLifetimeTest {
 
         @Override
         public void disconnect() {
+            if (adapter.closeMillis > 0) {
+                try {
+                    Thread.sleep(adapter.closeMillis);
+                } catch (final InterruptedException _) {
+                    Thread.currentThread().interrupt();
+                }
+            }
             connected = false;
             closed.countDown();
             final Thread connectThread = connecting;
