@@ -86,6 +86,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     // return of its publish, taken on a node at its highest polling load, would settle it.
     static final long READ_MARGIN_MILLIS = 500;
     private static final long READ_MARGIN_NANOS = TimeUnit.MILLISECONDS.toNanos(READ_MARGIN_MILLIS);
+    // The closes of connections abandoned for an unanswered read that the driver has not returned from, by adapter
+    // id, across adapter instances: a configuration update replaces the instance, and the new one must not open a
+    // session while the old one's close runs. Put by abandonUnanswered() on a connect thread, removed by the close's
+    // own completion, read by connect() on the polling or the lifecycle thread.
+    private static final @NotNull ConcurrentHashMap<String, AbandonedClose> ABANDONED_CLOSES =
+            new ConcurrentHashMap<>();
 
     protected final @NotNull T adapterConfig;
     protected final @NotNull List<Plc4xTag> tags;
@@ -115,12 +121,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private boolean stopped;
     // Guarded by lock: the connection of the latest attempt, whose connect may still be ending after a timeout.
     private @Nullable Plc4xConnection<T> latestAttempt;
-    // Guarded by lock: the close of the latest connection abandoned for an unanswered read, completed when the
-    // driver's disconnect returns, never exceptionally, and the time by which it is expected to have ended. Set by the
-    // poll that abandons the connection, on a connect thread; read by connect(), on the polling or the lifecycle
-    // thread, which opens no connection while this close runs, so an adapter holds at most one close at a time.
-    private @NotNull CompletableFuture<Void> abandonedClose = CompletableFuture.completedFuture(null);
-    private long abandonedCloseDeadlineNanos;
 
     protected volatile @Nullable Plc4xConnection<T> connection;
     private volatile @Nullable EventService eventService;
@@ -437,7 +437,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 return CompletableFuture.failedFuture(
                         new Plc4xException("The previous connection attempt is still ending"));
             }
-            if (!abandonedClose.isDone()) {
+            final AbandonedClose closing = ABANDONED_CLOSES.get(adapterId);
+            if (closing != null && !closing.closed().isDone()) {
                 // A device may take one session at a time and refuse a new one while it still holds the abandoned
                 // one, and a driver whose close hangs must hold one close per adapter, not one per stalled read: no
                 // connection opens until the driver has returned from the close. Within one sampler timeout of the
@@ -445,7 +446,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 // so an adapter whose driver never returns still reaches its limit.
                 protocolAdapterState.setConnectionStatus(ERROR);
                 return CompletableFuture.failedFuture(
-                        System.nanoTime() - abandonedCloseDeadlineNanos < 0
+                        System.nanoTime() - closing.deadlineNanos() < 0
                                 ? new StillClosingException()
                                 : new Plc4xException(
                                         "The connection abandoned for an unanswered read is still closing"));
@@ -888,14 +889,24 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             if (released) {
                 // Completed only when the driver's disconnect returns: a driver's close has no timeout of its own.
                 // connect() opens no connection while it runs, so no other connection is abandoned meanwhile; chained
-                // after the previous close all the same, so at most one close per adapter runs at a time.
-                abandonedCloseDeadlineNanos = System.nanoTime() + samplerTimeoutNanos;
-                abandonedClose = abandonedClose
-                        .thenRunAsync(() -> disconnectQuietly(usable), Plc4xConnection.connectExecutor())
-                        .exceptionally(t -> {
-                            log.error("Error closing the abandoned PLC4X connection [adapterId={}]", adapterId, t);
-                            return null;
-                        });
+                // after a previous close all the same, so at most one close per adapter id runs at a time.
+                final long deadlineNanos = System.nanoTime() + samplerTimeoutNanos;
+                final AbandonedClose registered = ABANDONED_CLOSES.compute(adapterId, (_, previous) -> {
+                    final CompletableFuture<Void> after =
+                            previous == null ? CompletableFuture.completedFuture(null) : previous.closed();
+                    return new AbandonedClose(
+                            after.thenRunAsync(() -> disconnectQuietly(usable), Plc4xConnection.connectExecutor())
+                                    .exceptionally(t -> {
+                                        log.error(
+                                                "Error closing the abandoned PLC4X connection [adapterId={}]",
+                                                adapterId,
+                                                t);
+                                        return null;
+                                    }),
+                            deadlineNanos);
+                });
+                final CompletableFuture<Void> _ =
+                        registered.closed().whenComplete((_, _) -> ABANDONED_CLOSES.remove(adapterId, registered));
             }
         }
         pollingOutput.fail(
@@ -929,6 +940,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                     false);
         }
     }
+
+    /** The close of an abandoned connection, completed when the driver returns, and when it is expected to end. */
+    private record AbandonedClose(@NotNull CompletableFuture<Void> closed, long deadlineNanos) {}
 
     /** A read and its connection; the read completes when the driver answers or the connection closes. */
     private record InFlightRead(

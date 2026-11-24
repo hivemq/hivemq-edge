@@ -112,6 +112,9 @@ class AbstractPlc4xAdapterLifetimeTest {
     private static final long ONE_SESSION_CLOSE_MILLIS = 410;
     // The interval between two polls in the cleanup test, whose first poll starts right after the abandon.
     private static final long NEXT_POLL_AFTER_MILLIS = 200;
+    // Each adapter gets an id of its own: the adapter keeps the closes it abandoned by adapter id across instances, so
+    // a test that leaves a close running does not hold the next test's connection.
+    private static final @NotNull AtomicInteger ADAPTER_IDS = new AtomicInteger();
     private static final @NotNull Plc4xTag TAG_A = tag("a");
     private static final @NotNull Plc4xTag TAG_B = tag("b");
 
@@ -445,6 +448,40 @@ class AbstractPlc4xAdapterLifetimeTest {
         assertThat(adapter.connections).hasSize(1);
         assertThat(last.failure).isNull();
         assertThat(last.failMessage).contains("still closing");
+    }
+
+    /// A configuration update replaces the adapter while the old instance still closes the connection it abandoned.
+    /// The new instance opens no session on a one-session device until that close has ended. Its polls meanwhile
+    /// are not carried out, and the first poll after the close connects and reads.
+    @Test
+    void configUpdateWhileTheAbandonedConnectionCloses_newInstanceConnectsOnceTheCloseEnded() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.oneSession = true;
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = ONE_SESSION_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        final LifetimeAdapter replacement = adapter.replacement();
+        replacement.oneSession = true;
+        replacement.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+        replacement.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+
+        final long deadlineNanos = System.nanoTime() + TIMEOUT.toNanos();
+        RecordingOutput next;
+        do {
+            pause(PAUSE_BETWEEN_POLLS_MILLIS);
+            next = replacement.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+        } while (next.failure instanceof CancellationException && System.nanoTime() - deadlineNanos < 0);
+
+        assertThat(next.failMessage).isNull();
+        assertThat(next.added).containsExactly("a");
+        assertThat(replacement.connections).hasSize(1);
     }
 
     /// A reconnect that fails once the abandoned connection has closed is a polling error, like any failed connect;
@@ -807,6 +844,7 @@ class AbstractPlc4xAdapterLifetimeTest {
             extends AbstractPlc4xAdapter<S7SpecificAdapterConfig, Plc4xToMqttMapping> {
 
         final @NotNull ProtocolAdapterState state;
+        private final long samplerTimeoutMillis;
         final @NotNull List<ScriptedConnection> connections = new CopyOnWriteArrayList<>();
         final @NotNull AtomicInteger reads = new AtomicInteger();
         // Set by the test thread. Read when a connection is created, on the thread that starts the attempt (the test
@@ -827,7 +865,7 @@ class AbstractPlc4xAdapterLifetimeTest {
         volatile boolean oneSession;
         // The disconnects still running, counted by the threads that disconnect, read by the connect threads, and the
         // most that ran at once, read by the test thread.
-        final @NotNull AtomicInteger closesInProgress = new AtomicInteger();
+        final @NotNull AtomicInteger closesInProgress;
         final @NotNull AtomicInteger maxClosesInProgress = new AtomicInteger();
         // How long a connect takes once it starts, and whether the device refuses it. Set by the test thread before
         // the polls, read by the connect threads.
@@ -850,18 +888,44 @@ class AbstractPlc4xAdapterLifetimeTest {
                 final long samplerTimeoutMillis,
                 final boolean publishChangedDataOnly,
                 final @NotNull ProtocolAdapterState state) {
+            this(
+                    tags,
+                    samplerTimeoutMillis,
+                    publishChangedDataOnly,
+                    state,
+                    "lifetime-" + ADAPTER_IDS.incrementAndGet(),
+                    new AtomicInteger());
+        }
+
+        private LifetimeAdapter(
+                final @NotNull List<Plc4xTag> tags,
+                final long samplerTimeoutMillis,
+                final boolean publishChangedDataOnly,
+                final @NotNull ProtocolAdapterState state,
+                final @NotNull String adapterId,
+                final @NotNull AtomicInteger closesInProgress) {
             super(
                     S7ProtocolAdapterInformation.INSTANCE,
-                    newInput(tags, publishChangedDataOnly, state),
+                    newInput(tags, publishChangedDataOnly, state, adapterId),
                     samplerTimeoutMillis);
             this.state = state;
+            this.samplerTimeoutMillis = samplerTimeoutMillis;
+            this.closesInProgress = closesInProgress;
+        }
+
+        /// The instance a configuration update builds in place of this one: same adapter id, same device.
+        @NotNull
+        LifetimeAdapter replacement() {
+            return new LifetimeAdapter(
+                    tags, samplerTimeoutMillis, true, mock(ProtocolAdapterState.class), getId(), closesInProgress);
         }
 
         @SuppressWarnings({"unchecked", "rawtypes"})
         private static @NotNull ProtocolAdapterInput<S7SpecificAdapterConfig> newInput(
                 final @NotNull List<Plc4xTag> tags,
                 final boolean publishChangedDataOnly,
-                final @NotNull ProtocolAdapterState state) {
+                final @NotNull ProtocolAdapterState state,
+                final @NotNull String adapterId) {
             final ProtocolAdapterInput<S7SpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
             when(input.getConfig())
                     .thenReturn(new S7SpecificAdapterConfig(
@@ -876,7 +940,7 @@ class AbstractPlc4xAdapterLifetimeTest {
                             null,
                             new S7ToMqttConfig(null, null, publishChangedDataOnly)));
             when(input.getTags()).thenReturn((List) tags);
-            when(input.getAdapterId()).thenReturn("lifetime");
+            when(input.getAdapterId()).thenReturn(adapterId);
             when(input.getProtocolAdapterState()).thenReturn(state);
             return input;
         }
