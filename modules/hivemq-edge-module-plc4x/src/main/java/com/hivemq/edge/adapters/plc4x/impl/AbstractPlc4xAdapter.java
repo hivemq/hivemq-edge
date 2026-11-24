@@ -115,11 +115,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private boolean stopped;
     // Guarded by lock: the connection of the latest attempt, whose connect may still be ending after a timeout.
     private @Nullable Plc4xConnection<T> latestAttempt;
-    // Guarded by lock: the close of the latest connection abandoned for an unanswered read, which never completes
-    // exceptionally. Set by the poll that abandons it, on a connect thread; read by connect(), on the polling or the
-    // lifecycle thread, which starts the next connection attempt only once this close has ended or one sampler timeout
-    // has passed.
+    // Guarded by lock: the close of the latest connection abandoned for an unanswered read, completed when the
+    // driver's disconnect returns, never exceptionally, and the time by which it is expected to have ended. Set by the
+    // poll that abandons the connection, on a connect thread; read by connect(), on the polling or the lifecycle
+    // thread, which opens no connection while this close runs, so an adapter holds at most one close at a time.
     private @NotNull CompletableFuture<Void> abandonedClose = CompletableFuture.completedFuture(null);
+    private long abandonedCloseDeadlineNanos;
 
     protected volatile @Nullable Plc4xConnection<T> connection;
     private volatile @Nullable EventService eventService;
@@ -193,14 +194,19 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      */
     private boolean release(final @NotNull Plc4xConnection<T> lost) {
         synchronized (lock) {
-            if (connection != lost) {
-                return false;
-            }
-            connection = null;
-            // Set under the lock, before another attempt can start, so it never overwrites that attempt's status.
-            protocolAdapterState.setConnectionStatus(ERROR);
-            return true;
+            return releaseLocked(lost);
         }
+    }
+
+    /** {@link #release}'s body, for a caller that holds {@code lock}. */
+    private boolean releaseLocked(final @NotNull Plc4xConnection<T> lost) {
+        if (connection != lost) {
+            return false;
+        }
+        connection = null;
+        // Set under the lock, before another attempt can start, so it never overwrites that attempt's status.
+        protocolAdapterState.setConnectionStatus(ERROR);
+        return true;
     }
 
     private void completeAfter(
@@ -217,6 +223,15 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             if (t != null) {
                 // An unreachable device is expected and handled: one line with the driver's cause, no stack trace.
                 final Throwable cause = t instanceof CompletionException && t.getCause() != null ? t.getCause() : t;
+                if (cause instanceof StillClosingException) {
+                    // Cleanup, not a failed reconnect: this poll is not carried out, and the first poll after the
+                    // close connects with the whole of its own time.
+                    log.debug(
+                            "The abandoned connection is still closing, a later poll connects [adapterId={}]",
+                            adapterId);
+                    pollingOutput.fail(new CancellationException(cause.getMessage()), null);
+                    return;
+                }
                 pollingOutput.fail("Polling failed for adapter '" + adapterId
                         + "' because no connection could be established: " + cause.getMessage());
                 return;
@@ -422,6 +437,19 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 return CompletableFuture.failedFuture(
                         new Plc4xException("The previous connection attempt is still ending"));
             }
+            if (!abandonedClose.isDone()) {
+                // A device may take one session at a time and refuse a new one while it still holds the abandoned
+                // one, and a driver whose close hangs must hold one close per adapter, not one per stalled read: no
+                // connection opens until the driver has returned from the close. Within one sampler timeout of the
+                // abandon that is cleanup, and the polls are not carried out; past it each poll is a polling error,
+                // so an adapter whose driver never returns still reaches its limit.
+                protocolAdapterState.setConnectionStatus(ERROR);
+                return CompletableFuture.failedFuture(
+                        System.nanoTime() - abandonedCloseDeadlineNanos < 0
+                                ? new StillClosingException()
+                                : new Plc4xException(
+                                        "The connection abandoned for an unanswered read is still closing"));
+            }
             // we do not subscribe anymore as no current adapter type supports it anyway
             if (log.isTraceEnabled()) {
                 log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
@@ -435,11 +463,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             // after it, and the adapter wrapper does not report a start that left DISCONNECTED as CONNECTED.
             protocolAdapterState.setConnectionStatus(CONNECTING);
             try {
-                // A device may take one session at a time, and refuse a new one while it still holds the abandoned
-                // one: the attempt connects once that close has ended, and the poll waiting on it waits for the close.
                 @SuppressWarnings("unused")
-                final var unused = abandonedClose
-                        .thenRunAsync(
+                final var unused = CompletableFuture.runAsync(
                                 () -> {
                                     try {
                                         tempConnection.startConnection(
@@ -849,26 +874,28 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * it as a polling error, and counting it again would stop an adapter at its limit before the reconnect. The poll
      * ends once the connection is released, before the close, which a driver may take its time over: little of the
      * poll's time is left, and a close past the sampler's timeout would turn the poll into a polling error. The close
-     * runs on a connect thread, and the next connection attempt starts once it has ended: a device that takes one
-     * session at a time would refuse the new one while it still holds the old. The next poll waits for the close
-     * within its own time.
+     * runs on a connect thread, and no connection opens until the driver has returned from it: a device that takes
+     * one session at a time would refuse the new one while it still holds the old. Polls within one sampler timeout of
+     * the abandon are not carried out; past it, each poll is a polling error until the close has ended.
      */
     private void abandonUnanswered(
             final @NotNull Plc4xConnection<T> usable, final @NotNull BatchPollingOutput pollingOutput) {
-        final boolean released = release(usable);
-        if (released) {
-            // Set before this poll completes, so the poll the sampler starts next finds the close to wait for.
-            synchronized (lock) {
-                // The wait for the close is bounded by one sampler timeout: a driver's close has no timeout of its
-                // own, and one that hangs must not keep the adapter from ever connecting again. Past it the next
-                // attempt connects; a device that still holds the old session refuses it, one polling error.
-                abandonedClose = CompletableFuture.runAsync(
-                                () -> disconnectQuietly(usable), Plc4xConnection.connectExecutor())
+        final boolean released;
+        // Released and registered in one lock section, which connect() also takes, so no attempt can start between
+        // the release and the close it must wait for; set before this poll completes, so the next poll finds it.
+        synchronized (lock) {
+            released = releaseLocked(usable);
+            if (released) {
+                // Completed only when the driver's disconnect returns: a driver's close has no timeout of its own.
+                // connect() opens no connection while it runs, so no other connection is abandoned meanwhile; chained
+                // after the previous close all the same, so at most one close per adapter runs at a time.
+                abandonedCloseDeadlineNanos = System.nanoTime() + samplerTimeoutNanos;
+                abandonedClose = abandonedClose
+                        .thenRunAsync(() -> disconnectQuietly(usable), Plc4xConnection.connectExecutor())
                         .exceptionally(t -> {
                             log.error("Error closing the abandoned PLC4X connection [adapterId={}]", adapterId, t);
                             return null;
-                        })
-                        .completeOnTimeout(null, samplerTimeoutNanos, TimeUnit.NANOSECONDS);
+                        });
             }
         }
         pollingOutput.fail(
@@ -886,6 +913,21 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     public enum ReadType {
         Read,
         Subscribe
+    }
+
+    /**
+     * Why no connection attempt starts while an abandoned connection is still closing, within one sampler timeout of
+     * the abandon: cleanup, which the poll does not count. Never thrown, so it carries no stack trace.
+     */
+    private static final class StillClosingException extends Exception {
+
+        StillClosingException() {
+            super(
+                    "The connection abandoned for an unanswered read is still closing; a later poll connects",
+                    null,
+                    false,
+                    false);
+        }
     }
 
     /** A read and its connection; the read completes when the driver answers or the connection closes. */
