@@ -86,11 +86,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     // return of its publish, taken on a node at its highest polling load, would settle it.
     static final long READ_MARGIN_MILLIS = 500;
     private static final long READ_MARGIN_NANOS = TimeUnit.MILLISECONDS.toNanos(READ_MARGIN_MILLIS);
-    // The closes of connections abandoned for an unanswered read that the driver has not returned from, by adapter
-    // id, across adapter instances: a configuration update replaces the instance, and the new one must not open a
-    // session while the old one's close runs. Put by abandonUnanswered() on a connect thread, removed by the close's
-    // own completion, read by connect() on the polling or the lifecycle thread.
-    private static final @NotNull ConcurrentHashMap<String, AbandonedClose> ABANDONED_CLOSES =
+    // The closes of connections abandoned for an unanswered read that the driver has not returned from, by adapter id
+    // and device, across adapter instances: a configuration update replaces the instance, and the new one must not
+    // open a session on the same device while the old one's close runs, but connects at once to another device. Put
+    // by abandonUnanswered() on a connect thread, removed by the close's own completion, read by connect() on the
+    // polling or the lifecycle thread.
+    private static final @NotNull ConcurrentHashMap<CloseKey, AbandonedClose> ABANDONED_CLOSES =
             new ConcurrentHashMap<>();
 
     protected final @NotNull T adapterConfig;
@@ -437,7 +438,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 return CompletableFuture.failedFuture(
                         new Plc4xException("The previous connection attempt is still ending"));
             }
-            final AbandonedClose closing = ABANDONED_CLOSES.get(adapterId);
+            final AbandonedClose closing = ABANDONED_CLOSES.get(closeKey());
             if (closing != null && !closing.closed().isDone()) {
                 // A device may take one session at a time and refuse a new one while it still holds the abandoned
                 // one, and a driver whose close hangs must hold one close per adapter, not one per stalled read: no
@@ -864,6 +865,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         return cfg != null ? cfg.getMaxPollingErrorsBeforeRemoval() : 5;
     }
 
+    /** The device this adapter connects to, under its id: the key of its abandoned closes. */
+    private @NotNull CloseKey closeKey() {
+        return new CloseKey(adapterId, adapterConfig.getHost(), adapterConfig.getPort());
+    }
+
     /** How long after now a read may still start in a poll that started at {@code pollStartNanos}. */
     private long readStartBudgetNanos(final long pollStartNanos) {
         return samplerTimeoutNanos - READ_MARGIN_NANOS - (System.nanoTime() - pollStartNanos);
@@ -889,9 +895,10 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             if (released) {
                 // Completed only when the driver's disconnect returns: a driver's close has no timeout of its own.
                 // connect() opens no connection while it runs, so no other connection is abandoned meanwhile; chained
-                // after a previous close all the same, so at most one close per adapter id runs at a time.
+                // after a previous close all the same, so at most one close per adapter id and device runs at a time.
                 final long deadlineNanos = System.nanoTime() + samplerTimeoutNanos;
-                final AbandonedClose registered = ABANDONED_CLOSES.compute(adapterId, (_, previous) -> {
+                final CloseKey key = closeKey();
+                final AbandonedClose registered = ABANDONED_CLOSES.compute(key, (_, previous) -> {
                     final CompletableFuture<Void> after =
                             previous == null ? CompletableFuture.completedFuture(null) : previous.closed();
                     return new AbandonedClose(
@@ -906,7 +913,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                             deadlineNanos);
                 });
                 final CompletableFuture<Void> _ =
-                        registered.closed().whenComplete((_, _) -> ABANDONED_CLOSES.remove(adapterId, registered));
+                        registered.closed().whenComplete((_, _) -> ABANDONED_CLOSES.remove(key, registered));
             }
         }
         pollingOutput.fail(
@@ -940,6 +947,10 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                     false);
         }
     }
+
+    /** An adapter id and the device it connects to: a close abandoned there holds only a session to that device. */
+    private record CloseKey(
+            @NotNull String adapterId, @NotNull String host, int port) {}
 
     /** The close of an abandoned connection, completed when the driver returns, and when it is expected to end. */
     private record AbandonedClose(@NotNull CompletableFuture<Void> closed, long deadlineNanos) {}

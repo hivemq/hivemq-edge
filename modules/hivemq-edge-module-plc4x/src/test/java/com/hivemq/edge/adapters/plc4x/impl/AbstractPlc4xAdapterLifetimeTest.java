@@ -55,6 +55,7 @@ import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConf
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7ToMqttConfig;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,9 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -484,6 +488,111 @@ class AbstractPlc4xAdapterLifetimeTest {
         assertThat(replacement.connections).hasSize(1);
     }
 
+    /// A configuration update that points the adapter at another device connects to it at once: the close the old
+    /// instance abandoned on its device holds sessions to that device only, even while it hangs.
+    @Test
+    void configUpdateToAnotherDeviceWhileTheOldCloseHangs_newInstanceConnectsAtOnce() {
+        final LifetimeAdapter adapter = abandonedWithHungClose();
+        final LifetimeAdapter replacement = adapter.replacementOn("other-plc");
+        replacement.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+        replacement.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+
+        final RecordingOutput first = replacement.poll();
+
+        await().atMost(TIMEOUT).until(first::completed);
+        assertThat(first.failMessage).isNull();
+        assertThat(first.added).containsExactly("a");
+        assertThat(replacement.connections).hasSize(1);
+    }
+
+    /// Moving an adapter between devices while each close hangs holds one close per device, and moving it back to a
+    /// device whose close still hangs waits for that close, as the first instance did.
+    @Test
+    void adapterMovedBetweenDevicesWhileClosesHang_holdsOneClosePerDeviceAndWaitsOnReturn() {
+        final LifetimeAdapter onFirst = abandonedWithHungClose();
+        final LifetimeAdapter onSecond = onFirst.replacementOn("second-plc");
+        onSecond.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        onSecond.awaitConnected();
+        onSecond.answer = CompletableFuture::new;
+        onSecond.closeMillis = HUNG_CLOSE_MILLIS;
+        onSecond.poll();
+        final RecordingOutput abandoning = onSecond.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        onSecond.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+
+        final LifetimeAdapter backOnFirst = onFirst.replacement();
+        backOnFirst.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        final RecordingOutput back = backOnFirst.poll();
+
+        await().atMost(TIMEOUT).until(back::completed);
+        assertThat(back.failure).isInstanceOf(CancellationException.class);
+        assertThat(backOnFirst.connections).isEmpty();
+        assertThat(onFirst.maxClosesInProgress.get()).isEqualTo(1);
+        assertThat(onSecond.maxClosesInProgress.get()).isEqualTo(1);
+    }
+
+    /// Many adapters abandoning and reconnecting at once keep to their own devices: each holds at most one close, and
+    /// each reads again once its close has ended.
+    @Test
+    void manyAdaptersAbandoningAtOnce_eachHoldsOneCloseAndReadsAgain() throws Exception {
+        final int adapters = 16;
+        final List<LifetimeAdapter> all = new ArrayList<>();
+        for (int i = 0; i < adapters; i++) {
+            final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+            adapter.oneSession = true;
+            adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+            all.add(adapter);
+        }
+        try (ExecutorService pollers = Executors.newThreadPerTaskExecutor(
+                Thread.ofVirtual().name("lifetime-test-poller-", 0).factory())) {
+            final List<Future<RecordingOutput>> reads = new ArrayList<>();
+            for (final LifetimeAdapter adapter : all) {
+                reads.add(pollers.submit(() -> {
+                    adapter.awaitConnected();
+                    adapter.answer = CompletableFuture::new;
+                    adapter.closeMillis = ONE_SESSION_CLOSE_MILLIS;
+                    adapter.poll();
+                    final RecordingOutput abandoning = adapter.poll();
+                    await().atMost(TIMEOUT).until(abandoning::completed);
+                    adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+                    final long deadlineNanos = System.nanoTime() + TIMEOUT.toNanos();
+                    RecordingOutput next;
+                    do {
+                        pause(PAUSE_BETWEEN_POLLS_MILLIS);
+                        next = adapter.poll();
+                        await().atMost(TIMEOUT).until(next::completed);
+                    } while (next.failure instanceof CancellationException && System.nanoTime() - deadlineNanos < 0);
+                    return next;
+                }));
+            }
+            for (final Future<RecordingOutput> read : reads) {
+                assertThat(read.get(2 * TIMEOUT.toMillis(), TimeUnit.MILLISECONDS).added)
+                        .containsExactly("a");
+            }
+        }
+        for (final LifetimeAdapter adapter : all) {
+            assertThat(adapter.maxClosesInProgress.get()).isEqualTo(1);
+            assertThat(adapter.connections).hasSize(2);
+        }
+    }
+
+    /// An adapter whose read was abandoned and whose connection's close hangs; the adapter is stopped, as a
+    /// configuration update stops it before it builds the next instance.
+    private static @NotNull LifetimeAdapter abandonedWithHungClose() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = HUNG_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        return adapter;
+    }
+
     /// A reconnect that fails once the abandoned connection has closed is a polling error, like any failed connect;
     /// the polls while it closed were not.
     @Test
@@ -894,6 +1003,7 @@ class AbstractPlc4xAdapterLifetimeTest {
                     publishChangedDataOnly,
                     state,
                     "lifetime-" + ADAPTER_IDS.incrementAndGet(),
+                    "localhost",
                     new AtomicInteger());
         }
 
@@ -903,10 +1013,11 @@ class AbstractPlc4xAdapterLifetimeTest {
                 final boolean publishChangedDataOnly,
                 final @NotNull ProtocolAdapterState state,
                 final @NotNull String adapterId,
+                final @NotNull String host,
                 final @NotNull AtomicInteger closesInProgress) {
             super(
                     S7ProtocolAdapterInformation.INSTANCE,
-                    newInput(tags, publishChangedDataOnly, state, adapterId),
+                    newInput(tags, publishChangedDataOnly, state, adapterId, host),
                     samplerTimeoutMillis);
             this.state = state;
             this.samplerTimeoutMillis = samplerTimeoutMillis;
@@ -916,8 +1027,25 @@ class AbstractPlc4xAdapterLifetimeTest {
         /// The instance a configuration update builds in place of this one: same adapter id, same device.
         @NotNull
         LifetimeAdapter replacement() {
+            return replacementOn(adapterConfig.getHost(), closesInProgress);
+        }
+
+        /// The instance a configuration update builds when it points this adapter id at another device.
+        @NotNull
+        LifetimeAdapter replacementOn(final @NotNull String host) {
+            return replacementOn(host, new AtomicInteger());
+        }
+
+        private @NotNull LifetimeAdapter replacementOn(
+                final @NotNull String host, final @NotNull AtomicInteger deviceClosesInProgress) {
             return new LifetimeAdapter(
-                    tags, samplerTimeoutMillis, true, mock(ProtocolAdapterState.class), getId(), closesInProgress);
+                    tags,
+                    samplerTimeoutMillis,
+                    true,
+                    mock(ProtocolAdapterState.class),
+                    getId(),
+                    host,
+                    deviceClosesInProgress);
         }
 
         @SuppressWarnings({"unchecked", "rawtypes"})
@@ -925,12 +1053,13 @@ class AbstractPlc4xAdapterLifetimeTest {
                 final @NotNull List<Plc4xTag> tags,
                 final boolean publishChangedDataOnly,
                 final @NotNull ProtocolAdapterState state,
-                final @NotNull String adapterId) {
+                final @NotNull String adapterId,
+                final @NotNull String host) {
             final ProtocolAdapterInput<S7SpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
             when(input.getConfig())
                     .thenReturn(new S7SpecificAdapterConfig(
                             102,
-                            "localhost",
+                            host,
                             S7SpecificAdapterConfig.ControllerType.S7_1500,
                             null,
                             null,
