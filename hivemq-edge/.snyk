@@ -8,7 +8,7 @@
 #
 # Each entry ignores a finding that no upgrade fixes and that Edge cannot reach.
 # The analysis lives in the Linear issue named above the entry; the reason
-# below is the one recorded in Snyk. No entry expires.
+# below is the one recorded in Snyk.
 #
 # Fields of each entry:
 # - reasonType: the Snyk ignore type (not-vulnerable, wont-fix or
@@ -17,6 +17,11 @@
 #   an upgrade that fixes it, and the dependency gets updated.
 # - ignoredBy: whoever most recently vouched for the entry. Whoever checks an
 #   entry again updates it; git history keeps the earlier names.
+# - expires: three months after the entry was last vouched for. InfoSec asks
+#   for an expiry on every ignore, because auditors read ignores as risk
+#   acceptances. When it passes, the finding shows again and Snyk Notifier
+#   reopens its Linear issue; whoever checks the entry again sets a new expires
+#   along with ignoredBy.
 # - created: when the ignore first came into being; it does not change.
 #
 # Migrated from the Snyk web UI ignores on hivemq-edge:build.gradle.kts [master]
@@ -41,6 +46,7 @@ ignore:
         ignoredBy:
           name: Martin Schönert
           email: martin.schoenert@hivemq.com
+        expires: 2027-02-25T00:00:00.000Z
         created: 2026-11-19T14:44:00.212Z
   # EDG-1282: jakarta.validation-api 3.1.0, no CVE.
   SNYK-JAVA-JAKARTAVALIDATION-20936881:
@@ -55,5 +61,6 @@ ignore:
         ignoredBy:
           name: Martin Schönert
           email: martin.schoenert@hivemq.com
+        expires: 2027-02-25T00:00:00.000Z
         created: 2026-11-19T18:25:23.281Z
 patch: {}
