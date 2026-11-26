@@ -44,6 +44,20 @@ class PublishChangedDataOnlyHandlerTest {
                 Arguments.of("on", "off"));
     }
 
+    /// `isNew` answers as `replaceIfValueIsNew` would and records nothing, so the adapter can choose what to publish
+    /// before it knows the publish reached the sampler, and the value stays new until it is recorded.
+    @ParameterizedTest
+    @MethodSource("changes")
+    void isNew_answersWithoutRecording(final Object first, final Object second) {
+        final var handler = new PublishChangedDataOnlyHandler();
+        handler.replaceIfValueIsNew("tag", first);
+
+        assertThat(handler.isNew("tag", copyOf(first))).isFalse();
+        assertThat(handler.isNew("tag", second)).isTrue();
+        assertThat(handler.isNew("tag", second)).isTrue();
+        assertThat(handler.replaceIfValueIsNew("tag", second)).isTrue();
+    }
+
     @ParameterizedTest
     @MethodSource("changes")
     void replaceIfValueIsNew_whenTheFirstSampleArrives_thenItIsPublished(final Object first, final Object ignored) {

@@ -271,7 +271,9 @@ class AbstractPlc4xAdapterReconnectTest {
         releasePoll.countDown();
         final CapturingPollingOutput output = poll.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
 
-        await().atMost(TIMEOUT).until(() -> output.failMessage != null);
+        // The poll belongs to the run that stop() ended, so it completes without data rather than failing.
+        await().atMost(TIMEOUT).until(() -> output.published || output.failMessage != null);
+        assertThat(output.failMessage).isNull();
         assertThat(adapter.connectionsCreated.get())
                 .as("a stopped adapter must not start a connection attempt")
                 .isEqualTo(1);
@@ -634,6 +636,7 @@ class AbstractPlc4xAdapterReconnectTest {
         private static @NotNull ProtocolAdapterInput<S7SpecificAdapterConfig> newInput(
                 final @NotNull List<Plc4xTag> tags, final @NotNull ProtocolAdapterState state) {
             final ProtocolAdapterInput<S7SpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
+            when(input.getConfig()).thenReturn(testConfig());
             when(input.getTags()).thenReturn((List) tags);
             when(input.getAdapterId()).thenReturn("testS7");
             when(input.getProtocolAdapterState()).thenReturn(state);
@@ -685,21 +688,23 @@ class AbstractPlc4xAdapterReconnectTest {
         @SuppressWarnings("unchecked")
         private static @NotNull ProtocolAdapterInput<ADSSpecificAdapterConfig> newInput() {
             final ProtocolAdapterInput<ADSSpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
+            when(input.getConfig()).thenReturn(adsConfig());
             when(input.getTags()).thenReturn((List) List.<Plc4xTag>of());
             when(input.getAdapterId()).thenReturn("testAds");
             when(input.getProtocolAdapterState()).thenReturn(mock(ProtocolAdapterState.class));
             return input;
         }
 
+        private static @NotNull ADSSpecificAdapterConfig adsConfig() {
+            return new ADSSpecificAdapterConfig(
+                    48898, "localhost", 851, 48898, "1.2.3.4.5.6", "6.5.4.3.2.1", null, null);
+        }
+
         @Override
         protected @NotNull Plc4xConnection<ADSSpecificAdapterConfig> createConnection() throws Plc4xException {
             connectionsCreated.incrementAndGet();
-            final FakeConnection<ADSSpecificAdapterConfig> created = new FakeConnection<>(
-                    new ADSSpecificAdapterConfig(
-                            48898, "localhost", 851, 48898, "1.2.3.4.5.6", "6.5.4.3.2.1", null, null),
-                    Behaviour.SUCCEED,
-                    new CountDownLatch(0),
-                    attemptsFinished);
+            final FakeConnection<ADSSpecificAdapterConfig> created =
+                    new FakeConnection<>(adsConfig(), Behaviour.SUCCEED, new CountDownLatch(0), attemptsFinished);
             lastConnection.set(created);
             return created;
         }

@@ -86,6 +86,10 @@ public class PerContextSampler extends AbstractSubscriptionSampler {
         });
         return completeBeforeReporting(poll, (_, throwable) -> {
             if (throwable != null) {
+                if (PollingOutputImpl.isNotCarriedOut(getProtocolId(), throwable)) {
+                    // Not an error: the polling task leaves the error count as it is and logs the poll.
+                    return;
+                }
                 if (pollingOutput.getErrorMessage() == null) {
                     log.warn(
                             "During the polling for adapter with id '{}' an exception occurred: ",

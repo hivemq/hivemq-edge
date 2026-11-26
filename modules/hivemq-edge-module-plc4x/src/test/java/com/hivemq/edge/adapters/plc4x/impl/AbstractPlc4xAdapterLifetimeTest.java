@@ -1,0 +1,1325 @@
+/*
+ * Copyright 2023-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.edge.adapters.plc4x.impl;
+
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter.READ_MARGIN_MILLIS;
+import static com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter.SAMPLER_TIMEOUT_MILLIS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.adapters.plc4x.Plc4xException;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
+import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterInformation;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7ToMqttConfig;
+import com.hivemq.protocols.AbstractSubscriptionSampler;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import org.apache.plc4x.java.api.PlcDriverManager;
+import org.apache.plc4x.java.api.messages.PlcReadRequest;
+import org.apache.plc4x.java.api.messages.PlcReadResponse;
+import org.apache.plc4x.java.api.types.PlcResponseCode;
+import org.apache.plc4x.java.api.value.PlcValue;
+import org.apache.plc4x.java.spi.messages.DefaultPlcReadResponse;
+import org.apache.plc4x.java.spi.messages.utils.DefaultPlcResponseItem;
+import org.apache.plc4x.java.spi.messages.utils.PlcResponseItem;
+import org.apache.plc4x.java.spi.values.PlcDINT;
+import org.apache.plc4x.java.spi.values.PlcList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+
+/// Guards what a poll does when its run ends under it, how long a read may take, and what a partial answer
+/// publishes: a poll of an ended run completes without data or error, a read is bounded by the sampler's timeout,
+/// a read is not queued behind an unanswered one, a value whose publish may not have been taken is published again,
+/// and one unreadable tag does not hide the others.
+class AbstractPlc4xAdapterLifetimeTest {
+
+    private static final @NotNull Duration TIMEOUT = Duration.ofSeconds(5);
+    // A stop ends a poll waiting on a connect in milliseconds; 1 s is well inside TIMEOUT, the connection's own wait
+    // for the gate, so a poll ended by that wait instead fails the test.
+    private static final @NotNull Duration STOP_ENDS_POLL_WITHIN = Duration.ofSeconds(1);
+    // Short enough to watch a poll run out of time; the read budget is this minus the adapter's read margin.
+    private static final long SHORT_SAMPLER_TIMEOUT_MILLIS = 1_000;
+    // A send that blocks inside poll() this long, well under SHORT_SAMPLER_TIMEOUT_MILLIS.
+    private static final long SLOW_SEND_MILLIS = 300;
+    // A close that takes longer than what is left of a poll after it waited on an unanswered read (the read margin).
+    private static final long SLOW_CLOSE_MILLIS = 850;
+    // How long a test that polls in a loop waits between two polls.
+    private static final long PAUSE_BETWEEN_POLLS_MILLIS = 50;
+    // A close that does not end within the test: far longer than SHORT_SAMPLER_TIMEOUT_MILLIS and within TIMEOUT.
+    private static final long HUNG_CLOSE_MILLIS = 4_000;
+    // How long the hung-close test polls: past the close's deadline, well before the close ends.
+    private static final long POLL_WHILE_HUNG_MILLIS = 2_500;
+    // A close that ends after its deadline of one sampler timeout and well inside TIMEOUT.
+    private static final long LATE_CLOSE_MILLIS = 1_600;
+    // A close that takes almost a whole sampler timeout, and a reconnect after it: together past one sampler timeout,
+    // so a poll that waited for both would end too late.
+    private static final long CLEANUP_CLOSE_MILLIS = 980;
+    private static final long RECONNECT_MILLIS = 110;
+    // A close that a one-session device takes, so several polls fall while it runs.
+    private static final long ONE_SESSION_CLOSE_MILLIS = 410;
+    // The interval between two polls in the cleanup test, whose first poll starts right after the abandon.
+    private static final long NEXT_POLL_AFTER_MILLIS = 200;
+    // Each adapter gets an id of its own: the adapter keeps the closes it abandoned by adapter id across instances, so
+    // a test that leaves a close running does not hold the next test's connection.
+    private static final @NotNull AtomicInteger ADAPTER_IDS = new AtomicInteger();
+    private static final @NotNull Plc4xTag TAG_A = tag("a");
+    private static final @NotNull Plc4xTag TAG_B = tag("b");
+
+    /// A read answered after the adapter stopped and started again belongs to the old run: its poll completes
+    /// without data, and its value is not recorded in the new run's change cache, so the new run publishes it.
+    @Test
+    void readOfAnEndedRun_answeredAfterARestart_leavesTheNewRunsCacheEmpty() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SAMPLER_TIMEOUT_MILLIS);
+        adapter.readsFailOnClose = false;
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        final CompletableFuture<PlcReadResponse> oldRunsRead = new CompletableFuture<>();
+        adapter.answer = () -> oldRunsRead;
+        final RecordingOutput oldRunsPoll = adapter.poll();
+
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        oldRunsRead.complete(response(Map.of("a", ok(7))));
+
+        assertThat(oldRunsPoll.published).isTrue();
+        assertThat(oldRunsPoll.added).isEmpty();
+        assertThat(oldRunsPoll.failMessage).isNull();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(7))));
+        final RecordingOutput newRunsPoll = adapter.poll();
+        await().atMost(TIMEOUT).until(newRunsPoll::completed);
+        assertThat(newRunsPoll.added).containsExactly("a");
+    }
+
+    /// A poll waiting on a connection attempt when the adapter stops completes without data and without an error:
+    /// a failure would reach the ended run's sampler and count against the adapter the next run shares.
+    @Test
+    void pollWaitingOnAConnectionAttempt_whenTheAdapterStops_completesWithoutAnError() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SAMPLER_TIMEOUT_MILLIS);
+        adapter.connectGate = new CountDownLatch(1);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        await().atMost(TIMEOUT).until(() -> adapter.connections.size() == 1);
+        final RecordingOutput waiting = adapter.poll();
+
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+
+        // The stop's disconnect ends the connect, as the real connection's interrupt does: well inside the
+        // connection's own wait for the gate.
+        await().atMost(STOP_ENDS_POLL_WITHIN).until(waiting::completed);
+        assertThat(waiting.failMessage).isNull();
+        assertThat(waiting.added).isEmpty();
+        assertThat(adapter.reads.get()).isZero();
+        verify(adapter.state, never()).setConnectionStatus(ERROR);
+    }
+
+    /// A stop between the poll taking the connection and its read closes the connection, and the read throws; the
+    /// poll belongs to the run that ended, so it completes without an error.
+    @Test
+    void readThatThrowsBecauseTheAdapterStopped_completesWithoutAnError() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> {
+            adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+            throw new IllegalStateException("The connection was closed");
+        };
+
+        final RecordingOutput reading = adapter.poll();
+
+        assertThat(reading.completed()).isTrue();
+        assertThat(reading.failMessage).isNull();
+        assertThat(reading.added).isEmpty();
+        verify(adapter.state, never()).setConnectionStatus(ERROR);
+    }
+
+    /// The disconnect of a stop fails the read in flight; the poll belongs to the run that ended before the
+    /// disconnect, so it completes without an error.
+    @Test
+    void readInFlight_whenTheAdapterStops_completesWithoutAnError() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        final RecordingOutput reading = adapter.poll();
+
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+
+        assertThat(reading.completed()).isTrue();
+        assertThat(reading.failMessage).isNull();
+        assertThat(reading.added).isEmpty();
+    }
+
+    /// A publish that returns after the sampler's timeout may not have been taken, so its value is not recorded and
+    /// the next poll publishes the unchanged value again.
+    @Test
+    void publishReturningAfterTheSamplersTimeout_isPublishedAgainByTheNextPoll() {
+        // Long enough for a loopback read and its publish, short enough that holding the publish past it is quick.
+        final long samplerTimeoutMillis = 600;
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), samplerTimeoutMillis);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(7))));
+        final RecordingOutput late = new RecordingOutput();
+        late.publishGate = new CountDownLatch(1);
+
+        // Taken on the polling thread right before poll(), which takes its own start after it: the wait below
+        // passes the adapter's sampler timeout whatever the delay before the polling thread runs.
+        final CompletableFuture<Long> pollStartNanos = new CompletableFuture<>();
+        final CompletableFuture<Void> polling = CompletableFuture.runAsync(() -> {
+            pollStartNanos.complete(System.nanoTime());
+            adapter.poll(late);
+        });
+        await().atMost(TIMEOUT)
+                .pollInterval(Duration.ofMillis(10))
+                .until(() -> pollStartNanos.isDone()
+                        && System.nanoTime() - pollStartNanos.join()
+                                > TimeUnit.MILLISECONDS.toNanos(samplerTimeoutMillis + 50));
+        late.publishGate.countDown();
+        await().atMost(TIMEOUT).until(polling::isDone);
+
+        assertThat(late.publishGateExpired).isFalse();
+        assertThat(late.added).containsExactly("a");
+        final RecordingOutput next = adapter.poll();
+        await().atMost(TIMEOUT).until(next::completed);
+        assertThat(next.added).containsExactly("a");
+    }
+
+    /// A publish that throws fails the poll, and its value is published again by the next poll.
+    @Test
+    void publishThatThrows_failsThePollAndIsPublishedAgainByTheNextPoll() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(7))));
+        final RecordingOutput failing = new RecordingOutput();
+        failing.publishThrows = true;
+
+        adapter.poll(failing);
+
+        assertThat(failing.failMessage).contains("while publishing the values read");
+        final RecordingOutput next = adapter.poll();
+        await().atMost(TIMEOUT).until(next::completed);
+        assertThat(next.added).containsExactly("a");
+    }
+
+    /// The adapter records a value as published only within its sampler timeout of poll(), so that timeout must not
+    /// be longer than the time the sampler really waits for a poll's output.
+    @Test
+    void samplerTimeout_isNoLongerThanTheSamplers() {
+        assertThat(SAMPLER_TIMEOUT_MILLIS).isLessThanOrEqualTo(AbstractSubscriptionSampler.POLL_OUTPUT_TIMEOUT_MILLIS);
+    }
+
+    /// A device that never answers fails the poll at the sampler's timeout, not after the driver's own limit, which
+    /// for S7 is longer than the sampler waits; the read margin does not shorten a read already sent.
+    @Test
+    void readTheDeviceNeverAnswers_failsThePollAtTheSamplersTimeout() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+
+        final long pollStartNanos = System.nanoTime();
+        final RecordingOutput unanswered = adapter.poll();
+
+        await().atMost(TIMEOUT).until(() -> unanswered.failMessage != null);
+        assertThat(unanswered.failMessage).contains("did not answer the read in time");
+        assertThat(unanswered.failedAtNanos - pollStartNanos)
+                .isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS))
+                .isLessThan(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS) + TIMEOUT.toNanos());
+    }
+
+    /// A read sent at once and answered after the read margin but before the sampler's timeout is published, so an
+    /// alarm the device cleared on that read reaches the consumer. The margin decides only whether a read starts.
+    @Test
+    void readAnsweredInsideTheSamplersTimeoutButPastTheMargin_isPublished() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        final CompletableFuture<PlcReadResponse> late = new CompletableFuture<>();
+        adapter.answer = () -> late;
+
+        final long pollStartNanos = System.nanoTime();
+        final RecordingOutput alarm = adapter.poll();
+        await().atMost(TIMEOUT)
+                .pollInterval(Duration.ofMillis(10))
+                .until(() -> System.nanoTime() - pollStartNanos
+                        > TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS - READ_MARGIN_MILLIS + 200));
+        late.complete(response(Map.of("a", ok(1))));
+
+        await().atMost(TIMEOUT).until(alarm::completed);
+        assertThat(alarm.failMessage).isNull();
+        assertThat(alarm.added).containsExactly("a");
+    }
+
+    /// A send that takes time inside `poll()` does not shorten the read: the sampler's timeout starts only once
+    /// `poll()` returns, so an answer within the sampler's time after that return is published.
+    @Test
+    void slowSendInsideThePoll_doesNotShortenTheRead() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        final CompletableFuture<PlcReadResponse> late = new CompletableFuture<>();
+        adapter.answer = () -> {
+            try {
+                Thread.sleep(SLOW_SEND_MILLIS);
+            } catch (final InterruptedException _) {
+                Thread.currentThread().interrupt();
+            }
+            return late;
+        };
+
+        final RecordingOutput polled = adapter.poll();
+        final long returnedNanos = System.nanoTime();
+        await().atMost(TIMEOUT)
+                .pollInterval(Duration.ofMillis(10))
+                .until(() -> System.nanoTime() - returnedNanos
+                        > TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS - SLOW_SEND_MILLIS + 100));
+        late.complete(response(Map.of("a", ok(1))));
+
+        await().atMost(TIMEOUT).until(polled::completed);
+        assertThat(polled.failMessage).isNull();
+        assertThat(polled.added).containsExactly("a");
+    }
+
+    /// A poll that abandons an unanswered read ends before the slow close of its connection: the close takes longer
+    /// than the poll has left, and a poll ended after it would be timed out by the sampler, a second polling error
+    /// for one unanswered read.
+    @Test
+    void readTheDriverNeverCompletes_abandoningPollEndsBeforeASlowClose() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = SLOW_CLOSE_MILLIS;
+        adapter.poll();
+
+        final long pollStartNanos = System.nanoTime();
+        final RecordingOutput waiting = adapter.poll();
+
+        await().atMost(TIMEOUT).until(waiting::completed);
+        assertThat(waiting.failure).isInstanceOf(CancellationException.class);
+        assertThat(waiting.failedAtNanos - pollStartNanos)
+                .isLessThan(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS));
+    }
+
+    /// A device that takes one session at a time refuses a new one while it still closes the old: no connection opens
+    /// while the abandoned one closes, the polls meanwhile are not carried out, and the first poll after the close
+    /// connects and reads, so the read left unanswered costs no second polling error.
+    @Test
+    void readTheDriverNeverCompletes_pollAfterTheAbandonedConnectionClosedConnectsAndReads() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.oneSession = true;
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = ONE_SESSION_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+
+        final long deadlineNanos = System.nanoTime() + TIMEOUT.toNanos();
+        RecordingOutput next;
+        do {
+            pause(PAUSE_BETWEEN_POLLS_MILLIS);
+            next = adapter.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+        } while (next.failure instanceof CancellationException && System.nanoTime() - deadlineNanos < 0);
+
+        assertThat(next.failMessage).isNull();
+        assertThat(next.added).containsExactly("a");
+        assertThat(adapter.connections).hasSize(2);
+    }
+
+    /// A poll while the abandoned connection still closes is not carried out. A close of almost a whole poll and the
+    /// reconnect after it do not fit one sampler timeout: a poll that waited for both would count its cleanup.
+    /// Every poll ends within its time, none counts, and the first poll after the close reads.
+    @Test
+    void readTheDriverNeverCompletes_pollWaitingOnTheSlowCloseIsNotCarriedOutAndALaterPollReads() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.oneSession = true;
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = CLEANUP_CLOSE_MILLIS;
+        adapter.connectMillis = RECONNECT_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+
+        // More polls than fall within the close at this interval, so a poll after the close is among them.
+        final int maxPolls = 10;
+        RecordingOutput next;
+        int polls = 0;
+        do {
+            final long pollStartNanos = System.nanoTime();
+            next = adapter.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+            assertThat(next.completedAtNanos - pollStartNanos)
+                    .isLessThan(TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS));
+            if (next.failMessage != null) {
+                assertThat(next.failure).isInstanceOf(CancellationException.class);
+            }
+            polls++;
+            pause(NEXT_POLL_AFTER_MILLIS);
+        } while (next.added.isEmpty() && polls < maxPolls);
+        assertThat(next.added).containsExactly("a");
+        assertThat(adapter.connections).hasSize(2);
+    }
+
+    /// A close of the abandoned connection that hangs is the only close the adapter holds: no connection opens while
+    /// it runs, so no further connection is abandoned, and past one sampler timeout each poll is a polling error.
+    @Test
+    void abandonedConnectionWhoseCloseHangs_isTheOnlyCloseHeldAndPollsPastItsDeadlineCount() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = HUNG_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        final long abandonedNanos = System.nanoTime();
+
+        RecordingOutput last;
+        do {
+            pause(PAUSE_BETWEEN_POLLS_MILLIS);
+            last = adapter.poll();
+            await().atMost(TIMEOUT).until(last::completed);
+        } while (System.nanoTime() - abandonedNanos < TimeUnit.MILLISECONDS.toNanos(POLL_WHILE_HUNG_MILLIS));
+
+        assertThat(adapter.maxClosesInProgress.get()).isEqualTo(1);
+        assertThat(adapter.connections).hasSize(1);
+        assertThat(last.failure).isNull();
+        assertThat(last.failMessage).contains("still closing");
+    }
+
+    /// A configuration update replaces the adapter while the old instance still closes the connection it abandoned.
+    /// The new instance opens no session on a one-session device until that close has ended. Its polls meanwhile
+    /// are not carried out, and the first poll after the close connects and reads.
+    @Test
+    void configUpdateWhileTheAbandonedConnectionCloses_newInstanceConnectsOnceTheCloseEnded() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.oneSession = true;
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = ONE_SESSION_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        final LifetimeAdapter replacement = adapter.replacement();
+        replacement.oneSession = true;
+        replacement.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+        replacement.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+
+        final long deadlineNanos = System.nanoTime() + TIMEOUT.toNanos();
+        RecordingOutput next;
+        do {
+            pause(PAUSE_BETWEEN_POLLS_MILLIS);
+            next = replacement.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+        } while (next.failure instanceof CancellationException && System.nanoTime() - deadlineNanos < 0);
+
+        assertThat(next.failMessage).isNull();
+        assertThat(next.added).containsExactly("a");
+        assertThat(replacement.connections).hasSize(1);
+    }
+
+    /// A configuration update that points the adapter at another device connects to it at once: the close the old
+    /// instance abandoned on its device holds sessions to that device only, even while it hangs.
+    @Test
+    void configUpdateToAnotherDeviceWhileTheOldCloseHangs_newInstanceConnectsAtOnce() {
+        final LifetimeAdapter adapter = abandonedWithHungClose();
+        final LifetimeAdapter replacement = adapter.replacementOn("other-plc");
+        replacement.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+        replacement.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+
+        final RecordingOutput first = replacement.poll();
+
+        await().atMost(TIMEOUT).until(first::completed);
+        assertThat(first.failMessage).isNull();
+        assertThat(first.added).containsExactly("a");
+        assertThat(replacement.connections).hasSize(1);
+    }
+
+    /// Moving an adapter between devices while each close hangs holds one close per device, and moving it back to a
+    /// device whose close still hangs waits for that close, as the first instance did.
+    @Test
+    void adapterMovedBetweenDevicesWhileClosesHang_holdsOneClosePerDeviceAndWaitsOnReturn() {
+        final LifetimeAdapter onFirst = abandonedWithHungClose();
+        final LifetimeAdapter onSecond = onFirst.replacementOn("second-plc");
+        onSecond.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        onSecond.awaitConnected();
+        onSecond.answer = CompletableFuture::new;
+        onSecond.closeMillis = HUNG_CLOSE_MILLIS;
+        onSecond.poll();
+        final RecordingOutput abandoning = onSecond.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        onSecond.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+
+        final LifetimeAdapter backOnFirst = onFirst.replacement();
+        backOnFirst.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        final RecordingOutput back = backOnFirst.poll();
+
+        await().atMost(TIMEOUT).until(back::completed);
+        assertThat(back.failure).isInstanceOf(CancellationException.class);
+        assertThat(backOnFirst.connections).isEmpty();
+        assertThat(onFirst.maxClosesInProgress.get()).isEqualTo(1);
+        assertThat(onSecond.maxClosesInProgress.get()).isEqualTo(1);
+    }
+
+    /// Many adapters abandoning and reconnecting at once keep to their own devices: each holds at most one close, and
+    /// each reads again once its close has ended.
+    @Test
+    void manyAdaptersAbandoningAtOnce_eachHoldsOneCloseAndReadsAgain() throws Exception {
+        final int adapters = 16;
+        final List<LifetimeAdapter> all = new ArrayList<>();
+        for (int i = 0; i < adapters; i++) {
+            final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+            adapter.oneSession = true;
+            adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+            all.add(adapter);
+        }
+        try (ExecutorService pollers = Executors.newThreadPerTaskExecutor(
+                Thread.ofVirtual().name("lifetime-test-poller-", 0).factory())) {
+            final List<Future<RecordingOutput>> reads = new ArrayList<>();
+            for (final LifetimeAdapter adapter : all) {
+                reads.add(pollers.submit(() -> {
+                    adapter.awaitConnected();
+                    adapter.answer = CompletableFuture::new;
+                    adapter.closeMillis = ONE_SESSION_CLOSE_MILLIS;
+                    adapter.poll();
+                    final RecordingOutput abandoning = adapter.poll();
+                    await().atMost(TIMEOUT).until(abandoning::completed);
+                    adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+                    final long deadlineNanos = System.nanoTime() + TIMEOUT.toNanos();
+                    RecordingOutput next;
+                    do {
+                        pause(PAUSE_BETWEEN_POLLS_MILLIS);
+                        next = adapter.poll();
+                        await().atMost(TIMEOUT).until(next::completed);
+                    } while (next.failure instanceof CancellationException && System.nanoTime() - deadlineNanos < 0);
+                    return next;
+                }));
+            }
+            for (final Future<RecordingOutput> read : reads) {
+                assertThat(read.get(2 * TIMEOUT.toMillis(), TimeUnit.MILLISECONDS).added)
+                        .containsExactly("a");
+            }
+        }
+        for (final LifetimeAdapter adapter : all) {
+            assertThat(adapter.maxClosesInProgress.get()).isEqualTo(1);
+            assertThat(adapter.connections).hasSize(2);
+        }
+    }
+
+    /// An adapter whose read was abandoned and whose connection's close hangs; the adapter is stopped, as a
+    /// configuration update stops it before it builds the next instance.
+    private static @NotNull LifetimeAdapter abandonedWithHungClose() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = HUNG_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        assertThat(abandoning.failure).isInstanceOf(CancellationException.class);
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        return adapter;
+    }
+
+    /// A reconnect that fails once the abandoned connection has closed is a polling error, like any failed connect;
+    /// the polls while it closed were not.
+    @Test
+    void readTheDriverNeverCompletes_reconnectRefusedAfterTheClose_isAPollingError() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = ONE_SESSION_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        adapter.refuseConnect = true;
+
+        final long deadlineNanos = System.nanoTime() + TIMEOUT.toNanos();
+        RecordingOutput next;
+        do {
+            pause(PAUSE_BETWEEN_POLLS_MILLIS);
+            next = adapter.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+        } while (next.failure instanceof CancellationException && System.nanoTime() - deadlineNanos < 0);
+
+        assertThat(next.failure).isNull();
+        assertThat(next.failMessage).contains("the device refused the session");
+        assertThat(adapter.connections).hasSize(2);
+    }
+
+    /// A close of the abandoned connection that ends after its deadline holds the next connection until it has
+    /// ended; then the adapter connects again and reads.
+    @Test
+    void abandonedConnectionWhoseCloseEndsLate_isReconnectedOnceTheCloseEnded() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.closeMillis = LATE_CLOSE_MILLIS;
+        adapter.poll();
+        final RecordingOutput abandoning = adapter.poll();
+        await().atMost(TIMEOUT).until(abandoning::completed);
+        final long abandonedNanos = System.nanoTime();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            final RecordingOutput next = adapter.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+            assertThat(next.added).containsExactly("a");
+        });
+        assertThat(System.nanoTime() - abandonedNanos).isGreaterThan(TimeUnit.MILLISECONDS.toNanos(LATE_CLOSE_MILLIS));
+        assertThat(adapter.connections).hasSize(2);
+        assertThat(adapter.maxClosesInProgress.get()).isEqualTo(1);
+    }
+
+    /// A read the driver cancels is a polling error: the cancellation reaches the output wrapped, so Edge does not
+    /// take it for a poll the adapter did not carry out, which would leave the error count as it is.
+    @Test
+    void readTheDriverCancels_failsThePollAsAPollingError() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> {
+            final CompletableFuture<PlcReadResponse> cancelled = new CompletableFuture<>();
+            cancelled.cancel(false);
+            return cancelled;
+        };
+
+        final RecordingOutput polled = adapter.poll();
+
+        await().atMost(TIMEOUT).until(polled::completed);
+        assertThat(polled.failure).isNotNull().isNotInstanceOf(CancellationException.class);
+        assertThat(polled.failure).hasCauseInstanceOf(CancellationException.class);
+    }
+
+    /// A read the driver never completes (S7 0.13.1 drops a response it cannot decode)
+    /// holds the next poll only until that poll's time to start a read runs out; then the connection is closed, the
+    /// poll ends as not carried out (the read's own poll already counted it), and the poll after it connects again
+    /// and reads.
+    @Test
+    void readTheDriverNeverCompletes_isAbandonedByTheNextPollAndTheConnectionReopened() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.poll();
+
+        final RecordingOutput waiting = adapter.poll();
+
+        await().atMost(TIMEOUT).until(waiting::completed);
+        assertThat(waiting.failure).isInstanceOf(CancellationException.class);
+        assertThat(waiting.failMessage).contains("left the previous read unanswered");
+        assertThat(adapter.reads.get()).isEqualTo(1);
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            final RecordingOutput next = adapter.poll();
+            await().atMost(TIMEOUT).until(next::completed);
+            assertThat(next.added).containsExactly("a");
+        });
+        assertThat(adapter.connections).hasSize(2);
+    }
+
+    /// A poll whose connection attempt took most of its time ends without reading, as a poll not carried out, which
+    /// Edge counts neither as an error nor as a success: the answer would come after the sampler stopped waiting,
+    /// and a value the device clears on read would be lost; the next poll reads.
+    @Test
+    void connectionEstablishedTooLateInThePoll_endsWithoutReadingAndTheNextPollReads() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SHORT_SAMPLER_TIMEOUT_MILLIS);
+        adapter.connectGate = new CountDownLatch(1);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        await().atMost(TIMEOUT).until(() -> adapter.connections.size() == 1);
+
+        final long pollStartNanos = System.nanoTime();
+        final RecordingOutput waiting = adapter.poll();
+        await().atMost(TIMEOUT)
+                .pollInterval(Duration.ofMillis(10))
+                .until(() -> System.nanoTime() - pollStartNanos
+                        > TimeUnit.MILLISECONDS.toNanos(SHORT_SAMPLER_TIMEOUT_MILLIS - READ_MARGIN_MILLIS + 100));
+        adapter.connectGate.countDown();
+
+        await().atMost(TIMEOUT).until(waiting::completed);
+        assertThat(waiting.failure).isInstanceOf(CancellationException.class);
+        assertThat(waiting.added).isEmpty();
+        assertThat(adapter.reads.get()).isZero();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(1))));
+        final RecordingOutput next = adapter.poll();
+        await().atMost(TIMEOUT).until(next::completed);
+        assertThat(next.added).containsExactly("a");
+    }
+
+    /// The drivers answer one request at a time, so a poll that finds the previous read unanswered sends no read
+    /// behind it: it reads once the driver answers that read, and an unanswered read costs one polling error, not
+    /// two.
+    @Test
+    void pollWhileThePreviousReadIsUnanswered_readsOnceThePreviousReadEnds() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SAMPLER_TIMEOUT_MILLIS, false);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        final CompletableFuture<PlcReadResponse> unanswered = new CompletableFuture<>();
+        adapter.answer = () -> unanswered;
+        adapter.poll();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(2))));
+
+        final RecordingOutput second = adapter.poll();
+        assertThat(second.completed()).isFalse();
+        assertThat(adapter.reads.get()).isEqualTo(1);
+        unanswered.complete(response(Map.of("a", ok(1))));
+
+        await().atMost(TIMEOUT).until(second::completed);
+        assertThat(second.failMessage).isNull();
+        assertThat(second.added).containsExactly("a");
+        assertThat(adapter.reads.get()).isEqualTo(2);
+    }
+
+    /// A poll waiting on the previous read when the adapter stops completes without an error and sends no read: the
+    /// stop's disconnect ends the previous read, and the waiting poll belongs to the run that ended.
+    @Test
+    void pollWaitingOnThePreviousRead_whenTheAdapterStops_completesWithoutAnError() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A), SAMPLER_TIMEOUT_MILLIS, false);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = CompletableFuture::new;
+        adapter.poll();
+        final RecordingOutput waiting = adapter.poll();
+        assertThat(waiting.completed()).isFalse();
+
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+
+        await().atMost(STOP_ENDS_POLL_WITHIN).until(waiting::completed);
+        assertThat(waiting.failMessage).isNull();
+        assertThat(waiting.added).isEmpty();
+        assertThat(adapter.reads.get()).isEqualTo(1);
+    }
+
+    /// A response that holds no entry for a tag counts as that tag's failure, and the other tags are published.
+    @Test
+    void responseWithoutAnEntryForATag_publishesTheOtherTags() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A, TAG_B), SAMPLER_TIMEOUT_MILLIS, false);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(1))));
+
+        try (final CapturedLog log = new CapturedLog()) {
+            final RecordingOutput polled = adapter.poll();
+
+            assertThat(polled.failMessage).isNull();
+            assertThat(polled.added).containsExactly("a");
+            assertThat(log.messages(Level.WARN)).singleElement().asString().contains("tag=b");
+        }
+    }
+
+    /// A value that cannot be converted, as PLC4X throws for an array, counts as that tag's failure, and the other
+    /// tags are published.
+    @Test
+    void valueThatCannotBeConverted_publishesTheOtherTags() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A, TAG_B), SAMPLER_TIMEOUT_MILLIS, false);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of(
+                "a",
+                ok(1),
+                "b",
+                new DefaultPlcResponseItem<>(PlcResponseCode.OK, new PlcList(List.of(new PlcDINT(2)))))));
+
+        try (final CapturedLog log = new CapturedLog()) {
+            final RecordingOutput polled = adapter.poll();
+
+            assertThat(polled.failMessage).isNull();
+            assertThat(polled.added).containsExactly("a");
+            assertThat(log.messages(Level.WARN)).singleElement().asString().contains("tag=b");
+        }
+    }
+
+    /// A new run warns again about a tag that still cannot be read: the warning is once per tag and run.
+    @Test
+    void tagStillFailingAfterARestart_isWarnedAboutAgain() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A, TAG_B), SAMPLER_TIMEOUT_MILLIS, false);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> CompletableFuture.completedFuture(
+                response(Map.of("a", ok(1), "b", new DefaultPlcResponseItem<>(PlcResponseCode.ACCESS_DENIED, null))));
+
+        try (final CapturedLog log = new CapturedLog()) {
+            adapter.poll();
+            adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+            adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+            adapter.awaitConnected();
+            final RecordingOutput afterRestart = adapter.poll();
+            await().atMost(TIMEOUT).until(afterRestart::completed);
+
+            assertThat(log.messages(Level.WARN))
+                    .filteredOn(message -> message.contains("tag=b"))
+                    .hasSize(2);
+        }
+    }
+
+    /// A poll that reads a tag after polls that failed sets the adapter's status from ERROR back to CONNECTED.
+    @Test
+    void partialRead_afterAnError_setsTheStatusToConnected() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A, TAG_B), SAMPLER_TIMEOUT_MILLIS, false);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        clearInvocations(adapter.state);
+        when(adapter.state.getConnectionStatus()).thenReturn(ERROR);
+        adapter.answer = () -> CompletableFuture.completedFuture(
+                response(Map.of("a", ok(1), "b", new DefaultPlcResponseItem<>(PlcResponseCode.ACCESS_DENIED, null))));
+
+        final RecordingOutput polled = adapter.poll();
+
+        assertThat(polled.failMessage).isNull();
+        verify(adapter.state).setConnectionStatus(CONNECTED);
+    }
+
+    /// One tag the device cannot read does not hide the others: the tags read are published, the poll succeeds, and
+    /// the failing tag is warned about once until it is read again.
+    @Test
+    void partialRead_publishesTheTagsReadAndWarnsOncePerTag() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A, TAG_B), SAMPLER_TIMEOUT_MILLIS, false);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> CompletableFuture.completedFuture(
+                response(Map.of("a", ok(1), "b", new DefaultPlcResponseItem<>(PlcResponseCode.ACCESS_DENIED, null))));
+
+        try (final CapturedLog log = new CapturedLog()) {
+            final RecordingOutput first = adapter.poll();
+            final RecordingOutput second = adapter.poll();
+
+            assertThat(first.failMessage).isNull();
+            assertThat(first.added).containsExactly("a");
+            assertThat(second.added).containsExactly("a");
+            assertThat(log.messages(Level.WARN))
+                    .singleElement()
+                    .asString()
+                    .contains("tag=b")
+                    .contains("responseCode=ACCESS_DENIED");
+
+            adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(1), "b", ok(2))));
+            final RecordingOutput recovered = adapter.poll();
+            assertThat(recovered.added).containsExactlyInAnyOrder("a", "b");
+            assertThat(log.messages(Level.INFO))
+                    .anySatisfy(message ->
+                            assertThat(message).contains("read again").contains("tag=b"));
+        }
+    }
+
+    /// A poll in which no tag could be read is a polling error.
+    @Test
+    void readWithNoTagRead_failsThePoll() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A, TAG_B), SAMPLER_TIMEOUT_MILLIS);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of(
+                "a",
+                new DefaultPlcResponseItem<>(PlcResponseCode.NOT_FOUND, null),
+                "b",
+                new DefaultPlcResponseItem<>(PlcResponseCode.ACCESS_DENIED, null))));
+
+        final RecordingOutput output = adapter.poll();
+
+        assertThat(output.failMessage).contains("no tag could be read");
+        assertThat(output.published).isFalse();
+    }
+
+    /// A tag answered without a value that can be published counts as not read: the other tags are published, the
+    /// tag is warned about once, and a poll with no value at all fails.
+    @Test
+    void tagAnsweredWithoutAValue_countsAsNotRead() {
+        final LifetimeAdapter adapter = new LifetimeAdapter(List.of(TAG_A, TAG_B), SAMPLER_TIMEOUT_MILLIS, false);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitConnected();
+        adapter.answer = () -> CompletableFuture.completedFuture(response(Map.of("a", ok(1), "b", okWithoutValue())));
+
+        try (final CapturedLog log = new CapturedLog()) {
+            final RecordingOutput first = adapter.poll();
+            final RecordingOutput second = adapter.poll();
+
+            assertThat(first.failMessage).isNull();
+            assertThat(first.added).containsExactly("a");
+            assertThat(second.added).containsExactly("a");
+            assertThat(log.messages(Level.WARN)).singleElement().asString().contains("tag=b");
+        }
+
+        adapter.answer =
+                () -> CompletableFuture.completedFuture(response(Map.of("a", okWithoutValue(), "b", okWithoutValue())));
+        final RecordingOutput none = adapter.poll();
+        assertThat(none.failMessage).contains("no tag could be read");
+    }
+
+    /// Lets the given time pass before the test's next poll, as the sampler's interval does between two polls.
+    private static void pause(final long millis) {
+        await().pollDelay(Duration.ofMillis(millis)).atMost(TIMEOUT).until(() -> true);
+    }
+
+    private static @NotNull Plc4xTag tag(final @NotNull String name) {
+        return new Plc4xTag(name, null, new Plc4xTagDefinition("%DB1:0", Plc4xDataType.DATA_TYPE.DINT));
+    }
+
+    private static @NotNull PlcResponseItem<PlcValue> ok(final int value) {
+        return new DefaultPlcResponseItem<>(PlcResponseCode.OK, new PlcDINT(value));
+    }
+
+    private static @NotNull PlcResponseItem<PlcValue> okWithoutValue() {
+        return new DefaultPlcResponseItem<>(PlcResponseCode.OK, null);
+    }
+
+    private static @NotNull PlcReadResponse response(final @NotNull Map<String, PlcResponseItem<PlcValue>> items) {
+        return new DefaultPlcReadResponse(mock(PlcReadRequest.class), new LinkedHashMap<>(items));
+    }
+
+    private static @NotNull ProtocolAdapterStartInput startInput() {
+        final ProtocolAdapterStartInput input = mock(ProtocolAdapterStartInput.class);
+        final ModuleServices moduleServices = mock(ModuleServices.class);
+        when(moduleServices.eventService()).thenReturn(mock(EventService.class));
+        when(input.moduleServices()).thenReturn(moduleServices);
+        return input;
+    }
+
+    /// An S7-configured adapter built with a chosen sampler timeout, whose connections connect when the gate opens
+    /// and answer reads as the test says.
+    private static final class LifetimeAdapter
+            extends AbstractPlc4xAdapter<S7SpecificAdapterConfig, Plc4xToMqttMapping> {
+
+        final @NotNull ProtocolAdapterState state;
+        private final long samplerTimeoutMillis;
+        final @NotNull List<ScriptedConnection> connections = new CopyOnWriteArrayList<>();
+        final @NotNull AtomicInteger reads = new AtomicInteger();
+        // Set by the test thread. Read when a connection is created, on the thread that starts the attempt (the test
+        // thread in start() or poll()).
+        volatile @NotNull CountDownLatch connectGate = new CountDownLatch(0);
+        // Set by the test thread, read by the thread that starts a read: the test thread in poll(), a connect thread
+        // after a connection attempt or after the previous read.
+        volatile @NotNull Supplier<CompletableFuture<PlcReadResponse>> answer =
+                () -> CompletableFuture.completedFuture(response(Map.of()));
+        // Set by the test thread, read by the thread that disconnects (the test thread in stop(), a poll that releases
+        // a lost connection).
+        volatile boolean readsFailOnClose = true;
+        // How long a disconnect takes, as a driver that closes slowly. Set by the test thread before the polls, read by
+        // the thread that disconnects.
+        volatile long closeMillis;
+        // Whether the device takes one session at a time: a connect fails while another connection is still closing.
+        // Set by the test thread before start(), read by the connect threads.
+        volatile boolean oneSession;
+        // The disconnects still running, counted by the threads that disconnect, read by the connect threads, and the
+        // most that ran at once, read by the test thread.
+        final @NotNull AtomicInteger closesInProgress;
+        final @NotNull AtomicInteger maxClosesInProgress = new AtomicInteger();
+        // How long a connect takes once it starts, and whether the device refuses it. Set by the test thread before
+        // the polls, read by the connect threads.
+        volatile long connectMillis;
+        volatile boolean refuseConnect;
+
+        LifetimeAdapter(final @NotNull List<Plc4xTag> tags, final long samplerTimeoutMillis) {
+            this(tags, samplerTimeoutMillis, true);
+        }
+
+        LifetimeAdapter(
+                final @NotNull List<Plc4xTag> tags,
+                final long samplerTimeoutMillis,
+                final boolean publishChangedDataOnly) {
+            this(tags, samplerTimeoutMillis, publishChangedDataOnly, mock(ProtocolAdapterState.class));
+        }
+
+        private LifetimeAdapter(
+                final @NotNull List<Plc4xTag> tags,
+                final long samplerTimeoutMillis,
+                final boolean publishChangedDataOnly,
+                final @NotNull ProtocolAdapterState state) {
+            this(
+                    tags,
+                    samplerTimeoutMillis,
+                    publishChangedDataOnly,
+                    state,
+                    "lifetime-" + ADAPTER_IDS.incrementAndGet(),
+                    "localhost",
+                    new AtomicInteger());
+        }
+
+        private LifetimeAdapter(
+                final @NotNull List<Plc4xTag> tags,
+                final long samplerTimeoutMillis,
+                final boolean publishChangedDataOnly,
+                final @NotNull ProtocolAdapterState state,
+                final @NotNull String adapterId,
+                final @NotNull String host,
+                final @NotNull AtomicInteger closesInProgress) {
+            super(
+                    S7ProtocolAdapterInformation.INSTANCE,
+                    newInput(tags, publishChangedDataOnly, state, adapterId, host),
+                    samplerTimeoutMillis);
+            this.state = state;
+            this.samplerTimeoutMillis = samplerTimeoutMillis;
+            this.closesInProgress = closesInProgress;
+        }
+
+        /// The instance a configuration update builds in place of this one: same adapter id, same device.
+        @NotNull
+        LifetimeAdapter replacement() {
+            return replacementOn(adapterConfig.getHost(), closesInProgress);
+        }
+
+        /// The instance a configuration update builds when it points this adapter id at another device.
+        @NotNull
+        LifetimeAdapter replacementOn(final @NotNull String host) {
+            return replacementOn(host, new AtomicInteger());
+        }
+
+        private @NotNull LifetimeAdapter replacementOn(
+                final @NotNull String host, final @NotNull AtomicInteger deviceClosesInProgress) {
+            return new LifetimeAdapter(
+                    tags,
+                    samplerTimeoutMillis,
+                    true,
+                    mock(ProtocolAdapterState.class),
+                    getId(),
+                    host,
+                    deviceClosesInProgress);
+        }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        private static @NotNull ProtocolAdapterInput<S7SpecificAdapterConfig> newInput(
+                final @NotNull List<Plc4xTag> tags,
+                final boolean publishChangedDataOnly,
+                final @NotNull ProtocolAdapterState state,
+                final @NotNull String adapterId,
+                final @NotNull String host) {
+            final ProtocolAdapterInput<S7SpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
+            when(input.getConfig())
+                    .thenReturn(new S7SpecificAdapterConfig(
+                            102,
+                            host,
+                            S7SpecificAdapterConfig.ControllerType.S7_1500,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            new S7ToMqttConfig(null, null, publishChangedDataOnly)));
+            when(input.getTags()).thenReturn((List) tags);
+            when(input.getAdapterId()).thenReturn(adapterId);
+            when(input.getProtocolAdapterState()).thenReturn(state);
+            return input;
+        }
+
+        @Override
+        protected @NotNull String getProtocolHandler() {
+            return "s7";
+        }
+
+        @Override
+        protected @NotNull ReadType getReadType() {
+            return ReadType.Read;
+        }
+
+        @Override
+        protected @NotNull Plc4xConnection<S7SpecificAdapterConfig> createConnection() throws Plc4xException {
+            final ScriptedConnection created = new ScriptedConnection(this);
+            connections.add(created);
+            return created;
+        }
+
+        @NotNull
+        RecordingOutput poll() {
+            final RecordingOutput output = new RecordingOutput();
+            poll(output);
+            return output;
+        }
+
+        void poll(final @NotNull RecordingOutput output) {
+            poll(mock(BatchPollingInput.class), output);
+        }
+
+        void awaitConnected() {
+            await().atMost(TIMEOUT).until(() -> {
+                final Plc4xConnection<S7SpecificAdapterConfig> current = connection;
+                return current != null && current.isConnected() && !isConnecting();
+            });
+        }
+    }
+
+    /// A connection that connects once the adapter's gate opens, unless it was closed first, and hands out the reads
+    /// the adapter's answer supplies; closing it fails the unanswered reads, as the real connection does.
+    private static final class ScriptedConnection extends Plc4xConnection<S7SpecificAdapterConfig> {
+
+        private final @NotNull LifetimeAdapter adapter;
+        private final @NotNull CountDownLatch gate;
+        private final @NotNull List<CompletableFuture<PlcReadResponse>> handedOut = new CopyOnWriteArrayList<>();
+        private final @NotNull CountDownLatch closed = new CountDownLatch(1);
+        // Written by the connect thread, read by the thread that disconnects.
+        private volatile @Nullable Thread connecting;
+        // Written by the connect thread and by disconnect(), read by the adapter's poll threads.
+        private volatile boolean connected;
+
+        ScriptedConnection(final @NotNull LifetimeAdapter adapter) throws Plc4xException {
+            super(PlcDriverManager.getDefault(), adapter.adapterConfig, _ -> "");
+            this.adapter = adapter;
+            this.gate = adapter.connectGate;
+        }
+
+        @Override
+        void startConnection(
+                final @NotNull EventService eventService,
+                final @NotNull String adapterId,
+                final @NotNull String protocolId)
+                throws Plc4xException {
+            if (adapter.oneSession && adapter.closesInProgress.get() > 0) {
+                throw new Plc4xException("the device still holds another session");
+            }
+            if (adapter.refuseConnect) {
+                throw new Plc4xException("the device refused the session");
+            }
+            connecting = Thread.currentThread();
+            try {
+                if (adapter.connectMillis > 0) {
+                    Thread.sleep(adapter.connectMillis);
+                }
+                if (closed.getCount() == 0) {
+                    throw new Plc4xException("closed while connecting");
+                }
+                if (!gate.await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+                    throw new Plc4xException("the test never opened the connect gate");
+                }
+            } catch (final InterruptedException _) {
+                // disconnect() interrupts the connect, as the real connection does; S7 and ADS map it to a failure.
+                throw new Plc4xException("interrupted while connecting");
+            } finally {
+                connecting = null;
+            }
+            if (closed.getCount() == 0) {
+                throw new Plc4xException("closed while connecting");
+            }
+            connected = true;
+        }
+
+        @Override
+        public boolean isConnected() {
+            return connected;
+        }
+
+        @Override
+        protected void lazyConnectionCheck() {}
+
+        @Override
+        @NotNull
+        CompletableFuture<Void> connectTerminated() {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull List<Plc4xTag> tags) {
+            adapter.reads.incrementAndGet();
+            final CompletableFuture<PlcReadResponse> read = adapter.answer.get();
+            handedOut.add(read);
+            return read;
+        }
+
+        @Override
+        public void disconnect() {
+            adapter.maxClosesInProgress.accumulateAndGet(adapter.closesInProgress.incrementAndGet(), Math::max);
+            try {
+                if (adapter.closeMillis > 0) {
+                    Thread.sleep(adapter.closeMillis);
+                }
+            } catch (final InterruptedException _) {
+                Thread.currentThread().interrupt();
+            } finally {
+                adapter.closesInProgress.decrementAndGet();
+            }
+            connected = false;
+            closed.countDown();
+            final Thread connectThread = connecting;
+            if (connectThread != null) {
+                connectThread.interrupt();
+            }
+            if (adapter.readsFailOnClose) {
+                for (final CompletableFuture<PlcReadResponse> read : handedOut) {
+                    read.completeExceptionally(new Plc4xException("The connection was closed"));
+                }
+            }
+        }
+
+        @Override
+        protected @NotNull String getProtocol() {
+            return "s7";
+        }
+
+        @Override
+        protected @NotNull String getTagAddressForSubscription(final @NotNull Plc4xTag tag) {
+            return tag.getDefinition().getTagAddress();
+        }
+    }
+
+    /// Records what a poll published or why it failed; its publish can be held back or made to throw.
+    private static final class RecordingOutput implements BatchPollingOutput {
+
+        // Written by the adapter's poll, connect or driver thread that publishes or fails, read by the test thread.
+        final @NotNull List<String> added = new CopyOnWriteArrayList<>();
+        // Set by the test thread before the poll, read by the publishing thread.
+        volatile @Nullable CountDownLatch publishGate;
+        volatile boolean publishThrows;
+        // Written by the publishing or failing thread, read by the test thread.
+        volatile boolean publishGateExpired;
+        volatile boolean published;
+        volatile @Nullable String failMessage;
+        volatile @Nullable Throwable failure;
+        volatile long failedAtNanos;
+        // Written before published or failMessage, so a test thread that reads either set sees this time.
+        volatile long completedAtNanos;
+
+        boolean completed() {
+            return published || failMessage != null;
+        }
+
+        @Override
+        public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {}
+
+        @Override
+        public void addDataPoint(final @NotNull DataPoint dataPoint) {}
+
+        @Override
+        public @NotNull DataPointListBuilder dataPointListPublisher() {
+            return new DataPointListBuilder() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public @NotNull DataPointBuilder<DataPointListBuilder> addDataPoint(final @NotNull Tag tag) {
+                    added.add(tag.getName());
+                    return mock(DataPointBuilder.class);
+                }
+
+                @Override
+                public void publish() {
+                    final CountDownLatch gate = publishGate;
+                    if (gate != null) {
+                        try {
+                            publishGateExpired = !gate.await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                        } catch (final InterruptedException _) {
+                            Thread.currentThread().interrupt();
+                            publishGateExpired = true;
+                        }
+                    }
+                    if (publishThrows) {
+                        throw new IllegalStateException("publish failed in test");
+                    }
+                    completedAtNanos = System.nanoTime();
+                    published = true;
+                }
+            };
+        }
+
+        @Override
+        public void finish() {}
+
+        @Override
+        public void fail(final @NotNull Throwable t, final @Nullable String errorMessage) {
+            failure = t;
+            fail(errorMessage != null ? errorMessage : String.valueOf(t.getMessage()));
+        }
+
+        @Override
+        public void fail(final @NotNull String errorMessage) {
+            // Written before failMessage: a thread that reads failMessage non-null then sees this time.
+            failedAtNanos = System.nanoTime();
+            completedAtNanos = failedAtNanos;
+            failMessage = errorMessage;
+        }
+    }
+
+    /// Captures the adapter's log lines for one test.
+    private static final class CapturedLog implements AutoCloseable {
+
+        private final @NotNull Logger logger = (Logger) LoggerFactory.getLogger(LifetimeAdapter.class);
+        private final @NotNull ListAppender<ILoggingEvent> appender = new ListAppender<>();
+
+        CapturedLog() {
+            appender.start();
+            logger.addAppender(appender);
+        }
+
+        @NotNull
+        List<String> messages(final @NotNull Level level) {
+            return appender.list.stream()
+                    .filter(event -> event.getLevel() == level)
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .toList();
+        }
+
+        @Override
+        public void close() {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+    }
+}
