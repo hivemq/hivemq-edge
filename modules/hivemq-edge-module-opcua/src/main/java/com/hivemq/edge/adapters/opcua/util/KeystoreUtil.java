@@ -15,137 +15,26 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.stream.Stream;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
-import org.eclipse.milo.opcua.stack.core.util.CertificateUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/// The shape Eclipse Milo's client builder takes Edge's own key and certificate chain in.
+///
+/// Nothing here reads a file any more. Every piece of TLS material - this key, the trust anchors,
+/// the fingerprint allow-list and the revocation lists - is read once by `TLSPolicy`, which handles
+/// containers and PEM alike; this record only carries the result across to Milo in the shape its API
+/// expects.
 public class KeystoreUtil {
 
-    public static @NotNull List<X509Certificate> getCertificatesFromTruststore(
-            final @NotNull String keyStoreType,
-            final @NotNull String keyStorePath,
-            final @NotNull String keyStorePassword) {
-        try (final FileInputStream fileInputStream = new FileInputStream(keyStorePath)) {
-            // load keystore from TLS config
-            final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-            keyStore.load(fileInputStream, keyStorePassword.toCharArray());
-            final List<X509Certificate> certificates = new ArrayList<>();
-            final Iterator<String> aliasIter = keyStore.aliases().asIterator();
-            while (aliasIter.hasNext()) {
-                final String alias = aliasIter.next();
-                certificates.add((X509Certificate) keyStore.getCertificate(alias));
-            }
-            return Collections.unmodifiableList(certificates);
-        } catch (final FileNotFoundException e) {
-            throw new SslException("Cannot find KeyStore at path '" + keyStorePath + "'");
-        } catch (final KeyStoreException | IOException e) {
-            throw new SslException(
-                    String.format("Not able to open or read KeyStore '%s' with type '%s'", keyStorePath, keyStoreType),
-                    e);
-        } catch (final NoSuchAlgorithmException | CertificateException e) {
-            throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
-        } catch (final NoSuchElementException e) {
-            throw new SslException("Not able to find key in KeyStore '" + keyStorePath + "'", e);
-        }
-    }
+    private KeystoreUtil() {}
 
-    public static @NotNull List<X509Certificate> getCertificatesFromDefaultTruststore() {
-        // if no truststore is set use java default
-        try {
-            // Loads default Root CA certificates (generally, from JAVA_HOME/lib/cacerts)
-            final TrustManagerFactory trustManagerFactory =
-                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init((KeyStore) null);
-            return Arrays.stream(trustManagerFactory.getTrustManagers())
-                    .flatMap(trustManager -> {
-                        if (trustManager instanceof X509TrustManager x509TrustManager) {
-                            return Arrays.stream(x509TrustManager.getAcceptedIssuers());
-                        }
-                        return Stream.empty();
-                    })
-                    .toList();
-        } catch (final NoSuchAlgorithmException | KeyStoreException e) {
-            throw new SslException("Not able to load system default truststore", e);
-        }
-    }
-
-    public static @NotNull KeyPairWithChain getKeysFromKeystore(
-            final @NotNull String keyStoreType,
-            final @NotNull String keyStorePath,
-            final @NotNull String keyStorePassword,
-            final @NotNull String privateKeyPassword) {
-        try (final FileInputStream fileInputStream = new FileInputStream(keyStorePath)) {
-            // load keystore from TLS config
-            final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-            keyStore.load(fileInputStream, keyStorePassword.toCharArray());
-
-            // Find the first key entry (not just any alias, which might be a certificate entry)
-            String keyAlias = null;
-            final Iterator<String> aliasIterator = keyStore.aliases().asIterator();
-            while (aliasIterator.hasNext()) {
-                final String alias = aliasIterator.next();
-                if (keyStore.isKeyEntry(alias)) {
-                    keyAlias = alias;
-                    break;
-                }
-            }
-
-            if (keyAlias == null) {
-                throw new SslException("No key entry found in KeyStore '" + keyStorePath + "'");
-            }
-
-            final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, privateKeyPassword.toCharArray());
-            final Certificate certificate = keyStore.getCertificate(keyAlias);
-            final Certificate[] certificateChain = keyStore.getCertificateChain(keyAlias);
-
-            final X509Certificate certificateX509 = (X509Certificate) certificate;
-            final X509Certificate[] certificateChainX509 = new X509Certificate[certificateChain.length];
-            for (int i = 0; i < certificateChain.length; i++) {
-                certificateChainX509[i] = (X509Certificate) certificateChain[i];
-            }
-
-            // Extract Application URI from certificate SAN extension
-            final String applicationUri =
-                    CertificateUtil.getSanUri(certificateX509).orElse(null);
-
-            return new KeyPairWithChain(privateKey, certificateX509, certificateChainX509, applicationUri);
-        } catch (final UnrecoverableKeyException e1) {
-            throw new SslException(
-                    "Not able to recover key from KeyStore, please check your private-key-password and your keyStorePassword",
-                    e1);
-        } catch (final FileNotFoundException e) {
-            throw new SslException("Cannot find KeyStore at path '" + keyStorePath + "'");
-        } catch (final KeyStoreException | IOException e) {
-            throw new SslException(
-                    String.format("Not able to open or read KeyStore '%s' with type '%s'", keyStorePath, keyStoreType),
-                    e);
-        } catch (final NoSuchAlgorithmException | CertificateException e) {
-            throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
-        } catch (final NoSuchElementException e) {
-            throw new SslException("Not able to find key in KeyStore '" + keyStorePath + "'", e);
-        }
-    }
-
+    /// @param privateKey the key Edge signs the OPC UA handshake with
+    /// @param publicKey the certificate belonging to that key
+    /// @param certificateChain that certificate and the intermediates vouching for it, leaf first
+    /// @param applicationUri the URI in the certificate's subject alternative name, which OPC UA
+    ///     compares against the application identifier, or `null` where it carries none
     @SuppressWarnings("ArrayRecordComponent")
     public record KeyPairWithChain(
             @NotNull PrivateKey privateKey,

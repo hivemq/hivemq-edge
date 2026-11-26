@@ -47,6 +47,7 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.protocols.fsm.I18nProtocolAdapterMessage;
 import com.hivemq.protocols.fsm.ProtocolAdapterManagerState;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import com.hivemq.security.tls.TLSMaterialProvider;
 import com.hivemq.util.ThreadFactoryUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -144,6 +145,8 @@ public class ProtocolAdapterManager {
     private final @NotNull ExecutorService executorService;
     private final @NotNull ExecutorService adapterLifecycleExecutor;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
+    // The node's declared TLS material, handed to every adapter through its input; see TLSMaterialSource.
+    private final @NotNull TLSMaterialProvider tlsMaterialProvider;
     private final @NotNull AtomicInteger refreshTasksInProgress = new AtomicInteger(0);
 
     /**
@@ -169,7 +172,9 @@ public class ProtocolAdapterManager {
      */
     private final @NotNull Set<String> tracedConversionFailures = new HashSet<>();
 
-    @Inject
+    /// A manager whose adapters resolve their references into shared TLS material against no declared
+    /// material.
+    @VisibleForTesting
     public ProtocolAdapterManager(
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull HiveMQEdgeRemoteService remoteService,
@@ -184,6 +189,39 @@ public class ProtocolAdapterManager {
             final @NotNull TagManager tagManager,
             final @NotNull ProtocolAdapterExtractor protocolAdapterConfig,
             final @NotNull ProtocolAdapterPublishService adapterPublishService) {
+        this(
+                metricRegistry,
+                remoteService,
+                eventService,
+                configConverter,
+                versionProvider,
+                protocolAdapterPollingService,
+                protocolAdapterMetrics,
+                protocolAdapterWritingService,
+                protocolAdapterFactoryManager,
+                northboundConsumerFactory,
+                tagManager,
+                protocolAdapterConfig,
+                adapterPublishService,
+                new TLSMaterialProvider());
+    }
+
+    @Inject
+    public ProtocolAdapterManager(
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull HiveMQEdgeRemoteService remoteService,
+            final @NotNull EventService eventService,
+            final @NotNull ProtocolAdapterConfigConverter configConverter,
+            final @NotNull VersionProvider versionProvider,
+            final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
+            final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
+            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
+            final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager,
+            final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
+            final @NotNull TagManager tagManager,
+            final @NotNull ProtocolAdapterExtractor protocolAdapterConfig,
+            final @NotNull ProtocolAdapterPublishService adapterPublishService,
+            final @NotNull TLSMaterialProvider tlsMaterialProvider) {
         this.metricRegistry = metricRegistry;
         this.remoteService = remoteService;
         this.eventService = eventService;
@@ -197,6 +235,7 @@ public class ProtocolAdapterManager {
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
         this.adapterPublishService = adapterPublishService;
+        this.tlsMaterialProvider = tlsMaterialProvider;
         this.executorService = Executors.newSingleThreadExecutor();
         this.adapterLifecycleExecutor = new ThreadPoolExecutor(
                 ADAPTER_LIFECYCLE_CORE_POOL_SIZE,
@@ -654,7 +693,8 @@ public class ProtocolAdapterManager {
                             version,
                             state,
                             perModule,
-                            metricsService));
+                            metricsService,
+                            tlsMaterialProvider));
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             perModule.setAdapter(protocolAdapter);
             return new ProtocolAdapterWrapper(

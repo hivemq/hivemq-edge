@@ -23,6 +23,7 @@ import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
+import com.hivemq.security.tls.TLSMaterialProvider;
 import java.io.Writer;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -84,6 +85,15 @@ public interface ConfigurationService {
 
     @NotNull
     InternalConfigurationService internalConfigurationService();
+
+    /**
+     * Returns the TLS material this node declares for several surfaces to share, which is what a
+     * surface resolves a reference against when it starts.
+     *
+     * @return the TLS material provider
+     */
+    @NotNull
+    TLSMaterialProvider tlsMaterialProvider();
 
     @NotNull
     BridgeExtractor bridgeExtractor();

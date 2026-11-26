@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
  * visible choice in the configuration file.
  *
  * <p>Axes are stored exactly as written and are never rewritten. Resolution of an omitted axis to its
- * default happens at read time in {@link TlsChecksProjection}, so writing an unchanged configuration
+ * default happens at read time in {@link TLSConfigOpcUA}, so writing an unchanged configuration
  * back out is a no-op.
  *
  * <p><b>No axis declares a {@code defaultValue}, deliberately — do not add one.</b> A
@@ -122,7 +122,7 @@ public record TlsChecksFull(
          * <p>Not a setting and not part of the configuration surface: it never appears in the JSON
          * schema, is never serialized, and cannot be set from a configuration file. It exists so that
          * "these axes could not be read" survives deserialization as far as
-         * {@link TlsChecksProjection#project(Tls)}, which is where the adapter is refused. Carrying the
+         * {@link TLSConfigOpcUA}, which is where the adapter is refused. Carrying the
          * text rather than a flag lets that refusal quote back what was actually found.
          *
          * <p>Quoting it is safe <em>here</em> and nowhere else on this surface. {@link Tls#fromText},
@@ -140,7 +140,7 @@ public record TlsChecksFull(
          * The entries this element carried that are not axes, or an empty map when every entry was
          * recognized. Same contract and same rationale as {@link Tls#unknownSettings()}: it exists so
          * that a misspelled axis <em>name</em> refuses the adapter in
-         * {@link TlsChecksProjection#project(Tls)} instead of silently resolving the axis to its
+         * {@link TLSConfigOpcUA} instead of silently resolving the axis to its
          * default, and it is serialized back out verbatim so a writeback cannot delete the entry.
          * Deliberately unannotated: the {@code @JsonAnySetter} lives on the properties-creator
          * parameter below, and the {@code @JsonAnyGetter} on the explicit accessor.
@@ -150,7 +150,7 @@ public record TlsChecksFull(
     public TlsChecksFull {
         // Canonicalized (never null, insertion-ordered, unmodifiable) so equal configurations compare
         // equal however they were built. The axes themselves are stored verbatim - defaulting happens
-        // at read time in TlsChecksProjection so that a writeback cannot alter what the operator wrote.
+        // at read time in TLSConfigOpcUA so that a writeback cannot alter what the operator wrote.
         unknownSettings = unknownSettings == null || unknownSettings.isEmpty()
                 ? Map.of()
                 : Collections.unmodifiableMap(new LinkedHashMap<>(unknownSettings));
@@ -220,13 +220,13 @@ public record TlsChecksFull(
      *   <li><b>Anything else</b> means the operator configured axes that can no longer be read. Which
      *       axis each value belonged to is unrecoverable — {@code revocation=NONE} and
      *       {@code hostname=NONE} both arrive as {@code "NONE"} — so the text is carried through to
-     *       {@link TlsChecksProjection}, which refuses to start the adapter. Silently resolving it to
+     *       {@link TLSConfigOpcUA}, which refuses to start the adapter. Silently resolving it to
      *       maximum validation would be safe in the validation direction but would discard a security
      *       setting the operator explicitly wrote, leaving nothing but a start-up log line to say so.
      * </ul>
      *
      * <p>Deliberately does not throw. A throw here surfaces as a raw Jackson coercion error;
-     * carrying the sentinel through to {@link TlsChecksProjection} keeps the refusal on this adapter
+     * carrying the sentinel through to {@link TLSConfigOpcUA} keeps the refusal on this adapter
      * with the full context — which element collapsed, what text it collapsed to, and how to fix it.
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

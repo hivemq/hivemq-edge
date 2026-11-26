@@ -15,21 +15,31 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public record Truststore(
+        /**
+         * Nullable, although a truststore naming no path is refused: a {@code <truststore>} whose
+         * {@code <path>} child is missing binds null regardless. Refusing here would surface as a raw
+         * Jackson error on this adapter rather than as the configuration error
+         * {@link TLSConfigOpcUA} reports.
+         */
         @JsonProperty(value = "path")
+        @JsonInclude(NON_NULL)
         @ModuleConfigField(title = "Truststore path", description = "Path on the local file system to the truststore.")
-        @NotNull
+        @Nullable
         String path,
 
         @JsonProperty(value = "password")
+        @JsonInclude(NON_NULL)
         @ModuleConfigField(title = "Truststore password", description = "Password to open the truststore.")
-        @NotNull
+        @Nullable
         String password) {
 
     @JsonCreator
@@ -75,15 +85,5 @@ public record Truststore(
                 + "configuration has been rejected. The text is not repeated here because it can be the truststore "
                 + "password. Give every element a value or remove it entirely. An empty <truststore/> is valid and "
                 + "means the JVM cacerts are trusted.");
-    }
-
-    @Override
-    public @NotNull String path() {
-        return path;
-    }
-
-    @Override
-    public @NotNull String password() {
-        return password;
     }
 }

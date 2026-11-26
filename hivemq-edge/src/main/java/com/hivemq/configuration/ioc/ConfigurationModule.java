@@ -30,6 +30,7 @@ import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
+import com.hivemq.security.tls.TLSMaterialProvider;
 import dagger.Module;
 import dagger.Provides;
 import jakarta.inject.Singleton;
@@ -131,5 +132,13 @@ public class ConfigurationModule {
     static @NotNull InternalConfigurationService internalConfigurationService(
             final @NotNull ConfigurationService configurationService) {
         return configurationService.internalConfigurationService();
+    }
+
+    /// The provider the configuration reader fills. Bound explicitly because the provider also has an
+    /// injectable constructor, which would give every injection point its own empty registry.
+    @Provides
+    @Singleton
+    static @NotNull TLSMaterialProvider tlsMaterialProvider(final @NotNull ConfigurationService configurationService) {
+        return configurationService.tlsMaterialProvider();
     }
 }
